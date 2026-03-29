@@ -23,7 +23,22 @@ if (!X_API_KEY) {
 }
 
 app.use(bodyParser.json());
-app.use(cors({ origin: ALLOWED_ORIGIN }));
+
+// CORS configuration with function-based origin validation
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin || TRUSTED_ORIGINS.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`[CORS] Blocked origin: ${origin}`);
+      callback(new Error('Not allowed by CORS policy'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'X-API-Key', 'Authorization']
+}));
 
 // Serve CRM static build at /crm if present
 const path = require('path');
