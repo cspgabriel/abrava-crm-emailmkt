@@ -1,0 +1,75 @@
+# Node/NPM
+node_modules/
+npm-debug.log
+npm-error.log
+*.log
+pnpm-debug.log*
+pnpm-error.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Build outputs
+dist/
+build/
+.tsc-out/
+*.tsbuildinfo
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+Thumbs.db
+.DS_Store
+
+# WhatsApp Bot Session
+.wwebjs_auth/
+.wwebjs_cache/
+.whatsapp_profile/
+**/ .whatsapp_profile/
+**/.whatsapp_profile/
+**/cliente_media/
+**/logo-variations/
+**/node_modules/
+**/dist/
+**/.env
+
+# Project specific
+build_err.txt
+check_err.txt
+git_diff.txt
+git_log.txt
+git_status.txt
+temp.html
+parsed_chat.txt
+*.csv
+*.xls
+*.xlsx (except tracked data files)
+
+# Local testing
+localhost-test/
+.test-results/
+
+# Temporary files
+tmp_*.py
+temp_*.js
+*.tmp
+
+# Keep these important files tracked
+!abravacom-main/crm/.env.example
+!/wpp-api-server/.env.example
