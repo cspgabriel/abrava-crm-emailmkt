@@ -28,7 +28,7 @@ const apiDomains = [
   'https://abravacom.com.br',
   'https://www.abravacom.com.br',
   'https://wpp-api.abravacom.com.br',
-  'https://abrava-crm-emailmkt-evc5-j00d8mbwb-cspgabriels-projects.vercel.app',
+  'https://abrava-crm-emailmkt-evc5.vercel.app',
   'http://localhost:3000',
   'http://localhost:3001',
   'http://localhost:5173',
