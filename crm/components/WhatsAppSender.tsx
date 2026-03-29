@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, History, MessageCircle, PhoneCall, Search, ShieldCheck, Users, Info } from 'lucide-react';
 import { collection, query, orderBy, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase';
@@ -818,7 +818,8 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
               )}
         </div>
       </>
-        )}
+      )}
+      </div>
       <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
         <div className="flex items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-2">
