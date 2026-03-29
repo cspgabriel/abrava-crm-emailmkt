@@ -6,9 +6,8 @@ let win;
 let procs = {};
 
 const isDev = !app.isPackaged;
-const rootDir = isDev 
-    ? path.join(__dirname, '..') 
-    : path.resolve(path.dirname(process.execPath), '..', '..', '..');
+// Hardcoded path for the client machine to ensure reliable discovery
+const rootDir = 'c:\\Users\\cspga\\Downloads\\abravacom-main';
 
 function createWindow() {
   win = new BrowserWindow({

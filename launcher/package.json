@@ -17,9 +17,12 @@
     "xterm": "^5.0.0"
   },
   "build": {
-    "appId": "com.abravacom.launcher",
+    "appId": "com.abravacom.hub",
+    "directories": {
+      "output": "dist-new"
+    },
     "win": {
-      "target": ["nsis"],
+      "target": ["nsis", "dir"],
       "icon": "icon.ico",
       "sign": false
     }

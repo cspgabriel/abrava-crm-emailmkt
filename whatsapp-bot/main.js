@@ -1,4 +1,4 @@
-c:\Users\marke\AppData\Local\Packages\5319275A.WhatsAppDesktop_cv1g1gvanyjgm\LocalState\sessions\68D82E0B5EA40ED75C515BF18B5ECC52668E5034\transfers\2026-12\WhatsApp Image 2026-03-23 at 15.11.59.jpegconst { Client, LocalAuth } = require('whatsapp-web.js');
+const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const { initializeApp } = require('firebase/app');
 const { initializeFirestore, collection, getDocs, updateDoc, doc } = require('firebase/firestore');
@@ -143,8 +143,8 @@ let isFirstRun = true;
 async function startPollingLeads() {
     const leadsRef = collection(db, 'simulations');
 
-    const checkNewLeads = async () => {
-      c:\Users\marke\AppData\Local\Packages\5319275A.WhatsAppDesktop_cv1g1gvanyjgm\LocalState\sessions\68D82E0B5EA40ED75C515BF18B5ECC52668E5034\transfers\2026-12\WhatsApp Image 2026-03-23 at 15.11.59.jpeg  try {
+        const checkNewLeads = async () => {
+            try {
             // Em vez de stream GRPC, fazemos requisições simples GET (HTTP)
             const snapshot = await getDocs(leadsRef);
             

@@ -685,7 +685,7 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
     return historyItems.filter((item) => normalizePhone(item.phone).includes(phoneFilter));
   }, [historyItems, historyFilterPhone]);
 
-  return (
+  return (<>
     <div className="p-6 max-w-6xl mx-auto space-y-6">
       <div className="space-y-2">
         <h2 className="text-2xl font-bold text-slate-900">Envio de WhatsApp</h2>
@@ -726,7 +726,7 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
             `}</style>
           </div>
         ) : (
-          <>
+          <div>
             {/* =====  ESTADOS NORMAIS  ===== */}
             <div className="flex items-center justify-between gap-4">
               <div className="flex-1">
@@ -817,7 +817,7 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
                 </div>
               )}
         </div>
-      </>
+      </div>
         )}
       <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
         <div className="flex items-center justify-between gap-3 mb-4">
@@ -1231,6 +1231,7 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
         </div>
       )}
     </div>
+    </>
   );
 };
 
