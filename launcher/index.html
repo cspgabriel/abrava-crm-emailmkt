@@ -11,289 +11,134 @@
     <style>
         :root {
             --primary: #6366f1;
-            --primary-light: #818cf8;
-            --bg-darker: #020617;
             --bg-sidebar: #0f172a;
             --bg-main: #1e293b;
-            --text-main: #f8fafc;
-            --text-dim: #94a3b8;
             --sidebar-width: 260px;
-            --accent: #10b981;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
-        body { background: var(--bg-darker); color: var(--text-main); height: 100vh; display: flex; overflow: hidden; }
+        * { margin:0; padding:0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+        body { background: #020617; color: white; height: 100vh; width: 100vw; overflow: hidden; display: flex; }
 
-        /* Sidebar Navigation */
+        /* Sidebar */
         .sidebar {
             width: var(--sidebar-width);
+            height: 100vh;
             background: var(--bg-sidebar);
             display: flex;
             flex-direction: column;
             border-right: 1px solid rgba(255, 255, 255, 0.05);
-            z-index: 50;
+            flex-shrink: 0;
         }
 
-        .sidebar-header {
-            padding: 2rem 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .logo-box {
-            background: linear-gradient(135deg, var(--primary), var(--primary-light));
-            width: 36px;
-            height: 36px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
-        }
-
-        .logo-text { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.5px; }
+        .sidebar-header { padding: 2rem 1.5rem; display: flex; align-items: center; gap: 0.75rem; }
+        .logo-box { background: var(--primary); width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
 
         .nav-list { flex: 1; padding: 0 1rem; list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
-
         .nav-item {
-            padding: 0.875rem 1rem;
-            border-radius: 12px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            color: var(--text-dim);
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            font-weight: 500;
+            padding: 0.875rem 1rem; border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 1rem;
+            color: #94a3b8; transition: 0.2s; font-weight: 500;
+        }
+        .nav-item:hover { background: rgba(255, 255, 255, 0.03); color: white; }
+        .nav-item.active { background: var(--primary); color: white; }
+
+        /* Content Area */
+        .workspace {
+            flex: 1;
+            height: 100vh;
+            background: var(--bg-main);
+            position: relative;
+            overflow: hidden;
         }
 
-        .nav-item i { width: 20px; transition: all 0.2s; }
-        .nav-item:hover { background: rgba(255, 255, 255, 0.03); color: var(--text-main); }
-        .nav-item.active { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
-        .nav-item.active i { color: white; }
-
-        .sidebar-footer { padding: 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.05); }
-
-        /* Main Workspace Area */
-        .workspace { flex: 1; display: flex; flex-direction: column; background: var(--bg-main); position: relative; }
-
-        .app-view { width: 100%; height: 100%; border: none; display: none; background: white; }
-        .app-view.active { display: block; }
-
-        /* Dashboard (Initial View) */
-        .dashboard {
-            padding: 2.5rem;
+        /* The Hub/Dashboard View */
+        .view-content {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            padding: 3rem;
             display: none;
             flex-direction: column;
             gap: 2rem;
+            background: var(--bg-main);
             overflow-y: auto;
-            background: var(--bg-main);
-            height: 100%;
         }
-        .dashboard.active { display: flex; }
+        .view-content.active { display: flex; }
 
-        .dash-header h2 { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.5rem; }
-        .dash-header p { color: var(--text-dim); }
-
-        .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; }
-        .dash-card {
-            background: rgba(15, 23, 42, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 20px;
-            padding: 2rem;
-            transition: all 0.3s;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-        .dash-card:hover { transform: translateY(-4px); border-color: var(--primary); background: rgba(15, 23, 42, 0.6); }
-
-        .dash-card h3 { font-size: 1.25rem; font-weight: 600; display: flex; align-items: center; gap: 0.75rem; }
-        .dash-card p { color: var(--text-dim); font-size: 0.9375rem; line-height: 1.5; }
-
-        .btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-        }
-        .btn:hover { background: var(--primary-light); }
-        .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
-        .btn-outline:hover { background: rgba(99, 102, 241, 0.05); }
-
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-dim); }
-        .status-dot.active { background: var(--accent); box-shadow: 0 0 10px var(--accent); }
-
-        /* Config Panel */
-        .config-panel { padding: 2.5rem; display: none; flex-direction: column; gap: 1.5rem; background: var(--bg-main); height: 100%; }
-        .config-panel.active { display: flex; }
-
-        .toggle-row { display: flex; justify-content: space-between; align-items: center; padding-bottom: 1rem; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
-
-        /* Loader */
-        .loader {
+        /* The External URL View (Iframe) */
+        .app-view {
             position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: var(--bg-main);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-            opacity: 1;
-            transition: opacity 0.5s;
-        }
-        .loader.hidden { opacity: 0; pointer-events: none; }
-        .spinner {
-            width: 40px; height: 40px;
-            border: 4px solid rgba(255, 255, 255, 0.1);
-            border-top: 4px solid var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* Webview Styles */
-        webview {
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            border: none;
             display: none;
             background: white;
         }
-        webview.active { display: flex; }
+        .app-view.active { display: block; }
 
-        /* Glass Switch */
-        .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #334155; transition: .4s; border-radius: 24px; }
-        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background: var(--primary); }
-        input:checked + .slider:before { transform: translateX(20px); }
+        /* Dashboard specific */
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
+        .card { background: #0f172a; border: 1px solid rgba(255,255,255,0.05); padding: 2rem; border-radius: 20px; cursor: pointer; transition: 0.2s; }
+        .card:hover { border-color: var(--primary); background: #1e293b; transform: translateY(-3px); }
+
+        .btn { background: var(--primary); padding: 0.7rem 1.5rem; border-radius: 10px; border: none; color: white; font-weight:600; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; }
+        
+        /* Loader */
+        .loader { position: fixed; inset: 0; background: #0f172a; z-index: 999; display: flex; align-items: center; justify-content: center; opacity: 1; transition: 0.5s; }
+        .loader.hidden { opacity: 0; pointer-events: none; }
     </style>
 </head>
 <body>
+    <div id="loader" class="loader"><div style="border: 4px solid #333; border-top-color: #6366f1; width: 40px; height: 40px; border-radius: 50%; animation: spin 1s linear infinite;"></div></div>
+    <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+
     <aside class="sidebar">
         <div class="sidebar-header">
-            <div class="logo-box"><i data-lucide="layout-dashboard" style="color: white; width: 20px;"></i></div>
-            <span class="logo-text">Abravacom</span>
+            <div class="logo-box"><i data-lucide="layout-dashboard" style="color: white; width: 18px;"></i></div>
+            <span style="font-weight: 700; font-size: 1.2rem;">Abravacom</span>
         </div>
-
         <nav class="nav-list">
-            <li class="nav-item active" data-tab="dashboard">
-                <i data-lucide="home"></i> Home
-            </li>
-            <li class="nav-item" data-tab="view-crm">
-                <i data-lucide="users"></i> CRM Online
-            </li>
-            <li class="nav-item" data-tab="view-site">
-                <i data-lucide="layout"></i> Site Admin
-            </li>
-            <li class="nav-item" data-tab="config">
-                <i data-lucide="settings"></i> Configurações
-            </li>
+            <li class="nav-item active" data-tab="dashboard"><i data-lucide="home"></i> Home</li>
+            <li class="nav-item" data-tab="view-crm"><i data-lucide="users"></i> CRM Online</li>
+            <li class="nav-item" data-tab="view-site"><i data-lucide="globe"></i> Site Admin</li>
+            <li class="nav-item" data-tab="config"><i data-lucide="settings"></i> Config</li>
         </nav>
-
-        <div class="sidebar-footer">
-            <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: var(--text-dim);">
-                <i data-lucide="shield-check" style="width: 14px;"></i> Sistema Ativo
-            </div>
-        </div>
     </aside>
 
     <main class="workspace">
-        <!-- Initial Dash -->
-        <div id="tab-dashboard" class="dashboard active">
-            <div class="dash-header">
-                <h2>Seja bem-vinda, Elis.</h2>
-                <p>Selecione uma plataforma para começar a gerenciar.</p>
-            </div>
-
-            <div class="grid-cards">
-                <div class="dash-card" onclick="switchTab('view-crm')">
-                    <h3><i data-lucide="users" style="color: var(--primary);"></i> CRM Master</h3>
-                    <p>Gestão completa de leads, clientes e funil de vendas. Acesse agora sua plataforma dedicada.</p>
-                    <button class="btn" style="margin-top: 1rem;">Abrir Dashboard</button>
+        <!-- Dashboard Home -->
+        <div id="tab-dashboard" class="view-content active">
+            <h1 style="font-size: 2rem;">Olá, Elis.</h1>
+            <p style="color: #94a3b8;">Escolha o portal que deseja acessar hoje.</p>
+            <div class="grid">
+                <div class="card" onclick="switchTab('view-crm')">
+                    <h3 style="margin-bottom: 0.5rem;"><i data-lucide="users" style="color: #6366f1;"></i> CRM Master</h3>
+                    <p style="color: #64748b; font-size: 0.9rem;">Gestão de clientes e inteligência de vendas.</p>
                 </div>
-
-                <div class="dash-card" onclick="switchTab('view-site')">
-                    <h3><i data-lucide="layout" style="color: var(--accent);"></i> Site Admin</h3>
-                    <p>Controle do conteúdo do seu site, landing pages e formulários. Rápido e fácil.</p>
-                    <button class="btn btn-outline" style="margin-top: 1rem;">Gerenciar Site</button>
-                </div>
-            </div>
-
-            <div style="margin-top: 2rem;">
-                <h3 style="font-size: 1rem; margin-bottom: 1rem; color: var(--text-dim);">Conexões de PC (Modo Local)</h3>
-                <div style="display: flex; gap: 1rem;">
-                    <button class="btn btn-outline" style="font-size: 0.8rem;" id="local-crm">
-                        <div class="status-dot" id="status-crm-local"></div> Iniciar CRM Local
-                    </button>
-                    <button class="btn btn-outline" style="font-size: 0.8rem;" id="local-site">
-                        <div class="status-dot" id="status-site-local"></div> Iniciar Site Local
-                    </button>
+                <div class="card" onclick="switchTab('view-site')">
+                    <h3 style="margin-bottom: 0.5rem;"><i data-lucide="globe" style="color: #10b981;"></i> Site Admin</h3>
+                    <p style="color: #64748b; font-size: 0.9rem;">Atualize conteúdos e landing pages.</p>
                 </div>
             </div>
         </div>
 
-        <!-- CRM Iframe -->
+        <!-- CRM Hub -->
         <iframe id="wv-crm" src="https://abravacom.com.br/crm" class="app-view"></iframe>
 
-        <!-- Site Iframe -->
+        <!-- Site Hub -->
         <iframe id="wv-site" src="https://abravacom.com.br/admin-public" class="app-view"></iframe>
 
-        <!-- Config Panel -->
-        <div id="tab-config" class="config-panel">
-            <h2>Configurações do App</h2>
-            <div style="margin-top: 2rem; display: flex; flex-direction: column; gap: 1.5rem;">
-                <div class="toggle-row">
-                    <div>
-                        <div style="font-weight: 600;">Iniciar com o Windows</div>
-                        <div style="font-size: 0.8rem; color: var(--text-dim);">Abre o app assim que o PC ligar.</div>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" id="check-autostart">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                <div class="toggle-row">
-                    <div>
-                        <div style="font-weight: 600;">Modo Janela</div>
-                        <div style="font-size: 0.8rem; color: var(--text-dim);">Mantém o app em tela cheia.</div>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" checked>
-                        <span class="slider"></span>
-                    </label>
-                </div>
+        <!-- Config -->
+        <div id="tab-config" class="view-content">
+            <h1>Configurações</h1>
+            <div style="margin-top: 2rem;">
+                <p>O aplicativo está configurado para o ambiente de produção.</p>
             </div>
-            
-            <div style="margin-top: auto; color: var(--text-dim); font-size: 0.8rem;">
-                Console do Sistema:<br>
-                <div id="console" style="background: rgba(0,0,0,0.3); padding: 0.5rem; height: 100px; overflow-y: auto; margin-top: 0.5rem; font-family: monospace;">Aguardando comandos...</div>
-            </div>
-        </div>
-
-        <!-- Loader overlay -->
-        <div id="sys-loader" class="loader hidden">
-            <div class="spinner"></div>
-            <p style="margin-top: 1rem; color: var(--text-dim);">Carregando...</p>
         </div>
     </main>
 
     <script src="renderer.js"></script>
     <script>
         lucide.createIcons();
+        window.addEventListener('load', () => setTimeout(() => document.getElementById('loader').classList.add('hidden'), 500));
     </script>
 </body>
 </html>
