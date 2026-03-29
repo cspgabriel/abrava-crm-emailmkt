@@ -73,3 +73,4 @@ temp_*.js
 # Keep these important files tracked
 !abravacom-main/crm/.env.example
 !/wpp-api-server/.env.example
+launcher/dist-pack/

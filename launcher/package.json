@@ -11,7 +11,8 @@
   "author": "Abravacom",
   "devDependencies": {
     "electron": "^26.0.0",
-    "electron-builder": "^24.0.0"
+    "electron-builder": "^24.0.0",
+    "electron-packager": "^17.1.2"
   },
   "dependencies": {
     "xterm": "^5.0.0"
@@ -22,7 +23,10 @@
       "output": "dist-new"
     },
     "win": {
-      "target": ["nsis", "dir"],
+      "target": [
+        "nsis",
+        "dir"
+      ],
       "icon": "icon.ico",
       "sign": false
     }
