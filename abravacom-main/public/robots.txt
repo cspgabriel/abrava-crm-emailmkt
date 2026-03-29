@@ -1,0 +1,21 @@
+User-agent: *
+Allow: /
+
+# Specifically allow AI bots to crawl public pages for citations
+User-agent: GPTBot
+Allow: /
+User-agent: ChatGPT-User
+Allow: /
+User-agent: PerplexityBot
+Allow: /
+User-agent: ClaudeBot
+Allow: /
+User-agent: anthropic-ai
+Allow: /
+User-agent: Google-Extended
+Allow: /
+
+# Disallow admin and private routes
+Disallow: /crm/
+Disallow: /admin/
+Disallow: /portal/

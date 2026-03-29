@@ -1,0 +1,27 @@
+{
+  "name": "abravacom-launcher",
+  "version": "0.1.0",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win nsis"
+  },
+  "description": "Launcher para iniciar frontend e API do Abravacom",
+  "author": "Abravacom",
+  "devDependencies": {
+    "electron": "^26.0.0",
+    "electron-builder": "^24.0.0"
+  },
+  "dependencies": {
+    "xterm": "^5.0.0"
+  },
+  "build": {
+    "appId": "com.abravacom.launcher",
+    "win": {
+      "target": ["nsis"],
+      "icon": "icon.ico",
+      "sign": false
+    }
+  }
+}

@@ -1,0 +1,91 @@
+[
+  {
+    "id": 1000,
+    "iconUrl": "https://lh3.googleusercontent.com/cG2OmAtMyp1THzMAp6mRGmZnF_lYDz_8x6umuBz1aRTReZjC_3XnAX7v9ZwEtwE8ADo6EipMtRsj-dj4p1XwVMgWzls=w128-h128-e365-rj-sc0x00ffffff0",
+    "pluginDescriptor": "WA Bulk Message Sender",
+    "tags": [
+      {
+        "text": "new",
+        "type": "danger"
+      }
+    ],
+    "linkUrl": "https://chrome.google.com/webstore/detail/wa-bulk-message-sender/fhkimgpddcmnleeaicdjggpedegolbkb?hl=zh-CN&authuser=0"
+  },
+  {
+    "id": 1100,
+    "iconUrl": "https://lh3.googleusercontent.com/8D97XRP79F-8hfPLG3287-t9diuV64wmd0BDLQNyY4CJXAyvUasaqLkY0AxSA76ntIqVwC4BeOr-Z7GbGOF3Ldg4yQ=w128-h128-e365-rj-sc0x00ffffff",
+    "pluginDescriptor": "Easy Sender for WhatsApp Web",
+    "tags": null,
+    "linkUrl": "https://chrome.google.com/webstore/detail/easy-sender-for-whatsapp/khfmfdepnleebhonomgihppncahojfig?hl=zh-CN&authuser=0"
+  },
+  {
+    "id": 1200,
+    "iconUrl": "https://lh3.googleusercontent.com/nSFlClwrLjOmgXwd-Zakv9trlNVS4AoeyMpzVePt0ga3C8nMAVSs3HpTXuDMloN2M3vZvtxVJwedohlU7y7ctsU=w128-h128-e365-rj-sc0x00ffffff",
+    "pluginDescriptor": "Web Sender",
+    "tags": null,
+    "linkUrl": "https://chrome.google.com/webstore/detail/web-sender/fngmlbjdnbieamehlidbkaikefhkkian"
+  },
+  {
+    "id": 1300,
+    "iconUrl": "https://lh3.googleusercontent.com/VZoixPg9nhcINEoXpoo5135N5moZBItTyC94raGAhD06Dy2u2YE4ODs8vcIELYjHNTMNPP98Nb-nrZBQAs6zlaGe=w128-h128-e365-rj-sc0x00ffffff",
+    "pluginDescriptor": "WAPI - Send personalized messages",
+    "tags": null,
+    "linkUrl": "https://chrome.google.com/webstore/detail/wapi-send-personalized-me/nmbjblpeeiobnakglbickhpgbinojbch"
+  },
+  {
+    "id": 1400,
+    "iconUrl": "https://lh3.googleusercontent.com/Irig43XMETRn8vyVuMX9nThjj-7Zv2_Rz1d5B93MsnO1Pmhj4Tf_cuMuKkuC3uxKdm9Ro-y1gLOW6rz8umGRQn_a0Sw=w128-h128-e365-rj-sc0x00ffffff",
+    "pluginDescriptor": "WA Web Sender",
+    "tags": null,
+    "linkUrl": "https://chrome.google.com/webstore/detail/wa-web-sender/fjfnifgmikimkaemhllmmmamkichknle"
+  },
+  {
+    "id": 1500,
+    "iconUrl": "https://lh3.googleusercontent.com/sJERVz0Zi4kEIsHPS_4M7D11RUzim-csEtd4hrYCNO3XZ6rtlOy3pQuiJVCBFv_oHKlVJx809Gq0Xe30frvznvaX=w128-h128-e365-rj-sc0x00ffffff",
+    "pluginDescriptor": "2 Whats Sender",
+    "tags": null,
+    "linkUrl": "https://chrome.google.com/webstore/detail/2-whats-sender/iefhbdnbjfimdpldnmmikgnckdfhnpoi"
+  },
+  {
+    "id": 1600,
+    "iconUrl": "https://lh3.googleusercontent.com/b7jEvV7AOrLQN2g1vMD5x59CyvJW4GpbWIL-daq_-IZ4_k5LT6KFotW_rk7lFfU4rKGbE8GNbgPymsM9FDLxlcSKIA=w128-h128-e365-rj-sc0x00ffffff",
+    "pluginDescriptor": "WAPlus - Group Exporter for WhatsApp",
+    "tags": null,
+    "linkUrl": "https://chrome.google.com/webstore/detail/whatsapp-group-exporter-g/eelhmnjkbjmlcglpiaegojkoolckdgaj?hl=zh-CN&authuser=0"
+  },
+  {
+    "id": 1700,
+    "iconUrl": "https://lh3.googleusercontent.com/lDgBfbU9yC77ngWj-r62apm44QnFr8yuP-XKcg_HJaxVr37stxgoGAXQTLNStdtyV2HsGBn9EWtw_z8gvT58QfpD=w128-h128-e365-rj-sc0x00ffffff",
+    "pluginDescriptor": "Contact Saver for WA",
+    "tags": null,
+    "linkUrl": "https://chrome.google.com/webstore/detail/contact-saver-for-wa/edklgfianniecabmndjcponckjlmoiel"
+  },
+  {
+    "id": 1800,
+    "iconUrl": "https://lh3.googleusercontent.com/lDgBfbU9yC77ngWj-r62apm44QnFr8yuP-XKcg_HJaxVr37stxgoGAXQTLNStdtyV2HsGBn9EWtw_z8gvT58QfpD=w128-h128-e365-rj-sc0x00ffffff",
+    "pluginDescriptor": "Backup WA Chats",
+    "tags": null,
+    "linkUrl": "https://chrome.google.com/webstore/detail/backup-wa-chats/bjdhlinfageccmfgaicipbfmjjbmopkc"
+  },
+  {
+    "id": 1900,
+    "iconUrl": "https://lh3.googleusercontent.com/leDs424mhZkQKEcRgOhOiQzOkyElTBapRg0sygrq6vGlw34e8NhJXaAS2XOOP6znbtR8wIu8zNL0U7RUcwO80tnM=w128-h128-e365-rj-sc0x00ffffff",
+    "pluginDescriptor": "Privacy Extension for WhatsApp Privacy",
+    "tags": null,
+    "linkUrl": "https://chrome.google.com/webstore/detail/whatsapp-privacy-hide-wha/cgipcgghboamefelooajpiabilddemlh"
+  },
+  {
+    "id": 2000,
+    "iconUrl": "https://lh3.googleusercontent.com/Pc-F6e5Gw9FFwPDlxBou0sBxT0SNCZ2H_UoGs0Fe3eEMdwT5fKwH80gvTUMRUDosdRJBXYBB5fpZg9bOdEianfO2qg=w128-h128-e365-rj-sc0x00ffffff",
+    "pluginDescriptor": "WhatsApp Group Link Scraper - WA Group Finder",
+    "tags": null,
+    "linkUrl": "https://chrome.google.com/webstore/detail/find-whatsapp-link-group/lfepbhhhpfohfckldbjoohmplpebdmnd"
+  },
+  {
+    "id": 2100,
+    "iconUrl": "https://lh3.googleusercontent.com/-ewnPlthxkpUXKTSqHnO08_oIm7VeEQeoFnjMyADsVImkeoyOdzqaVweSVV__flvdCi569OHUEHlEb0SAXWXk6XURwo=w128-h128-e365-rj-sc0x00ffffff",
+    "pluginDescriptor": "WA Group Sender",
+    "tags": null,
+    "linkUrl": "https://chrome.google.com/webstore/detail/wa-group-sender/kilbeicibedchlamahiimkjeilnkgmeo"
+  }
+]

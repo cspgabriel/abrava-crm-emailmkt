@@ -1,0 +1,9 @@
+2026/03/20-21:21:50.715 1358 Reusing MANIFEST C:\Users\marke\OneDrive\Github\CONSORCIO-CRM-1\.whatsapp_profile\Default\Local Storage\leveldb/MANIFEST-000001
+2026/03/20-21:21:50.727 1358 Recovering log #4
+2026/03/20-21:21:50.730 1358 Reusing old log C:\Users\marke\OneDrive\Github\CONSORCIO-CRM-1\.whatsapp_profile\Default\Local Storage\leveldb/000004.log 
+2026/03/20-21:23:01.018 5fb4 Level-0 table #8: started
+2026/03/20-21:23:01.028 5fb4 Level-0 table #8: 51305 bytes OK
+2026/03/20-21:23:01.032 5fb4 Delete type=0 #4
+2026/03/20-21:23:18.511 5fb4 Level-0 table #10: started
+2026/03/20-21:23:18.518 5fb4 Level-0 table #10: 75408 bytes OK
+2026/03/20-21:23:18.521 5fb4 Delete type=0 #7

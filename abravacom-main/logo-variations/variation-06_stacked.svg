@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800">
+  <rect width="100%" height="100%" fill="#fffdf6"/>
+  <g transform="translate(0,20)" font-family="Helvetica, Arial, sans-serif">
+    <g transform="translate(120,40)">
+      <path d="M0,240 C60,140 120,140 180,240 C240,340 320,340 380,240 C440,140 520,140 600,240 L600,360 L0,360 Z" fill="#2e7d32"/>
+      <path d="M0,280 C80,200 160,200 240,280 C320,360 400,360 480,280 C560,180 600,180 600,280 L600,360 L0,360 Z" fill="#66bb6a"/>
+      <circle cx="480" cy="60" r="36" fill="#FFD54F"/>
+    </g>
+    <text x="300" y="420" font-size="96" font-weight="800" text-anchor="middle" fill="#0b5e20">VISITE</text>
+    <text x="300" y="490" font-size="36" text-anchor="middle" fill="#0d47a1">TERESÓPOLIS <tspan fill="#2e7d32">RJ</tspan></text>
+    <text x="300" y="540" font-size="20" text-anchor="middle" fill="#2e7d32">PROCAP RJ</text>
+  </g>
+</svg>

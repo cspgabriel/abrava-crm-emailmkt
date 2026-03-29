@@ -1,0 +1,34 @@
+{
+  "name": "[firebase]--crm-oficial-finalzado-v1",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@google/genai": "^1.40.0",
+    "browserslist": "^4.28.1",
+    "caniuse-lite": "^1.0.30001781",
+    "firebase": "^12.9.0",
+    "html2canvas": "1.4.1",
+    "lucide-react": "^0.268.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "react-markdown": "9.0.1",
+    "tailwindcss": "^4.2.1",
+    "xlsx": "latest"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.2.1",
+    "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "daisyui": "^3.2.2",
+    "tailwindcss": "^4.2.1",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
+  }
+}

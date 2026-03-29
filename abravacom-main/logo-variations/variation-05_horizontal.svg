@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360">
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g transform="translate(40,20)">
+    <g id="icon" transform="scale(0.45)">
+      <path d="M0,420 C120,260 240,260 360,420 C480,580 620,580 740,420 C860,260 980,260 1000,420 L1000,600 L0,600 Z" fill="#2e7d32"/>
+      <path d="M0,480 C160,340 300,340 420,480 C560,640 680,640 800,480 C940,300 980,300 1000,480 L1000,600 L0,600 Z" fill="#66bb6a"/>
+      <circle cx="740" cy="140" r="70" fill="#FFB74D"/>
+    </g>
+  </g>
+  <g transform="translate(520,110)" font-family="Arial, Helvetica, sans-serif">
+    <text x="0" y="0" font-size="80" font-weight="800" fill="#1b5e20">VISITE</text>
+    <text x="0" y="60" font-size="34" fill="#0d47a1">TERESÓPOLIS <tspan fill="#2e7d32">RJ</tspan></text>
+    <text x="0" y="110" font-size="22" fill="#2e7d32">PROCAP RJ</text>
+  </g>
+</svg>

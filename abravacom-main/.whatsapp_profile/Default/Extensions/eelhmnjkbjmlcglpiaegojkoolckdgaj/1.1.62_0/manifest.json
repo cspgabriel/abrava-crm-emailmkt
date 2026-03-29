@@ -1,0 +1,48 @@
+{
+   "action": {
+      "default_icon": {
+         "128": "icons/128.png"
+      },
+      "default_popup": "popup.html",
+      "default_title": "WhatsApp Group Exporter- Group download"
+   },
+   "background": {
+      "service_worker": "background.js"
+   },
+   "content_scripts": [ {
+      "js": [ "inject/content-script.js" ],
+      "matches": [ "*://*.whatsapp.com/*" ],
+      "run_at": "document_end"
+   }, {
+      "css": [ "css/wa-attach.css" ],
+      "js": [ "js/redirect-link.js" ],
+      "matches": [ "*://*.whatsapp.com/*" ],
+      "run_at": "document_end"
+   }, {
+      "js": [ "js/drainage-module.js" ],
+      "matches": [ "*://*.whatsapp.com/*" ],
+      "run_at": "document_end"
+   }, {
+      "js": [ "./content2.js" ],
+      "matches": [ "\u003Call_urls>" ],
+      "run_at": "document_end"
+   } ],
+   "default_locale": "en",
+   "description": "__MSG_desc__",
+   "homepage_url": "https://web.whatsapp.com/",
+   "host_permissions": [ "*://*.whatsapp.com/*" ],
+   "icons": {
+      "128": "icons/128.png"
+   },
+   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAyz0e0VGbHzizR2J2OvLGb7YzM0URC98yGZ0VMrkXFVyxI5fMt6J9VbyGaGUElgzbZIPpCAl0pK9SMgzi5wOnWCRKv5lzvksyA8Fx6Rd1V37ooj0VE/jyOciGkjfvP50mZiDs6UHm8OzJ6A3romtWjh1IGaIfthXRJZVesccTm4DOgDn1uBkkvh9JeJA15ycX01EkDf73L0jnqVeOHTPTmi+3UuNcrG8LaWO8TX2+JeynCY5DA/HEia89BOVA+u3C1/XHQcJs+rMtIQSikH1CKtc1BW1pP1VggTIblw2YLWhZyWHq/RqkwCqYHjAzRQXIVm6jR/EH25d64A/n44XKNQIDAQAB",
+   "manifest_version": 3,
+   "name": "__MSG_name__",
+   "optional_host_permissions": [ "*://*/*" ],
+   "permissions": [ "tabs", "storage" ],
+   "update_url": "https://clients2.google.com/service/update2/crx",
+   "version": "1.1.62",
+   "web_accessible_resources": [ {
+      "matches": [ "*://*.whatsapp.com/*" ],
+      "resources": [ "inject/inject.js", "pic/crm-commend.png", "js/drainage-module/drainage-module.js", "fonts/*", "img/*", "icons/*", "images/*" ]
+   } ]
+}
