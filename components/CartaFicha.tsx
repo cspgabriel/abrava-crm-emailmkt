@@ -109,7 +109,7 @@ const CartaFicha: React.FC<CartaFichaProps> = ({ letter, onClose }) => {
                   </div>
                   <div className="flex justify-between items-center py-1">
                     <span className="text-slate-500">Entrada</span>
-                    <span className="font-black text-slate-900">{fmtBRL(letter.entry)}</span>
+                    <span className="font-black text-slate-900">Disponivel no acesso completo</span>
                   </div>
                   <div className="flex justify-between items-center py-1">
                     <span className="text-slate-500">Parcelas</span>

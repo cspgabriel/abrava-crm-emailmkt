@@ -2,11 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  LayoutDashboard,
-  LogIn,
   LogOut,
   Menu,
-  ShieldCheck,
   User,
   X,
 } from 'lucide-react';
@@ -15,17 +12,10 @@ import { doc, getDoc } from 'firebase/firestore';
 import BrandLogo from './BrandLogo';
 
 const primaryLinks = [
-  { name: 'Início', path: '/' },
-  { name: 'Cartas Contempladas Disponíveis', path: '/cartas' },
-  { name: 'Consórcios', path: '/consorcio' },
-  { name: 'Crédito com Garantia', path: '/simulacao' },
+  { name: 'Inicio', path: '/' },
+  { name: 'Cartas Contempladas', path: '/cartas' },
+  { name: 'Consorcio', path: '/consorcio' },
   { name: 'Sobre', path: '/sobre' },
-];
-
-const utilityLinks = [
-  { name: 'Portal', path: '/portal', icon: LayoutDashboard },
-  { name: 'Admin', path: '/admin-public', icon: ShieldCheck },
-  { name: 'Acesso', path: '/acesso', icon: LogIn },
 ];
 
 const Navbar: React.FC = () => {
@@ -100,26 +90,6 @@ const Navbar: React.FC = () => {
           </div>
 
           <div className="hidden items-center gap-3 xl:flex">
-            <div className="rounded-full border border-[rgba(217,173,87,0.14)] bg-[rgba(255,255,255,0.03)] p-1">
-              {utilityLinks.map((link) => {
-                const Icon = link.icon;
-                return (
-                  <Link
-                    key={link.path}
-                    to={link.path}
-                    className={`inline-flex items-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.22em] transition-all ${
-                      isActive(link.path)
-                        ? 'bg-[rgba(217,173,87,0.14)] text-[var(--brand-gold-soft)]'
-                        : 'text-white/85 hover:text-white'
-                    }`}
-                  >
-                    <Icon size={14} />
-                    {link.name}
-                  </Link>
-                );
-              })}
-            </div>
-
             {user ? (
               <div className="flex items-center gap-2">
                 <Link
@@ -142,7 +112,7 @@ const Navbar: React.FC = () => {
                 onClick={openAuth}
                 className="rounded-full whitespace-nowrap bg-[linear-gradient(135deg,#d8ad5b_0%,#b98532_100%)] px-5 py-3 text-[10px] font-bold uppercase tracking-[0.28em] text-[#081728] shadow-[0_14px_30px_rgba(185,133,50,0.35)] transition hover:brightness-105"
               >
-                Área do Parceiro
+                Area do Parceiro
               </button>
             )}
           </div>
@@ -192,24 +162,6 @@ const Navbar: React.FC = () => {
                   </Link>
                 ))}
               </div>
-
-              <div className="mt-4 grid gap-2">
-                {utilityLinks.map((link) => {
-                  const Icon = link.icon;
-                  return (
-                    <Link
-                      key={link.path}
-                      to={link.path}
-                      onClick={() => setIsOpen(false)}
-                      className="flex items-center gap-3 rounded-2xl bg-white/5 px-4 py-4 text-sm font-semibold uppercase tracking-[0.22em] text-[rgba(244,236,223,0.78)] transition hover:bg-white/10"
-                    >
-                      <Icon size={16} />
-                      {link.name}
-                    </Link>
-                  );
-                })}
-              </div>
-
               <div className="mt-5 grid gap-3">
                 {user ? (
                   <>
@@ -237,7 +189,7 @@ const Navbar: React.FC = () => {
                     onClick={openAuth}
                     className="rounded-2xl bg-[linear-gradient(135deg,#d8ad5b_0%,#b98532_100%)] px-5 py-4 text-[11px] font-bold uppercase tracking-[0.28em] text-[#081728]"
                   >
-                    Área do Parceiro
+                    Area do Parceiro
                   </button>
                 )}
               </div>

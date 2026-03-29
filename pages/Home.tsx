@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ShieldCheck, Star, Zap, DollarSign, Mail } from 'lucide-react';
@@ -7,25 +7,25 @@ import PartnerMarquee from '../components/PartnerMarquee';
 import { collection, limit, onSnapshot, orderBy, query } from 'firebase/firestore';
 import { db } from '../firebase';
 
-const heroTitleWords = ['Multiplique', 'seu', 'patrimônio', 'com'];
+const heroTitleWords = ['Multiplique', 'seu', 'patrimÃ´nio', 'com'];
 
 const featureList = [
   {
     icon: Zap,
-    title: 'Cartas contempladas disponíveis',
-    desc: 'Acesso a cartas prontas para negociação com agilidade e segurança.',
+    title: 'Cartas contempladas',
+    desc: 'Veja oportunidades com credito, parcela e prazo antes do cadastro e libere o acesso completo quando fizer sentido.',
     path: '/cartas'
   },
   {
     icon: ShieldCheck,
-    title: 'Consórcios estruturados para a contemplação',
-    desc: 'Planejamento inteligente para aumentar suas chances de contemplar com estratégia.',
+    title: 'Consorcios personalizados',
+    desc: 'Fluxo separado para captar o lead e montar a simulacao de acordo com o objetivo do cliente.',
     path: '/consorcio'
   },
   {
     icon: DollarSign,
-    title: 'Financiamentos',
-    desc: 'Comparação entre modalidades para indicar a opção mais vantajosa para seu perfil.',
+    title: 'Simulacao estrategica',
+    desc: 'Uma rota dedicada para apresentar condicoes, captar o contato e conduzir o cliente para o proximo passo.',
     path: '/simulacao'
   },
 ];
@@ -33,24 +33,24 @@ const featureList = [
 const testimonials = [
   {
     name: 'Roberto Almeida',
-    role: 'Empresário',
-    text: 'A Elis achou a carta para ampliar a frota em tempo recorde. Assessoria impecável, sem promessas vazias.',
+    role: 'EmpresÃ¡rio',
+    text: 'A Elis achou a carta para ampliar a frota em tempo recorde. Assessoria impecÃ¡vel, sem promessas vazias.',
     rating: 5,
-    date: 'Há 2 meses',
+    date: 'HÃ¡ 2 meses',
   },
   {
     name: 'Mariana Costa',
-    role: 'Médica',
-    text: 'Estava pagando juros absurdos. Com a carta da Abravacon economizei mais de 40% e ganhei segurança.',
+    role: 'MÃ©dica',
+    text: 'Estava pagando juros absurdos. Com a carta da Abravacon economizei mais de 40% e ganhei seguranÃ§a.',
     rating: 5,
-    date: 'Há 1 semana',
+    date: 'HÃ¡ 1 semana',
   },
   {
     name: 'Carlos Eduardo',
-    role: 'Empresário',
-    text: 'Hoje só uso esse caminho para imóveis. A inteligência matemática da equipe vale cada carta.',
+    role: 'EmpresÃ¡rio',
+    text: 'Hoje sÃ³ uso esse caminho para imÃ³veis. A inteligÃªncia matemÃ¡tica da equipe vale cada carta.',
     rating: 5,
-    date: 'Há 3 meses',
+    date: 'HÃ¡ 3 meses',
   },
 ];
 
@@ -119,7 +119,7 @@ const Home: React.FC = () => {
                 variants={{ hidden: { opacity: 0, y: 15 }, visible: { opacity: 1, y: 0 } }}
                 className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-[var(--brand-gold-soft)] to-[var(--brand-gold)]"
               >
-                inteligência
+                inteligÃªncia
               </motion.span>
             </motion.h1>
 
@@ -127,7 +127,7 @@ const Home: React.FC = () => {
               variants={{ hidden: { opacity: 0, y: 15 }, visible: { opacity: 1, y: 0 } }}
               className="max-w-2xl text-lg font-medium leading-relaxed text-[rgba(244,236,223,0.88)] sm:text-xl"
             >
-              Acesso exclusivo às melhores condições de cartas contempladas do país. Sem juros, transações com agilidade e 100% seguras. Consulte as condições e já comece a negociar agora mesmo com um dos nossos consultores.
+              Cartas contempladas, consorcios e simulacoes com uma comunicacao mais clara, direta e orientada a conversao. Veja as oportunidades, entenda o potencial e avance no momento certo.
             </motion.p>
 
             <motion.div
@@ -188,9 +188,7 @@ const HomeFeaturesSection = () => {
             transition={{ delay: 0.1 }}
             className="max-w-4xl mx-auto text-base leading-relaxed text-[rgba(244,236,223,0.88)]"
           >
-            Você não precisa correr riscos nem perder dinheiro tentando decidir sozinho. 
-            Nós analisamos, comparamos e indicamos a melhor solução para o seu perfil. 
-            Simples, seguro e feito para você tomar a decisão certa.
+            Voce nao precisa descobrir tudo sozinho. Organizamos a vitrine, os fluxos e o atendimento para que cada visitante encontre a oportunidade certa com mais clareza e menos friccao.
           </motion.p>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -199,7 +197,7 @@ const HomeFeaturesSection = () => {
             transition={{ delay: 0.15 }}
             className="max-w-3xl mx-auto text-sm font-bold uppercase tracking-[0.2em] text-[var(--brand-gold-soft)]"
           >
-            Oferecemos soluções:
+            Oferecemos soluÃ§Ãµes:
           </motion.p>
         </div>
 
@@ -268,7 +266,7 @@ const HomeTestimonialsSection = () => {
             transition={{ delay: 0.1 }}
             className="mx-auto max-w-2xl text-sm font-bold uppercase tracking-[0.3em] text-[var(--brand-ivory)]"
           >
-            Histórias reais de quem escolheu alavancar patrimônio com inteligência e segurança.
+            HistÃ³rias reais de quem escolheu alavancar patrimÃ´nio com inteligÃªncia e seguranÃ§a.
           </motion.p>
         </div>
 
@@ -360,3 +358,5 @@ const HomeWhatsappCtaSection = () => {
 };
 
 export default Home;
+
+

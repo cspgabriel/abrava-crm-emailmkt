@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, History, MessageCircle, PhoneCall, Search, ShieldCheck, Users, Info } from 'lucide-react';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase';
 
 type SendHistoryItem = {
@@ -31,17 +31,43 @@ const getResolvedApiKey = (apiKey = '') => {
 };
 
 const getResolvedApiBase = (apiBase = '') => {
-  // In development (localhost), use local wpp-api server at port 8787
-  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-    return 'http://localhost:8787';
-  }
+  // SEMPRE usar a URL pÃºblica da API (nÃ£o localhost)
+  // O servidor deve estar acessÃ­vel em https://wpp-api.abravacom.com.br
   
   const fallbackBase = 'https://wpp-api.abravacom.com.br';
   const envBase = ((import.meta as any)?.env?.VITE_API_WPP || (import.meta as any)?.env?.VITE_WHATSAPP_API_URL || '').trim();
+  
   return (apiBase || envBase || fallbackBase).replace(/\/$/, '');
 };
 
+// ðŸ” UtilitÃ¡rio para fazer fetch com headers de autenticaÃ§Ã£o
+const fetchWithAuth = async (
+  url: string, 
+  apiKey: string,
+  options: RequestInit = {}
+) => {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    ...((options.headers as Record<string, string>) || {})
+  };
+
+  // Adicionar API Key nos headers (nÃ£o em query param - mais seguro)
+  if (apiKey) {
+    headers['X-API-Key'] = apiKey;
+    headers['x-api-key'] = apiKey; // Suportar ambos os casos
+  }
+
+  return fetch(url, {
+    ...options,
+    headers,
+    credentials: 'include'
+  });
+};
+
 const normalizePhone = (phone: string) => String(phone || '').replace(/\D/g, '');
+
+type ConnectionState = 'waiting-qr' | 'restoring' | 'ready' | 'error' | 'initializing';
 
 export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campaigns?: any[] }> = ({ apiBase = '', apiKey = '', campaigns = [] }) => {
   const [phone, setPhone] = useState('');
@@ -59,14 +85,13 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
   const messageInputRef = React.useRef<HTMLTextAreaElement>(null);
   
   // WhatsApp Connection Status
+  const [connectionState, setConnectionState] = useState<ConnectionState>('initializing');
   const [whatsappReady, setWhatsappReady] = useState(false);
   const [connectedPhone, setConnectedPhone] = useState<string | null>(null);
   const [connectedName, setConnectedName] = useState<string | null>(null);
   const [qrCode, setQrCode] = useState<string | null>(null);
-  const [loadingStatus, setLoadingStatus] = useState(false);
-  const [lastStatusUpdate, setLastStatusUpdate] = useState(0);
-  const [sessionPersisted, setSessionPersisted] = useState<boolean | null>(null);
-  const [checkingConnection, setCheckingConnection] = useState(false);
+  const [lastError, setLastError] = useState<string | null>(null);
+  const wsRef = React.useRef<WebSocket | null>(null);
 
   // Bulk send progress tracking
   const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0, success: 0, failed: 0 });
@@ -76,39 +101,39 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
   const chipLimits = {
     cold: { 
       name: 'Novo', 
-      emoji: '📱',
-      shortDesc: 'Conta recém-criada',
+      emoji: 'ðŸ“±',
+      shortDesc: 'Conta recÃ©m-criada',
       day: 50, 
       week: 300, 
       month: 1500, 
-      description: 'Número acabou de ser ativado no WhatsApp, sem histórico. Limites rigorosos protegem novos usuários.' 
+      description: 'NÃºmero acabou de ser ativado no WhatsApp, sem histÃ³rico. Limites rigorosos protegem novos usuÃ¡rios.' 
     },
     warm: { 
       name: 'Em Uso', 
-      emoji: '📈',
+      emoji: 'ðŸ“ˆ',
       shortDesc: 'Conta com alguns envios',
       day: 75, 
       week: 500, 
       month: 2500, 
-      description: 'Você já tem algum histórico de mensagens. WhatsApp aumenta os limites gradualmente.' 
+      description: 'VocÃª jÃ¡ tem algum histÃ³rico de mensagens. WhatsApp aumenta os limites gradualmente.' 
     },
     hot: { 
       name: 'Experiente', 
-      emoji: '🔥',
+      emoji: 'ðŸ”¥',
       shortDesc: 'Conta estabelecida',
       day: 150, 
       week: 1000, 
       month: 4000, 
-      description: 'Sua conta tem boa reputação. Histórico robusto significa que você pode enviar mais.' 
+      description: 'Sua conta tem boa reputaÃ§Ã£o. HistÃ³rico robusto significa que vocÃª pode enviar mais.' 
     },
     superhot: { 
       name: 'Veterana', 
-      emoji: '⚡',
-      shortDesc: 'Conta muito antiga e confiável',
+      emoji: 'âš¡',
+      shortDesc: 'Conta muito antiga e confiÃ¡vel',
       day: 250, 
       week: 1500, 
       month: 6000, 
-      description: 'Sua conta é respeitada pelo WhatsApp. Você pode usar intensamente sem preocupações.' 
+      description: 'Sua conta Ã© respeitada pelo WhatsApp. VocÃª pode usar intensamente sem preocupaÃ§Ãµes.' 
     }
   };
   const [historyFilterPhone, setHistoryFilterPhone] = useState('');
@@ -191,101 +216,104 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
     saveHistoryItems([item, ...historyItems]);
   };
 
-  // Fetch WhatsApp connection status and QR code
-  const fetchWhatsappStatus = async () => {
+  // ====================  STATUS POLLING VIA HTTP (SEM WEBSOCKET)  ====================
+  
+  const pollWhatsAppStatus = async () => {
     try {
       const resolvedBase = getResolvedApiBase(apiBase);
-      const resolvedApiKey = getResolvedApiKey(apiKey);
+      const resolvedKey = getResolvedApiKey(apiKey);
+      const statusUrl = `${resolvedBase}/status`;
       
-      // Fetch status
-      const statusUrl = `${resolvedBase}/status${resolvedApiKey ? `?api_key=${encodeURIComponent(resolvedApiKey)}` : ''}`;
-      const statusResp = await fetch(statusUrl);
-      const statusData = await statusResp.json();
+      console.log('[WhatsApp] ðŸ“¡ Polling:', statusUrl);
       
-      if (statusData?.ok) {
-        const wasReady = whatsappReady;
-        const isNowReady = statusData.ready || false;
-        
-        setWhatsappReady(isNowReady);
-        setConnectedPhone(statusData.phone || null);
-        setConnectedName(statusData.accountName || null);
-        setSessionPersisted(typeof statusData.sessionPersisted === 'boolean' ? !!statusData.sessionPersisted : null);
-        setLastStatusUpdate(Date.now());
-        
-        // Detect connection state change
-        if (!wasReady && isNowReady) {
-          console.log('[CRM] ✓ WhatsApp conectado com sucesso!', statusData.phone, statusData.accountName);
-          setStatus(`✓ WhatsApp conectado! Número: ${statusData.phone} | ${statusData.accountName}`);
-        }
-        
-        // If not ready, fetch QR code only when backend reports it has one
-        if (!isNowReady) {
-          if (statusData.hasQR) {
-            try {
-              const qrUrl = `${resolvedBase}/qr${resolvedApiKey ? `?api_key=${encodeURIComponent(resolvedApiKey)}` : ''}`;
-              const qrResp = await fetch(qrUrl);
-              if (qrResp.ok) {
-                const qrData = await qrResp.json();
-                if (qrData?.ok && qrData.qr) {
-                  setQrCode(qrData.qr);
-                } else {
-                  setQrCode(null);
-                }
-              } else {
-                // backend returned 404 or similar; avoid spamming console with repeated fetches
-                setQrCode(null);
-              }
-            } catch (e) {
-              console.warn('[CRM] Erro ao buscar QR:', e);
-              setQrCode(null);
-            }
-          } else {
-            // No QR available according to backend; clear UI QR state
-            setQrCode(null);
-          }
+      const response = await fetchWithAuth(statusUrl, resolvedKey, {
+        method: 'GET'
+      });
+      
+      console.log('[WhatsApp] ðŸ“¡ Response status:', response.status);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('[WhatsApp] ðŸ“¡ Response data:', data);
+        if (data.ok || data.ready !== undefined) {
+          handleStatusUpdate(data);
         } else {
-          setQrCode(null);
+          console.warn('[WhatsApp] âš ï¸ Response nÃ£o tem ok=true:', data);
         }
+      } else {
+        console.error(`[WhatsApp] âŒ Status ${response.status}:`, await response.text());
       }
-    } catch (e) {
-      console.warn('[CRM] Erro ao buscar status WhatsApp:', e);
+    } catch (err) {
+      console.error('[WhatsApp] âŒ Erro ao fazer polling:', err instanceof Error ? err.message : err);
     }
   };
-
-  // Check connection state once before showing QR (keeps UI from showing QR when a persisted session exists)
-  const checkConnectionState = async () => {
-    try {
-      setCheckingConnection(true);
-      setLoadingStatus(true);
-      await fetchWhatsappStatus();
-    } finally {
-      setLoadingStatus(false);
-      setCheckingConnection(false);
-    }
-  };
-
-  // Polling status and QR every 3 seconds, or faster when not ready
+  
+  // Poll status a cada 2 segundos
   useEffect(() => {
-    // On mount / when apiBase/apiKey change, perform an explicit connection check
-    checkConnectionState();
-
-    const interval = setInterval(() => {
-      fetchWhatsappStatus();
-    }, whatsappReady ? 5000 : 2000); // Poll faster when waiting for QR scan
-
-    return () => clearInterval(interval);
-  }, [apiBase, apiKey, whatsappReady]);
-
-  // Also refresh status when page becomes visible (user switches tabs/windows)
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        fetchWhatsappStatus();
-      }
+    console.log('[WhatsApp] âœ… INICIANDO POLLING');
+    
+    // Poll imediato
+    pollWhatsAppStatus();
+    
+    // E depois a cada 2s
+    const pollInterval = setInterval(() => {
+      pollWhatsAppStatus();
+    }, 2000);
+    
+    return () => {
+      console.log('[WhatsApp] â¹ï¸  PARANDO POLLING');
+      clearInterval(pollInterval);
     };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
+  
+  const handleStatusUpdate = (data: any) => {
+    console.log('[WhatsApp] ðŸ”„ handleStatusUpdate chamado com:', { 
+      ready: data.ready, 
+      connectionState: data.connectionState,
+      hasQr: !!data.qr,
+      qrLength: data.qr?.length
+    });
+    
+    const ready = data.ready || false;
+    const state = data.connectionState || 'initializing';
+    
+    setWhatsappReady(ready);
+    setConnectedPhone(data.phone);
+    setConnectedName(data.accountName);
+    setLastError(data.lastError);
+    
+    // Atualizar estado de conexÃ£o baseado no estado do servidor
+    if (ready) {
+      console.log('[WhatsApp] âœ… Ready=true, setando para ready');
+      setConnectionState('ready');
+      setStatus(`âœ… Conectado: ${data.phone || 'Desconhecido'} - ${data.accountName || 'Sem nome'}`);
+      setQrCode(null);
+    } else if (state === 'restoring') {
+      console.log('[WhatsApp] ðŸ”„ Estado=restoring');
+      setConnectionState('restoring');
+      setStatus('ðŸ”„ Restaurando sessÃ£o...');
+      setQrCode(null);
+    } else if (state === 'waiting-qr') {
+      console.log('[WhatsApp] ðŸ“± Estado=waiting-qr, qrCode disponÃ­vel?', !!data.qr);
+      setConnectionState('waiting-qr');
+      if (data.qr) {
+        console.log('[WhatsApp] âœ… SETANDO QR CODE!');
+        setQrCode(data.qr);
+        setStatus('ðŸ“¸ Escaneie o QR code com seu WhatsApp');
+      } else {
+        console.log('[WhatsApp] âŒ Sem QR code ainda');
+        setStatus('â³ Aguardando QR code do servidor...');
+      }
+    } else if (state === 'error') {
+      console.log('[WhatsApp] âŒ Estado=error:', data.lastError);
+      setConnectionState('error');
+      setStatus(`âŒ Erro: ${data.lastError || 'Desconhecido'}`);
+    } else {
+      console.log('[WhatsApp] ðŸ¤· Estado desconhecido:', state);
+      setConnectionState('initializing');
+      setStatus('â³ Inicializando...');
+    }
+  };
 
   // WhatsApp formatting helpers
   const insertFormatting = (prefix: string, suffix: string = prefix) => {
@@ -325,17 +353,30 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
   // Subscribe to leads/contacts for the Leads picker
   useEffect(() => {
     if (!db) return;
-    try {
-      const q = query(collection(db, 'contacts'), orderBy('name'));
-      const unsub = onSnapshot(q, (snapshot) => {
-        setLeadsList(snapshot.docs.map(d => ({ id: d.id, ...(d.data() as any) })));
-      }, (err) => {
-        console.warn('Erro ao buscar leads do Firestore:', err);
-      });
-      return () => unsub();
-    } catch (e) {
-      console.warn('Firestore leads subscription error:', e);
-    }
+
+    let mounted = true;
+    const qRef = query(collection(db, 'contacts'), orderBy('name'));
+
+    const fetchLeads = async () => {
+      try {
+        const snap = await getDocs(qRef);
+        if (!mounted) return;
+        setLeadsList(snap.docs.map(d => ({ id: d.id, ...(d.data() as any) })));
+      } catch (err) {
+        console.warn('Erro ao buscar leads do Firestore (getDocs):', err);
+      }
+    };
+
+    // initial fetch
+    fetchLeads();
+
+    // periodic refresh (avoids realtime listener issues when permissions are restricted)
+    const t = setInterval(fetchLeads, 30 * 1000);
+
+    return () => {
+      mounted = false;
+      clearInterval(t);
+    };
   }, []);
 
   // Disconnect WhatsApp account
@@ -344,36 +385,32 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
     try {
       const resolvedBase = getResolvedApiBase(apiBase);
       const resolvedApiKey = getResolvedApiKey(apiKey);
-      const logoutUrl = `${resolvedBase}/logout${resolvedApiKey ? `?api_key=${encodeURIComponent(resolvedApiKey)}` : ''}`;
+      const logoutUrl = `${resolvedBase}/logout`;
       
-      const resp = await fetch(logoutUrl, { method: 'POST' });
+      const resp = await fetchWithAuth(logoutUrl, resolvedApiKey, { method: 'POST' });
       const data = await resp.json();
       
       if (data?.ok) {
-        setStatus('✓ Conta desconectada com sucesso. QR code será exibido em breve...');
+        setStatus('âœ“ Conta desconectada com sucesso. QR code serÃ¡ exibido em breve...');
         setConnectedPhone(null);
         setConnectedName(null);
         setWhatsappReady(false);
-        setTimeout(() => fetchWhatsappStatus(), 1000);
+        setTimeout(() => pollWhatsAppStatus(), 1000);
       } else {
-        setStatus('✗ Erro ao desconectar: ' + (data?.error || 'Desconhecido'));
+        setStatus('âœ— Erro ao desconectar: ' + (data?.error || 'Desconhecido'));
       }
     } catch (e: any) {
-      setStatus('✗ Erro na desconexão: ' + (e?.message || String(e)));
+      setStatus('âœ— Erro na desconexÃ£o: ' + (e?.message || String(e)));
     }
   };
 
   const sendMessage = async (phoneValue: string, messageValue: string, nameValue = '') => {
     const resolvedBase = getResolvedApiBase(apiBase);
     const resolvedApiKey = getResolvedApiKey(apiKey);
-    const sendUrl = `${resolvedBase}/send${resolvedApiKey ? `?api_key=${encodeURIComponent(resolvedApiKey)}` : ''}`;
+    const sendUrl = `${resolvedBase}/send`;
 
-    const response = await fetch(sendUrl, {
+    const response = await fetchWithAuth(sendUrl, resolvedApiKey, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(resolvedApiKey ? { 'x-api-key': resolvedApiKey } : {})
-      },
       body: JSON.stringify({ phone: normalizePhone(phoneValue), message: messageValue, name: nameValue })
     });
 
@@ -419,13 +456,9 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
   const scheduleEntry = async (phoneValue: string, messageValue: string, nameValue = '', whenIso: string) => {
     const resolvedBase = getResolvedApiBase(apiBase);
     const resolvedApiKey = getResolvedApiKey(apiKey);
-    const url = `${resolvedBase}/schedule${resolvedApiKey ? `?api_key=${encodeURIComponent(resolvedApiKey)}` : ''}`;
-    const resp = await fetch(url, {
+    const url = `${resolvedBase}/schedule`;
+    const resp = await fetchWithAuth(url, resolvedApiKey, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(resolvedApiKey ? { 'x-api-key': resolvedApiKey } : {})
-      },
       body: JSON.stringify({ phone: normalizePhone(phoneValue), message: messageValue, name: nameValue, scheduledAt: whenIso })
     });
     return resp.json();
@@ -438,14 +471,14 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
     const rows = [...manualRows, ...leadRows];
 
     if (!rows.length) {
-      setStatus('Insira ao menos 1 destinatário válido (uma linha por destinatário).');
+      setStatus('Insira ao menos 1 destinatÃ¡rio vÃ¡lido (uma linha por destinatÃ¡rio).');
       return;
     }
 
     if (rows.length === 1) {
       const r = rows[0];
       if (!r.phone || !r.message) {
-        setStatus('Destino ou mensagem inválida.');
+        setStatus('Destino ou mensagem invÃ¡lida.');
         return;
       }
       setLoading(true);
@@ -472,8 +505,8 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
     try {
       const resolvedBase = getResolvedApiBase(apiBase);
       const resolvedApiKey = getResolvedApiKey(apiKey);
-      const url = `${resolvedBase}/schedules${resolvedApiKey ? `?api_key=${encodeURIComponent(resolvedApiKey)}` : ''}`;
-      const r = await fetch(url);
+      const url = `${resolvedBase}/schedules`;
+      const r = await fetchWithAuth(url, resolvedApiKey, { method: 'GET' });
       const data = await r.json();
       if (data?.ok && Array.isArray(data.schedules)) setSchedulesList(data.schedules);
     } catch (e) {
@@ -491,8 +524,8 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
     try {
       const resolvedBase = getResolvedApiBase(apiBase);
       const resolvedApiKey = getResolvedApiKey(apiKey);
-      const url = `${resolvedBase}/schedules/${encodeURIComponent(id)}/sendnow${resolvedApiKey ? `?api_key=${encodeURIComponent(resolvedApiKey)}` : ''}`;
-      const r = await fetch(url, { method: 'POST' });
+      const url = `${resolvedBase}/schedules/${encodeURIComponent(id)}/sendnow`;
+      const r = await fetchWithAuth(url, resolvedApiKey, { method: 'POST' });
       const d = await r.json();
       if (d?.ok) {
         setStatus('Envio imediato solicitado.');
@@ -509,8 +542,8 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
     try {
       const resolvedBase = getResolvedApiBase(apiBase);
       const resolvedApiKey = getResolvedApiKey(apiKey);
-      const url = `${resolvedBase}/schedules/${encodeURIComponent(id)}${resolvedApiKey ? `?api_key=${encodeURIComponent(resolvedApiKey)}` : ''}`;
-      const r = await fetch(url, { method: 'DELETE' });
+      const url = `${resolvedBase}/schedules/${encodeURIComponent(id)}`;
+      const r = await fetchWithAuth(url, resolvedApiKey, { method: 'DELETE' });
       const d = await r.json();
       if (d?.ok) {
         setStatus('Agendamento removido.');
@@ -546,7 +579,7 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
     const leadRows = getSelectedLeadRows();
     const rows = [...manualRows, ...leadRows];
     if (!rows.length || !scheduleAt) {
-      setStatus('Insira destinatários válidos e data/hora para agendar.');
+      setStatus('Insira destinatÃ¡rios vÃ¡lidos e data/hora para agendar.');
       return;
     }
     setScheduling(true);
@@ -635,9 +668,9 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
         }
       }
 
-      setStatus(`✓ Envio em massa finalizado! Sucesso: ${success} | Falhas: ${failed}`);
+      setStatus(`âœ“ Envio em massa finalizado! Sucesso: ${success} | Falhas: ${failed}`);
     } catch (e: any) {
-      setStatus(`✗ Erro no envio em massa: ${e?.message || String(e)}`);
+      setStatus(`âœ— Erro no envio em massa: ${e?.message || String(e)}`);
     } finally {
       window.removeEventListener('beforeunload', preventClose);
       setLoading(false);
@@ -660,76 +693,137 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
       </div>
 
       {/* WhatsApp Connection Status */}
-      <div className={`rounded-xl border-2 p-6 shadow-md transition ${whatsappReady ? 'bg-gradient-to-br from-emerald-50 to-green-50 border-green-300' : 'bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-300'}`}>
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              {whatsappReady ? (
-                <>
-                  <div className="h-3 w-3 rounded-full bg-green-500 animate-pulse"></div>
-                  <h3 className="text-lg font-bold text-green-900">✅ WhatsApp Conectado</h3>
-                </>
-              ) : (
-                <>
-                  <div className="h-3 w-3 rounded-full bg-amber-500 animate-pulse"></div>
-                  <h3 className="text-lg font-bold text-amber-900">⏳ Aguardando Autenticação</h3>
-                </>
-              )}
+      <div className={`rounded-xl border-2 p-6 shadow-md transition ${whatsappReady ? 'bg-gradient-to-br from-emerald-50 to-green-50 border-green-300' : connectionState === 'initializing' ? 'bg-gradient-to-br from-slate-50 to-slate-100 border-slate-300' : 'bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-300'}`}>
+        
+        {/* =====  ESTADO: INICIALIZANDO  ===== */}
+        {connectionState === 'initializing' ? (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-slate-900">ðŸ” Verificando Status do WhatsApp</h3>
+                <p className="text-sm text-slate-600 mt-1">Conectando ao servidor e carregando configuraÃ§Ãµes...</p>
+              </div>
             </div>
             
-            {whatsappReady && connectedPhone ? (
-              <div className="mt-3 space-y-1">
-                <p className="text-sm text-green-800"><strong>📱 Número:</strong> {connectedPhone}</p>
-                {connectedName && <p className="text-sm text-green-800"><strong>👤 Conta:</strong> {connectedName}</p>}
-                <button
-                  onClick={handleDisconnect}
-                  className="mt-2 px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-medium transition"
-                >
-                  Desconectar / Mudar Conta
-                </button>
-              </div>
-            ) : checkingConnection ? (
-              <div className="mt-3">
-                <p className="text-sm text-amber-700 mt-2">Verificando conexão da conta do WhatsApp... {checkingConnection && '⏳'}</p>
-              </div>
-            ) : sessionPersisted ? (
-              <div className="mt-3">
-                <p className="text-sm text-amber-700 mt-2">Sessão persistente encontrada. Restaurando conexão — aguarde alguns segundos.</p>
-              </div>
-            ) : qrCode ? (
-              <div className="mt-3">
-                <p className="text-xs text-amber-700 mb-2">📸 Escaneie o QR code com seu WhatsApp:</p>
-                <img src={qrCode} alt="QR Code" className="w-48 h-48 border-2 border-amber-300 rounded-lg" />
-              </div>
-            ) : (
-              <p className="text-sm text-amber-700 mt-2">Conectando... {loadingStatus && '⏳'}</p>
-            )}
-          </div>
-          
-          {!whatsappReady && (
+            {/* Barra de progresso estilo carregamento */}
             <div className="space-y-2">
-              <button
-                onClick={() => {
-                  // perform an explicit connection check (shows verifying state)
-                  checkConnectionState();
-                }}
-                disabled={loadingStatus || checkingConnection}
-                className="w-full px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded text-sm font-medium transition disabled:opacity-50"
-              >
-                {loadingStatus || checkingConnection ? '⟳ Atualizando...' : '🔄 Atualizar Status'}
-              </button>
-              <div className="bg-blue-50 border border-blue-200 rounded p-2 text-xs text-blue-700">
-                💡 <strong>Dica:</strong> Se você já escaneou o QR code com seu WhatsApp, aguarde 2-3 segundos e clique no botão acima para verificar se a conexão foi estabelecida.
+              <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full animate-pulse" style={{
+                  animation: 'progress 2s ease-in-out infinite',
+                  background: 'linear-gradient(90deg, #60a5fa, #3b82f6, #1d4ed8, #3b82f6, #60a5fa)',
+                  backgroundSize: '200% 100%'
+                }}></div>
               </div>
+              <p className="text-xs text-slate-500 text-center">Carregando... Aguarde</p>
             </div>
-          )}
+            
+            <style>{`
+              @keyframes progress {
+                0% { background-position: 0% center; }
+                50% { background-position: 100% center; }
+                100% { background-position: 0% center; }
+              }
+            `}</style>
+          </div>
+        ) : (
+          <>
+            {/* =====  ESTADOS NORMAIS  ===== */}
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  {whatsappReady ? (
+                    <>
+                      <div className="h-3 w-3 rounded-full bg-green-500 animate-pulse"></div>
+                      <h3 className="text-lg font-bold text-green-900">âœ… Conectado com Sucesso</h3>
+                    </>
+                  ) : connectionState === 'restoring' ? (
+                    <>
+                      <div className="h-3 w-3 rounded-full bg-blue-500 animate-pulse"></div>
+                      <h3 className="text-lg font-bold text-blue-900">ðŸ”„ Restaurando SessÃ£o</h3>
+                    </>
+                  ) : connectionState === 'waiting-qr' && qrCode ? (
+                    <>
+                      <div className="h-3 w-3 rounded-full bg-amber-500 animate-pulse"></div>
+                      <h3 className="text-lg font-bold text-amber-900">â³ Aguardando AutenticaÃ§Ã£o</h3>
+                    </>
+                  ) : connectionState === 'waiting-qr' ? (
+                    <>
+                      <div className="h-3 w-3 rounded-full bg-amber-500 animate-pulse"></div>
+                      <h3 className="text-lg font-bold text-amber-900">â³ Gerando QR Code</h3>
+                    </>
+                  ) : connectionState === 'error' ? (
+                    <>
+                      <div className="h-3 w-3 rounded-full bg-red-500 animate-pulse"></div>
+                      <h3 className="text-lg font-bold text-red-900">âŒ Erro de ConexÃ£o</h3>
+                    </>
+                  ) : (
+                    <>
+                      <div className="h-3 w-3 rounded-full bg-slate-500 animate-pulse"></div>
+                      <h3 className="text-lg font-bold text-slate-900">â³ Conectando...</h3>
+                    </>
+                  )}
+                </div>
+                
+                {whatsappReady && connectedPhone ? (
+                  <div className="mt-3 space-y-1">
+                    <p className="text-sm text-green-800"><strong>ðŸ“± NÃºmero:</strong> {connectedPhone}</p>
+                    {connectedName && <p className="text-sm text-green-800"><strong>ðŸ‘¤ Conta:</strong> {connectedName}</p>}
+                    <button
+                      onClick={handleDisconnect}
+                      className="mt-2 px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-medium transition"
+                    >
+                      Desconectar / Mudar Conta
+                    </button>
+                  </div>
+                ) : connectionState === 'restoring' ? (
+                  <div className="mt-3">
+                    <p className="text-sm text-blue-700">Sua sessÃ£o anterior foi encontrada. Restaurando acesso em alguns segundos...</p>
+                  </div>
+                ) : connectionState === 'waiting-qr' && qrCode ? (
+                  <div className="mt-3">
+                    <p className="text-xs text-amber-700 mb-2">ðŸ“± Escaneie este QR code com seu WhatsApp:</p>
+                    <img src={qrCode} alt="QR Code" className="w-48 h-48 border-2 border-amber-300 rounded-lg shadow-md" />
+                    <p className="text-xs text-amber-600 mt-2">âœ… Se escaneou o QR, aguarde 2-3 segundos para conectar</p>
+                  </div>
+                ) : connectionState === 'waiting-qr' ? (
+                  <div className="mt-3 space-y-2">
+                    <p className="text-sm text-amber-700">Gerando cÃ³digo QR...</p>
+                    <div className="inline-flex items-center gap-2">
+                      <div className="h-4 w-4 bg-amber-500 rounded-full animate-pulse"></div>
+                      <p className="text-xs text-amber-600">Obtendo QR via WebSocket...</p>
+                    </div>
+                  </div>
+                ) : connectionState === 'error' ? (
+                  <div className="mt-3">
+                    <p className="text-sm text-red-700 font-semibold mb-2">{lastError || 'Erro desconhecido'}</p>
+                    <p className="text-xs text-red-600">Tente atualizar a pÃ¡gina ou desconectar e conectar novamente.</p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-700 mt-2">Conectando ao WhatsApp...</p>
+                )}
+              </div>
+              
+              {!whatsappReady && connectionState !== 'initializing' && (
+                <div className="space-y-2">
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="w-full px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded text-sm font-medium transition"
+                  >
+                    ðŸ”„ Atualizar
+                  </button>
+                  <div className="bg-blue-50 border border-blue-200 rounded p-2 text-xs text-blue-700">
+                    ðŸ’¡ <strong>Dica:</strong> Se escaneou o QR, aguarde 2-3 segundos para a conexÃ£o ser estabelecida.
+                  </div>
+                </div>
+              )}
         </div>
-      </div>
+      </>
+        )}
       <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
         <div className="flex items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-2">
             <ShieldCheck className="h-5 w-5 text-slate-700" />
-            <label className="text-sm font-bold text-slate-700">Qual é o estágio da sua conta?</label>
+            <label className="text-sm font-bold text-slate-700">Qual Ã© o estÃ¡gio da sua conta?</label>
           </div>
           <button
             onClick={() => setShowChipInfo(true)}
@@ -779,7 +873,7 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
             </div>
           ))}
         </div>
-        <p className="text-xs text-slate-500 mt-3">Formato: <strong>Diário / Semanal / Mensal</strong> de mensagens que você pode enviar</p>
+        <p className="text-xs text-slate-500 mt-3">Formato: <strong>DiÃ¡rio / Semanal / Mensal</strong> de mensagens que vocÃª pode enviar</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -807,10 +901,10 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
       <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4 shadow-sm">
         <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide flex items-center gap-2"><PhoneCall className="h-4 w-4" /> Envio de WhatsApp</h3>
 
-        <label className="block text-sm text-slate-600">Destinatários (números apenas, separados por vírgula, ponto e vírgula ou uma linha por número)</label>
+        <label className="block text-sm text-slate-600">DestinatÃ¡rios (nÃºmeros apenas, separados por vÃ­rgula, ponto e vÃ­rgula ou uma linha por nÃºmero)</label>
         <textarea value={recipientsText} onChange={(e) => setRecipientsText(e.target.value)} rows={4} className="w-full p-3 border rounded-lg" placeholder="5511999998888, 5511888887777; 5511777776666" />
 
-          <label className="block text-sm text-slate-600">Mensagem (use {'{{name}}'} para inserir o nome do destinatário)</label>
+          <label className="block text-sm text-slate-600">Mensagem (use {'{{name}}'} para inserir o nome do destinatÃ¡rio)</label>
           <textarea 
             ref={messageInputRef}
             value={message} 
@@ -821,7 +915,7 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
           />
 
           <div className="flex flex-wrap items-center gap-2 mt-3">
-            <div className="text-xs text-slate-500 font-medium">Formatação WhatsApp:</div>
+            <div className="text-xs text-slate-500 font-medium">FormataÃ§Ã£o WhatsApp:</div>
             <button
               type="button"
               onClick={() => insertFormatting('*', '*')}
@@ -833,7 +927,7 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
             <button
               type="button"
               onClick={() => insertFormatting('_', '_')}
-              title="Itálico"
+              title="ItÃ¡lico"
               className="px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded text-sm italic transition"
             >
               <em>I</em>
@@ -841,7 +935,7 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
             <button
               type="button"
               onClick={() => insertFormatting('`', '`')}
-              title="Código monoespaçado"
+              title="CÃ³digo monoespaÃ§ado"
               className="px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded text-sm font-mono transition"
             >
               {`</>`}
@@ -854,12 +948,12 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
             >
               S
             </button>
-            <div className="ml-auto text-xs text-slate-500">💡 Dica: selecione o texto antes de clicar para formatar</div>
+            <div className="ml-auto text-xs text-slate-500">ðŸ’¡ Dica: selecione o texto antes de clicar para formatar</div>
           </div>
 
           <div className="grid grid-cols-3 gap-3 items-end mt-2">
             <div>
-              <label htmlFor="minDelay" className="text-xs text-slate-500">Delay mínimo (s)</label>
+              <label htmlFor="minDelay" className="text-xs text-slate-500">Delay mÃ­nimo (s)</label>
               <input 
                 id="minDelay"
                 type="number" 
@@ -871,7 +965,7 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
               />
             </div>
             <div>
-              <label htmlFor="maxDelay" className="text-xs text-slate-500">Delay máximo (s)</label>
+              <label htmlFor="maxDelay" className="text-xs text-slate-500">Delay mÃ¡ximo (s)</label>
               <input 
                 id="maxDelay"
                 type="number" 
@@ -882,7 +976,7 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
                 placeholder="45"
               />
             </div>
-            <div className="text-xs text-slate-400">Delay é aplicado aleatoriamente entre min e max para reduzir bloqueios.</div>
+            <div className="text-xs text-slate-400">Delay Ã© aplicado aleatoriamente entre min e max para reduzir bloqueios.</div>
           </div>
 
           <div className="flex items-center gap-3 mt-3">
@@ -899,18 +993,18 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
               />
               <button disabled={scheduling} onClick={async () => {
                 const rows = parseRecipients(recipientsText || (phone ? phone : ''));
-                if (!rows.length || !scheduleAt) { setStatus('Insira destinatários válidos e data/hora para agendar.'); return; }
+                if (!rows.length || !scheduleAt) { setStatus('Insira destinatÃ¡rios vÃ¡lidos e data/hora para agendar.'); return; }
                 if (rows.length === 1) await handleScheduleSingle(); else await handleScheduleBulk();
               }} className="px-3 py-2 bg-amber-500 text-white rounded-lg text-sm font-bold">{scheduling ? 'Agendando...' : 'Agendar envio'}</button>
             </div>
           </div>
 
           <div className="mt-4">
-            <div className="text-xs text-slate-500 mb-2">Pré-visualização</div>
+            <div className="text-xs text-slate-500 mb-2">PrÃ©-visualizaÃ§Ã£o</div>
             <div className="border rounded p-4 max-w-xs bg-slate-50">
               {(() => {
                 const rows = parseRecipients(recipientsText || (phone ? phone : ''));
-                const sample = rows.length ? rows[0] : { phone: phone || '55XXXXXXXXXXX', name: name || 'Contato', message: message || 'Sua mensagem aparecerá aqui...' };
+                const sample = rows.length ? rows[0] : { phone: phone || '55XXXXXXXXXXX', name: name || 'Contato', message: message || 'Sua mensagem aparecerÃ¡ aqui...' };
                 const rendered = (sample.message && sample.message.length) ? sample.message : message;
                 return (
                   <div>
@@ -930,7 +1024,7 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
         <div className="p-4 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 shadow-md space-y-3">
           <div className="flex items-center justify-between gap-2">
             <h4 className="font-bold text-blue-900 flex items-center gap-2">
-              <span className="animate-spin">⟳</span> Envio em Progresso
+              <span className="animate-spin">âŸ³</span> Envio em Progresso
             </h4>
             <span className="text-sm font-mono text-blue-800">{bulkProgress.current}/{bulkProgress.total}</span>
           </div>
@@ -950,15 +1044,15 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
           {/* Stats */}
           <div className="grid grid-cols-3 gap-2 text-sm">
             <div className="bg-green-100 border border-green-300 rounded-lg p-2 text-center">
-              <div className="font-bold text-green-700">✓ {bulkProgress.success}</div>
+              <div className="font-bold text-green-700">âœ“ {bulkProgress.success}</div>
               <div className="text-xs text-green-600">Sucesso</div>
             </div>
             <div className="bg-red-100 border border-red-300 rounded-lg p-2 text-center">
-              <div className="font-bold text-red-700">✗ {bulkProgress.failed}</div>
+              <div className="font-bold text-red-700">âœ— {bulkProgress.failed}</div>
               <div className="text-xs text-red-600">Falhas</div>
             </div>
             <div className="bg-amber-100 border border-amber-300 rounded-lg p-2 text-center">
-              <div className="font-bold text-amber-700">⏳ {bulkProgress.total - bulkProgress.current}</div>
+              <div className="font-bold text-amber-700">â³ {bulkProgress.total - bulkProgress.current}</div>
               <div className="text-xs text-amber-600">Pendente</div>
             </div>
           </div>
@@ -967,7 +1061,7 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
           <div className="flex items-start gap-2 p-3 bg-yellow-100 border border-yellow-300 rounded-lg">
             <AlertTriangle className="h-5 w-5 text-yellow-700 flex-shrink-0 mt-0.5" />
             <div className="text-xs text-yellow-800">
-              <strong>⚠️ Não feche a página!</strong> O envio está em progresso. Fechar a página pode interromper o processo.
+              <strong>âš ï¸ NÃ£o feche a pÃ¡gina!</strong> O envio estÃ¡ em progresso. Fechar a pÃ¡gina pode interromper o processo.
             </div>
           </div>
         </div>
@@ -976,8 +1070,8 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
       <div className="w-full mt-6">
         <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3 mb-4">
-            <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide flex items-center gap-2"><History className="h-4 w-4" /> Histórico Completo de Envios</h3>
-            <button onClick={() => saveHistoryItems([])} className="text-xs text-red-600 hover:underline font-medium">🗑️ Limpar histórico</button>
+            <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide flex items-center gap-2"><History className="h-4 w-4" /> HistÃ³rico Completo de Envios</h3>
+            <button onClick={() => saveHistoryItems([])} className="text-xs text-red-600 hover:underline font-medium">ðŸ—‘ï¸ Limpar histÃ³rico</button>
           </div>
           
           <div className="relative mb-4">
@@ -985,7 +1079,7 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
             <input
               value={historyFilterPhone}
               onChange={(e) => setHistoryFilterPhone(e.target.value)}
-              placeholder="Filtrar por número de telefone..."
+              placeholder="Filtrar por nÃºmero de telefone..."
               className="w-full pl-9 pr-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
           </div>
@@ -1002,7 +1096,7 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
                   <thead className="bg-gradient-to-r from-slate-50 to-slate-100 border-b sticky top-0">
                     <tr>
                       <th className="px-4 py-3 font-semibold text-slate-700">Data & Hora</th>
-                      <th className="px-4 py-3 font-semibold text-slate-700">Número</th>
+                      <th className="px-4 py-3 font-semibold text-slate-700">NÃºmero</th>
                       <th className="px-4 py-3 font-semibold text-slate-700">Nome</th>
                       <th className="px-4 py-3 font-semibold text-slate-700">Mensagem</th>
                       <th className="px-4 py-3 font-semibold text-slate-700 text-center">Status</th>
@@ -1016,20 +1110,20 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
                           {new Date(item.createdAt).toLocaleString('pt-BR')}
                         </td>
                         <td className="px-4 py-3 font-mono text-slate-800 font-semibold">{item.phone}</td>
-                        <td className="px-4 py-3 text-slate-700 max-w-[150px] truncate">{item.name || '—'}</td>
+                        <td className="px-4 py-3 text-slate-700 max-w-[150px] truncate">{item.name || 'â€”'}</td>
                         <td className="px-4 py-3 text-slate-600 max-w-[300px] truncate text-xs">{item.message.substring(0, 60)}...</td>
                         <td className="px-4 py-3 text-center">
                           {item.ok ? (
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-200 text-green-800">
-                              ✓ Enviado
+                              âœ“ Enviado
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-200 text-red-800">
-                              ✗ Falho
+                              âœ— Falho
                             </span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-center text-xs text-slate-500 font-mono">{item.responseId || '—'}</td>
+                        <td className="px-4 py-3 text-center text-xs text-slate-500 font-mono">{item.responseId || 'â€”'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -1041,87 +1135,87 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
           <div className="mt-4 flex items-center justify-between text-xs text-slate-500">
             <span>Total: <strong>{filteredHistory.length}</strong> registros</span>
             <span>
-              ✓ Sucesso: <strong className="text-green-600">{filteredHistory.filter(h => h.ok).length}</strong> | 
-              ✗ Falhas: <strong className="text-red-600">{filteredHistory.filter(h => !h.ok).length}</strong>
+              âœ“ Sucesso: <strong className="text-green-600">{filteredHistory.filter(h => h.ok).length}</strong> | 
+              âœ— Falhas: <strong className="text-red-600">{filteredHistory.filter(h => !h.ok).length}</strong>
             </span>
           </div>
         </div>
       </div>
 
-      {/* Modal de Informações sobre Tipos de Conta */}
+      {/* Modal de InformaÃ§Ãµes sobre Tipos de Conta */}
       {showChipInfo && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl max-w-3xl w-full max-h-[80vh] overflow-y-auto shadow-2xl">
             <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 flex items-center justify-between">
-              <h2 className="text-xl font-bold">Entenda os Estágios da Sua Conta</h2>
+              <h2 className="text-xl font-bold">Entenda os EstÃ¡gios da Sua Conta</h2>
               <button
                 onClick={() => setShowChipInfo(false)}
                 className="text-2xl font-light hover:opacity-80 transition"
               >
-                ✕
+                âœ•
               </button>
             </div>
             
             <div className="p-6 space-y-6">
               <div className="bg-blue-50 border-l-4 border-blue-500 p-4">
-                <h3 className="font-bold text-blue-900 mb-2">📱 NOVO - Conta Recém-Criada</h3>
-                <p className="text-sm text-blue-800 mb-3">Você acabou de ativar este número no WhatsApp. O sistema ainda está aprendendo que você é legítimo.</p>
+                <h3 className="font-bold text-blue-900 mb-2">ðŸ“± NOVO - Conta RecÃ©m-Criada</h3>
+                <p className="text-sm text-blue-800 mb-3">VocÃª acabou de ativar este nÃºmero no WhatsApp. O sistema ainda estÃ¡ aprendendo que vocÃª Ã© legÃ­timo.</p>
                 <div className="grid grid-cols-3 gap-2 text-xs mb-2">
-                  <div><span className="font-bold text-blue-900">Diário:</span> 50 mensagens</div>
+                  <div><span className="font-bold text-blue-900">DiÃ¡rio:</span> 50 mensagens</div>
                   <div><span className="font-bold text-blue-900">Semanal:</span> 300 mensagens</div>
                   <div><span className="font-bold text-blue-900">Mensal:</span> 1.500 mensagens</div>
                 </div>
-                <p className="text-xs text-blue-700">💡 Respeite esses limites. Se ultrapassar, seu número pode ser bloqueado temporariamente para proteção contra abuso.</p>
+                <p className="text-xs text-blue-700">ðŸ’¡ Respeite esses limites. Se ultrapassar, seu nÃºmero pode ser bloqueado temporariamente para proteÃ§Ã£o contra abuso.</p>
               </div>
 
               <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4">
-                <h3 className="font-bold text-yellow-900 mb-2">📈 EM USO - Conta com Alguns Envios</h3>
-                <p className="text-sm text-yellow-800 mb-3">Você já está usando há algumas semanas. Seu número começa a ganhar mais confiança.</p>
+                <h3 className="font-bold text-yellow-900 mb-2">ðŸ“ˆ EM USO - Conta com Alguns Envios</h3>
+                <p className="text-sm text-yellow-800 mb-3">VocÃª jÃ¡ estÃ¡ usando hÃ¡ algumas semanas. Seu nÃºmero comeÃ§a a ganhar mais confianÃ§a.</p>
                 <div className="grid grid-cols-3 gap-2 text-xs mb-2">
-                  <div><span className="font-bold text-yellow-900">Diário:</span> 75 mensagens</div>
+                  <div><span className="font-bold text-yellow-900">DiÃ¡rio:</span> 75 mensagens</div>
                   <div><span className="font-bold text-yellow-900">Semanal:</span> 500 mensagens</div>
                   <div><span className="font-bold text-yellow-900">Mensal:</span> 2.500 mensagens</div>
                 </div>
-                <p className="text-xs text-yellow-700">✅ Seu número naturalmente avança para este nível depois de ~2-3 semanas se você respeitar os limites anteriores.</p>
+                <p className="text-xs text-yellow-700">âœ… Seu nÃºmero naturalmente avanÃ§a para este nÃ­vel depois de ~2-3 semanas se vocÃª respeitar os limites anteriores.</p>
               </div>
 
               <div className="bg-orange-50 border-l-4 border-orange-500 p-4">
-                <h3 className="font-bold text-orange-900 mb-2">🔥 EXPERIENTE - Conta Bem Estabelecida</h3>
-                <p className="text-sm text-orange-800 mb-3">Você está usando por bastante tempo. O WhatsApp já tem certeza que você é um usuário de verdade.</p>
+                <h3 className="font-bold text-orange-900 mb-2">ðŸ”¥ EXPERIENTE - Conta Bem Estabelecida</h3>
+                <p className="text-sm text-orange-800 mb-3">VocÃª estÃ¡ usando por bastante tempo. O WhatsApp jÃ¡ tem certeza que vocÃª Ã© um usuÃ¡rio de verdade.</p>
                 <div className="grid grid-cols-3 gap-2 text-xs mb-2">
-                  <div><span className="font-bold text-orange-900">Diário:</span> 150 mensagens</div>
+                  <div><span className="font-bold text-orange-900">DiÃ¡rio:</span> 150 mensagens</div>
                   <div><span className="font-bold text-orange-900">Semanal:</span> 1.000 mensagens</div>
                   <div><span className="font-bold text-orange-900">Mensal:</span> 4.000 mensagens</div>
                 </div>
-                <p className="text-xs text-orange-700">🎯 Geralmente leva ~1-3 meses para chegar aqui. Agora você pode usar o WhatsApp de forma mais intensa.</p>
+                <p className="text-xs text-orange-700">ðŸŽ¯ Geralmente leva ~1-3 meses para chegar aqui. Agora vocÃª pode usar o WhatsApp de forma mais intensa.</p>
               </div>
 
               <div className="bg-red-50 border-l-4 border-red-500 p-4">
-                <h3 className="font-bold text-red-900 mb-2">⚡ VETERANA - Conta Antiga e Confiável</h3>
-                <p className="text-sm text-red-800 mb-3">Seu número tem muito tempo de uso. You é praticamente um usuário "VIP" no WhatsApp.</p>
+                <h3 className="font-bold text-red-900 mb-2">âš¡ VETERANA - Conta Antiga e ConfiÃ¡vel</h3>
+                <p className="text-sm text-red-800 mb-3">Seu nÃºmero tem muito tempo de uso. You Ã© praticamente um usuÃ¡rio "VIP" no WhatsApp.</p>
                 <div className="grid grid-cols-3 gap-2 text-xs mb-2">
-                  <div><span className="font-bold text-red-900">Diário:</span> 250 mensagens</div>
+                  <div><span className="font-bold text-red-900">DiÃ¡rio:</span> 250 mensagens</div>
                   <div><span className="font-bold text-red-900">Semanal:</span> 1.500 mensagens</div>
                   <div><span className="font-bold text-red-900">Mensal:</span> 6.000 mensagens</div>
                 </div>
-                <p className="text-xs text-red-700">🚀 Requer ~6+ meses com uso contínuo. Raríssimo sofrer bloqueios neste estágio.</p>
+                <p className="text-xs text-red-700">ðŸš€ Requer ~6+ meses com uso contÃ­nuo. RarÃ­ssimo sofrer bloqueios neste estÃ¡gio.</p>
               </div>
 
               <div className="bg-slate-50 border-l-4 border-slate-400 p-4">
-                <h3 className="font-bold text-slate-900 mb-2">⏭️ Como Evoluir Mais Rápido?</h3>
+                <h3 className="font-bold text-slate-900 mb-2">â­ï¸ Como Evoluir Mais RÃ¡pido?</h3>
                 <ul className="text-xs text-slate-700 space-y-1.5 list-disc list-inside">
-                  <li><strong>Não ultrapasse os limites:</strong> Se respeitá-los, avança naturalmente</li>
-                  <li><strong>Use o número normalmente:</strong> Receba mensagens, envie para amigos, converse</li>
-                  <li><strong>Varie os horários:</strong> Não envie tudo de madrugada ou em padrão repetitivo</li>
-                  <li><strong>Use delays aleatórios:</strong> Entre envios em massa, use pausas variadas</li>
-                  <li><strong>Mantenha ativo:</strong> Não abandone por longos períodos</li>
-                  <li><strong>Evite palavras SPAM:</strong> Não use termos muito comerciais ou de marketing</li>
+                  <li><strong>NÃ£o ultrapasse os limites:</strong> Se respeitÃ¡-los, avanÃ§a naturalmente</li>
+                  <li><strong>Use o nÃºmero normalmente:</strong> Receba mensagens, envie para amigos, converse</li>
+                  <li><strong>Varie os horÃ¡rios:</strong> NÃ£o envie tudo de madrugada ou em padrÃ£o repetitivo</li>
+                  <li><strong>Use delays aleatÃ³rios:</strong> Entre envios em massa, use pausas variadas</li>
+                  <li><strong>Mantenha ativo:</strong> NÃ£o abandone por longos perÃ­odos</li>
+                  <li><strong>Evite palavras SPAM:</strong> NÃ£o use termos muito comerciais ou de marketing</li>
                 </ul>
               </div>
 
               <div className="bg-green-50 border-l-4 border-green-500 p-4">
-                <h3 className="font-bold text-green-900 mb-2">⚠️ Importante!</h3>
-                <p className="text-xs text-green-700">Se você usar acima dos limites do seu estágio, pode sofrer bloqueios temporários (1-24 horas). Isto é normal e proteção do WhatsApp. Quando desbloqueado, aumente gradualmente os envios (~10-20% por semana).</p>
+                <h3 className="font-bold text-green-900 mb-2">âš ï¸ Importante!</h3>
+                <p className="text-xs text-green-700">Se vocÃª usar acima dos limites do seu estÃ¡gio, pode sofrer bloqueios temporÃ¡rios (1-24 horas). Isto Ã© normal e proteÃ§Ã£o do WhatsApp. Quando desbloqueado, aumente gradualmente os envios (~10-20% por semana).</p>
               </div>
             </div>
 
@@ -1141,3 +1235,4 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
 };
 
 export default WhatsAppSender;
+

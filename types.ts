@@ -85,3 +85,16 @@ export interface UserProfile {
   lastActivityAt?: Timestamp | null;   // Timestamp of most recent admin action
   lastActivityDesc?: string;           // Description of last activity
 }
+
+export interface AdminNote {
+  id?: string;
+  targetType: 'simulation' | 'user';
+  targetId: string;
+  targetName: string;
+  targetEmail?: string;
+  targetPhone?: string;
+  note: string;
+  dueDate?: string;
+  status: 'open' | 'done';
+  createdAt?: Timestamp | null;
+}

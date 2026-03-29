@@ -1,71 +1,83 @@
 import React, { useState } from 'react';
 import { Mail, ArrowRight, CheckCircle2, Loader2 } from 'lucide-react';
 import { db } from '../firebase';
-import { collection, addDoc } from 'firebase/firestore';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 
-const EmailCapture: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
+interface EmailCaptureProps {
+  onSuccess?: () => void;
+  title?: string;
+  description?: string;
+  source?: string;
+}
+
+const EmailCapture: React.FC<EmailCaptureProps> = ({
+  onSuccess,
+  title = 'CADASTRE-SE PARA TER O ACESSO COMPLETO',
+  description = 'Preencha seus dados para liberar o acesso completo e continuar vendo os detalhes das cartas contempladas.',
+  source = 'Acesso Completo - Cartas',
+}) => {
   const [name, setName] = useState('');
-  const [cpf, setCpf] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !cpf || !email || !email.includes('@') || !phone) return;
+    if (!name || !email || !email.includes('@') || !phone) return;
 
     setStatus('loading');
     try {
-      await addDoc(collection(db, "simulations"), {
-        name,
-        cpf,
-        email,
-        phone,
-        source: 'Acesso Completo - Cartas',
-        date: new Date().toLocaleString('pt-BR')
+      await addDoc(collection(db, 'simulations'), {
+        userName: name,
+        userEmail: email,
+        userPhone: phone,
+        source,
+        type: 'Lead Cartas Contempladas',
+        status: 'pending',
+        createdAt: serverTimestamp(),
       });
+
       setStatus('success');
       if (onSuccess) {
         setTimeout(onSuccess, 500);
       } else {
         setName('');
-        setCpf('');
         setEmail('');
         setPhone('');
       }
     } catch (e) {
-      console.error("Error saving lead: ", e);
+      console.error('Error saving lead: ', e);
       setStatus('error');
     }
   };
 
   return (
-    <div className="w-full p-4 sm:p-6 pb-6 rounded-2xl border border-slate-200 bg-white shadow-2xl transition-all duration-500">
-      <div className="flex items-center gap-3 mb-3">
-        <div className="p-2 sm:p-3 bg-[#d8ad5b]/20 rounded-xl text-[#b98532]">
+    <div className="w-full rounded-2xl border border-slate-200 bg-white p-4 pb-6 shadow-2xl transition-all duration-500 sm:p-6">
+      <div className="mb-3 flex items-center gap-3">
+        <div className="rounded-xl bg-[#d8ad5b]/20 p-2 text-[#b98532] sm:p-3">
           <Mail size={18} />
         </div>
         <div>
-          <h3 className="font-black text-[#0b1a3a] text-sm sm:text-lg uppercase tracking-tight italic leading-tight">
-            CADASTRE-SE E OBTENHA <br/><span className="text-[#b98532]">ACESSO COMPLETO</span>
+          <h3 className="text-sm font-black uppercase italic leading-tight tracking-tight text-[#0b1a3a] sm:text-lg">
+            {title}
           </h3>
         </div>
       </div>
-      
-      <p className="text-xs sm:text-sm text-slate-500 mb-4 sm:mb-6 leading-relaxed font-medium">
-        Preencha para liberar o acesso aos detalhes das cartas selecionadas.
+
+      <p className="mb-4 text-xs font-medium leading-relaxed text-slate-500 sm:mb-6 sm:text-sm">
+        {description}
       </p>
 
       {status === 'success' ? (
-        <div className="flex flex-col items-center justify-center p-8 bg-emerald-50 rounded-[2rem] border border-emerald-100 animate-fade-in">
-          <CheckCircle2 className="text-emerald-600 w-12 h-12 mb-4" />
-          <p className="text-emerald-700 font-black text-center text-sm uppercase tracking-wider">
+        <div className="animate-fade-in flex flex-col items-center justify-center rounded-[2rem] border border-emerald-100 bg-emerald-50 p-8">
+          <CheckCircle2 className="mb-4 h-12 w-12 text-emerald-600" />
+          <p className="text-center text-sm font-black uppercase tracking-wider text-emerald-700">
             Acesso Liberado!
           </p>
           {!onSuccess && (
-            <button 
+            <button
               onClick={() => setStatus('idle')}
-              className="mt-6 text-[10px] text-slate-400 hover:text-emerald-600 font-black uppercase tracking-widest transition-colors"
+              className="mt-6 text-[10px] font-black uppercase tracking-widest text-slate-400 transition-colors hover:text-emerald-600"
             >
               Realizar outro cadastro
             </button>
@@ -80,25 +92,7 @@ const EmailCapture: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
             placeholder="Seu nome completo"
             required
             disabled={status === 'loading'}
-            className="w-full px-4 py-3 sm:px-5 sm:py-4 rounded-xl sm:rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-[#d8ad5b] outline-none transition-all disabled:opacity-50 font-medium text-xs sm:text-sm"
-          />
-          <input
-            type="text"
-            value={cpf}
-            onChange={(e) => {
-              let val = e.target.value.replace(/\D/g, '');
-              if (val.length <= 11) {
-                val = val.replace(/(\d{3})(\d)/, '$1.$2');
-                val = val.replace(/(\d{3})(\d)/, '$1.$2');
-                val = val.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-              }
-              setCpf(val);
-            }}
-            maxLength={14}
-            placeholder="Seu CPF"
-            required
-            disabled={status === 'loading'}
-            className="w-full px-4 py-3 sm:px-5 sm:py-4 rounded-xl sm:rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-[#d8ad5b] outline-none transition-all disabled:opacity-50 font-medium text-xs sm:text-sm"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:ring-2 focus:ring-[#d8ad5b] disabled:opacity-50 sm:rounded-2xl sm:px-5 sm:py-4 sm:text-sm"
           />
           <input
             type="email"
@@ -107,7 +101,7 @@ const EmailCapture: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
             placeholder="Seu melhor e-mail"
             required
             disabled={status === 'loading'}
-            className="w-full px-4 py-3 sm:px-5 sm:py-4 rounded-xl sm:rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-[#d8ad5b] outline-none transition-all disabled:opacity-50 font-medium text-xs sm:text-sm"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:ring-2 focus:ring-[#d8ad5b] disabled:opacity-50 sm:rounded-2xl sm:px-5 sm:py-4 sm:text-sm"
           />
           <input
             type="tel"
@@ -116,25 +110,28 @@ const EmailCapture: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
               const val = e.target.value.replace(/\D/g, '');
               let formatted = val;
               if (val.length <= 11) {
-                formatted = val.replace(/^(\d{2})(\d)/g,"($1) $2").replace(/(\d)(\d{4})$/,"$1-$2");
+                formatted = val.replace(/^(\d{2})(\d)/g, '($1) $2').replace(/(\d)(\d{4})$/, '$1-$2');
               }
               setPhone(formatted);
             }}
             maxLength={15}
-            placeholder="Seu WhatsApp"
+            placeholder="Seu celular"
             required
             disabled={status === 'loading'}
-            className="w-full px-4 py-3 sm:px-5 sm:py-4 rounded-xl sm:rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-[#d8ad5b] outline-none transition-all disabled:opacity-50 font-medium text-xs sm:text-sm"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:ring-2 focus:ring-[#d8ad5b] disabled:opacity-50 sm:rounded-2xl sm:px-5 sm:py-4 sm:text-sm"
           />
-          
-          {status === 'error' && <p className="text-red-500 text-xs text-center font-bold">Erro de conexão, tente novamente.</p>}
+
+          {status === 'error' ? (
+            <p className="text-center text-xs font-bold text-red-500">Erro de conexão, tente novamente.</p>
+          ) : null}
+
           <button
             type="submit"
             disabled={status === 'loading'}
-            className="w-full py-3.5 sm:py-5 px-6 sm:px-8 mt-2 rounded-xl sm:rounded-2xl bg-gradient-to-r from-[#0b1a3a] to-[#071226] hover:brightness-110 text-white font-black uppercase tracking-widest active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-3 sm:gap-4 disabled:opacity-70 shadow-lg text-[11px] sm:text-sm"
+            className="mt-2 flex w-full items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-[#0b1a3a] to-[#071226] px-6 py-3.5 text-[11px] font-black uppercase tracking-widest text-white shadow-lg transition-all duration-300 active:scale-[0.98] disabled:opacity-70 sm:rounded-2xl sm:px-8 sm:py-5 sm:text-sm"
           >
             {status === 'loading' ? (
-              <Loader2 className="animate-spin w-6 h-6 text-[#d8ad5b]" />
+              <Loader2 className="h-6 w-6 animate-spin text-[#d8ad5b]" />
             ) : (
               <>
                 <span className="text-sm">Liberar Acesso</span>

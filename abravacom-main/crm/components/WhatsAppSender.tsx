@@ -31,14 +31,31 @@ const getResolvedApiKey = (apiKey = '') => {
 };
 
 const getResolvedApiBase = (apiBase = '') => {
-  // In development (localhost), use local wpp-api server at port 8787
-  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-    return 'http://localhost:8787';
-  }
-  
+  // ALWAYS use public API base for production/frontend deployment.
+  // Configure via env (VITE_API_WPP or VITE_WHATSAPP_API_URL) or fallback to public subdomain.
   const fallbackBase = 'https://wpp-api.abravacom.com.br';
   const envBase = ((import.meta as any)?.env?.VITE_API_WPP || (import.meta as any)?.env?.VITE_WHATSAPP_API_URL || '').trim();
   return (apiBase || envBase || fallbackBase).replace(/\/$/, '');
+};
+
+// Utility fetch wrapper that always attaches API key headers and credentials
+const fetchWithAuth = async (url: string, apiKey: string, options: RequestInit = {}) => {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    ...((options.headers as Record<string, string>) || {})
+  };
+
+  if (apiKey) {
+    headers['X-API-Key'] = apiKey;
+    headers['x-api-key'] = apiKey;
+  }
+
+  return fetch(url, {
+    ...options,
+    headers,
+    credentials: 'include'
+  });
 };
 
 const normalizePhone = (phone: string) => String(phone || '').replace(/\D/g, '');
@@ -191,39 +208,47 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
     saveHistoryItems([item, ...historyItems]);
   };
 
-  // Fetch WhatsApp connection status and QR code
+  // Fetch WhatsApp connection status and QR code (uses fetchWithAuth)
   const fetchWhatsappStatus = async () => {
     try {
       const resolvedBase = getResolvedApiBase(apiBase);
       const resolvedApiKey = getResolvedApiKey(apiKey);
-      
-      // Fetch status
-      const statusUrl = `${resolvedBase}/status${resolvedApiKey ? `?api_key=${encodeURIComponent(resolvedApiKey)}` : ''}`;
-      const statusResp = await fetch(statusUrl);
+      const statusUrl = `${resolvedBase}/status`;
+
+      console.log('[WhatsApp] 📡 Polling status:', statusUrl);
+      const statusResp = await fetchWithAuth(statusUrl, resolvedApiKey, { method: 'GET' });
+      console.log('[WhatsApp] 📡 Status HTTP:', statusResp.status);
+
+      if (!statusResp.ok) {
+        console.warn('[WhatsApp] ❌ Falha no /status:', await statusResp.text());
+        return;
+      }
+
       const statusData = await statusResp.json();
-      
-      if (statusData?.ok) {
+      console.log('[WhatsApp] 📡 Status data:', statusData);
+
+      if (statusData) {
         const wasReady = whatsappReady;
         const isNowReady = statusData.ready || false;
-        
+
         setWhatsappReady(isNowReady);
         setConnectedPhone(statusData.phone || null);
         setConnectedName(statusData.accountName || null);
         setSessionPersisted(typeof statusData.sessionPersisted === 'boolean' ? !!statusData.sessionPersisted : null);
         setLastStatusUpdate(Date.now());
-        
-        // Detect connection state change
+
         if (!wasReady && isNowReady) {
-          console.log('[CRM] ✓ WhatsApp conectado com sucesso!', statusData.phone, statusData.accountName);
-          setStatus(`✓ WhatsApp conectado! Número: ${statusData.phone} | ${statusData.accountName}`);
+          console.log('[WhatsApp] ✓ Conectado agora:', statusData.phone, statusData.accountName);
+          setStatus(`✓ WhatsApp conectado: ${statusData.phone || ''} ${statusData.accountName ? '| ' + statusData.accountName : ''}`);
         }
-        
-        // If not ready, fetch QR code only when backend reports it has one
+
+        // If not ready, try to fetch QR only if backend indicates it has one
         if (!isNowReady) {
           if (statusData.hasQR) {
             try {
-              const qrUrl = `${resolvedBase}/qr${resolvedApiKey ? `?api_key=${encodeURIComponent(resolvedApiKey)}` : ''}`;
-              const qrResp = await fetch(qrUrl);
+              const qrUrl = `${resolvedBase}/qr`;
+              console.log('[WhatsApp] 📡 Fetching QR from:', qrUrl);
+              const qrResp = await fetchWithAuth(qrUrl, resolvedApiKey, { method: 'GET' });
               if (qrResp.ok) {
                 const qrData = await qrResp.json();
                 if (qrData?.ok && qrData.qr) {
@@ -232,15 +257,13 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
                   setQrCode(null);
                 }
               } else {
-                // backend returned 404 or similar; avoid spamming console with repeated fetches
                 setQrCode(null);
               }
             } catch (e) {
-              console.warn('[CRM] Erro ao buscar QR:', e);
+              console.warn('[WhatsApp] Erro ao buscar QR:', e);
               setQrCode(null);
             }
           } else {
-            // No QR available according to backend; clear UI QR state
             setQrCode(null);
           }
         } else {
@@ -248,7 +271,7 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
         }
       }
     } catch (e) {
-      console.warn('[CRM] Erro ao buscar status WhatsApp:', e);
+      console.error('[WhatsApp] ❌ Erro ao buscar status:', e);
     }
   };
 

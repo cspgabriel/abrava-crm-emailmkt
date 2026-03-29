@@ -8,7 +8,6 @@ import ContemplatedLetters from './components/ContemplatedLetters';
 import ClientPortal from './components/ClientPortal';
 import AdminPortal from './pages/AdminPortal';
 import ThankYou from './pages/ThankYou';
-import SimulationLanding from './pages/SimulationLanding';
 import ConsorcioLanding from './pages/ConsorcioLanding';
 import WhatsAppModal from './components/WhatsAppModal';
 import AuthModal from './components/AuthModal';
@@ -80,7 +79,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/cartas" element={<ContemplatedLetters />} />
-          <Route path="/simulacao" element={<SimulationLanding />} />
+          <Route path="/simulacao" element={<ConsorcioLanding />} />
           <Route path="/consorcio" element={<ConsorcioLanding />} />
           <Route path="/obrigado" element={<ThankYou />} />
           <Route path="/acesso" element={<Navigate to="/admin-public" replace />} />

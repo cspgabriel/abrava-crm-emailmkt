@@ -6,10 +6,9 @@ import { VitePWA } from 'vite-plugin-pwa';
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     return {
-      root: './crm',
-      base: '/crm',
+      base: '/',
       build: {
-        outDir: '../dist/crm'
+        outDir: 'dist'
       },
       server: {
         port: 3001,
