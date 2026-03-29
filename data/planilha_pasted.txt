@@ -1,0 +1,21 @@
+Cód. Cota	Categoria	Crédito	Entrada	Nº Parcelas	Vlr Parcela	Saldo devedor	Fundo comum	Ref. garantia	Administradora	Status
+531	Imóvel	R$60.052,30	R$25.401,31	228	R$334,18	R$76.193,04	R$0,00	R$0,00	Santander	Disponível
+74	Imóvel	R$61.000,00	R$21.325,00	96	R$774,00	R$74.304,00	R$0,00	R$0,00	CNP Consórcio	Disponível
+350	Imóvel	R$61.500,00	R$26.337,50	148	R$402,00	R$59.496,00	R$0,00	R$0,00	Caixa	Disponível
+119	Imóvel	R$63.900,00	R$23.147,50	149	R$506,00	R$75.394,00	R$0,00	R$0,00	HS Consórcios	Disponível
+122	Imóvel	R$64.450,00	R$23.861,25	150	R$517,00	R$77.550,00	R$0,00	R$0,00	HS Consórcios	Disponível
+199	Imóvel	R$65.800,00	R$25.895,00	144	R$603,00	R$86.832,00	R$0,00	R$0,00	HS Consórcios	Disponível
+126	Imóvel	R$66.000,00	R$25.850,00	144	R$534,00	R$76.896,00	R$0,00	R$0,00	HS Consórcios	Disponível
+139	Imóvel	R$66.050,00	R$24.651,25	136	R$545,00	R$74.120,00	R$0,00	R$0,00	HS Consórcios	Disponível
+182	Imóvel	R$66.100,00	R$25.852,50	129	R$565,00	R$72.885,00	R$0,00	R$0,00	HS Consórcios	Disponível
+128	Imóvel	R$66.300,00	R$24.257,50	140	R$538,00	R$75.320,00	R$0,00	R$0,00	HS Consórcios	Disponível
+135	Imóvel	R$66.500,00	R$23.962,50	133	R$545,00	R$72.485,00	R$0,00	R$0,00	HS Consórcios	Disponível
+109	Imóvel	R$66.850,00	R$26.771,25	149	R$515,00	R$76.735,00	R$0,00	R$0,00	HS Consórcios	Disponível
+191	Imóvel	R$67.650,00	R$26.641,25	129	R$589,00	R$75.981,00	R$0,00	R$0,00	HS Consórcios	Disponível
+168	Imóvel	R$68.100,00	R$27.052,50	139	R$572,00	R$79.508,00	R$0,00	R$0,00	HS Consórcios	Disponível
+185	Imóvel	R$68.350,00	R$27.208,75	129	R$588,00	R$75.852,00	R$0,00	R$0,00	HS Consórcios	Disponível
+156	Imóvel	R$68.850,00	R$27.621,25	137	R$575,00	R$78.775,00	R$0,00	R$0,00	HS Consórcios	Disponível
+582	Imóvel	R$70.000,00	R$36.150,00	194	R$378,00	R$73.332,00	R$0,00	R$0,00	Portobens	Disponível
+589	Imóvel	R$70.000,00	R$37.250,00	194	R$444,00	R$86.136,00	R$0,00	R$0,00	Portobens	Disponível
+581	Imóvel	R$70.500,00	R$36.262,50	194	R$379,00	R$73.526,00	R$0,00	R$0,00	Portobens	Disponível
+574	Imóvel	R$71.000,00	R$36.275,00	183	R$399,00	R$73.017,00	R$0,00	R$0,00	Portobens	Disponível

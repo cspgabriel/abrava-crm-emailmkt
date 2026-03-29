@@ -1,0 +1,149 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    function isAdmin() {
+      return request.auth != null && (
+        request.auth.token.email == 'admin@finance8.com.br' || 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
+    }
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // ============ USERS ============
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // ============ SIMULATIONS ============
+    match /simulations/{simId} {
+      allow create: if true;
+      allow read: if true;
+      allow update: if true;
+      allow delete: if isAdmin();
+    }
+
+    // ============ CONTACTS / LEADS ============
+    match /contacts/{contactId} {
+      allow read: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /leads/{leadId} {
+      allow read: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ============ CONTEMPLATED LETTERS ============
+    match /contemplated_letters/{letterId} {
+      allow read: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ============ CAMPAIGNS ============
+    match /campaigns/{campaignId} {
+      allow read: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+      
+      // Campaign messages (nested collection)
+      match /messages/{messageId} {
+        allow read: if true;
+        allow create: if isAdmin();
+        allow update: if isAdmin();
+        allow delete: if isAdmin();
+      }
+    }
+
+    // ============ FORMS ============
+    match /forms/{formId} {
+      allow read: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+
+      // Form submissions (nested collection)
+      match /submissions/{submissionId} {
+        allow read: if isAdmin();
+        allow create: if true;
+        allow update: if isAdmin();
+        allow delete: if isAdmin();
+      }
+    }
+
+    // ============ SETTINGS ============
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ============ ANNOTATIONS ============
+    match /annotations/{annotationId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // ============ WHATSAPP SEND HISTORY ============
+    match /whatsapp_send_history/{historyId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // ============ WHATSAPP CAMPAIGNS ============
+    match /whatsapp_campaigns/{campaignId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // ============ ACTIVITY LOG ============
+    match /activity_log/{logId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ============ SAVED VIEWS ============
+    match /savedViews/{viewId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (request.auth.uid == resource.data.ownerUid || isAdmin());
+      allow delete: if isAuthenticated() && (request.auth.uid == resource.data.ownerUid || isAdmin());
+    }
+
+    // ============ ELIS SOLICITACOES ============
+    match /elis_solicitacoes/{solicitacaoId} {
+      allow read: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ============ DEVELOPMENT MODE: Catch-all permissive rules ============
+    // WARNING: This allows any authenticated user to access any other collection
+    // FOR DEVELOPMENT ONLY - Remove or restrict in production
+    match /{document=**} {
+      allow read, write: if isAuthenticated();
+    }
+  }
+}
+

@@ -1,0 +1,222 @@
+:root {
+  font-size: 15px;
+  --brand-navy: #102a45;
+  --brand-navy-deep: #091a2b;
+  --brand-navy-soft: #1a3a5c;
+  --brand-gold: #dfb351;
+  --brand-gold-soft: #ecc675;
+  --brand-ivory: #faf5eb;
+  color: var(--brand-ivory);
+  background:
+    radial-gradient(circle at top, rgba(223, 179, 81, 0.15), transparent 30%),
+    linear-gradient(180deg, #102a45 0%, #0d2238 50%, #091a2b 100%);
+}
+
+html, body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-family: 'Inter', sans-serif;
+  line-height: 1.45;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at top, rgba(223, 179, 81, 0.15), transparent 30%),
+    linear-gradient(180deg, #102a45 0%, #0d2238 50%, #091a2b 100%);
+}
+
+body {
+  font-size: 0.95rem;
+  color: var(--brand-ivory);
+}
+
+/* Reduce frequently used large heading sizes for better density */
+.text-4xl { font-size: 1.6rem !important; }
+.text-3xl { font-size: 1.25rem !important; }
+.text-2xl { font-size: 1.05rem !important; }
+
+/* Responsive overrides for Tailwind responsive classes */
+.sm\:text-5xl { font-size: 2rem !important; }
+.sm\:text-6xl { font-size: 2.2rem !important; }
+.sm\:text-7xl { font-size: 2.4rem !important; }
+
+/* Tighter heading spacing */
+h1,h2,h3,h4 { line-height: 1.1; }
+a { -webkit-tap-highlight-color: transparent; }
+
+/* Modal helpers: center and make panel scrollable on small screens */
+.modal-centered { display: grid; place-items: center; }
+.modal-panel { width: 100%; max-width: 48rem; background: white; border-radius: 1rem; box-shadow: 0 20px 50px rgba(2,6,23,0.2); }
+.modal-panel-inner { max-height: 88vh; overflow-y: auto; padding: 1.25rem; }
+
+/* Make tables denser */
+table td, table th { padding: 0.9rem 1.2rem; }
+
+/* Buttons slightly smaller */
+.btn-small { font-size: 0.72rem; padding: 0.6rem 0.9rem; }
+
+/* Improve contrast for small text */
+.text-muted { color: #6b7280; }
+
+/* Hide scrollbar but keep scrollable (for horizontal menus) */
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+@media (max-width: 640px) {
+  :root { font-size: 14px; }
+  .modal-panel { max-width: 96vw; border-radius: 0.9rem; }
+  .modal-panel-inner { padding: 1rem; }
+
+  /* Prevent huge gaps on mobile */
+  .space-y-32 { --tw-space-y: 4rem !important; }
+  .py-32 { padding-top: 4rem !important; padding-bottom: 4rem !important; }
+  .py-20 { padding-top: 2.5rem !important; padding-bottom: 2.5rem !important; }
+  .p-12 { padding: 1.5rem !important; }
+  .p-10 { padding: 1.25rem !important; }
+
+  /* Home sections: bright and clear on mobile to prevent 'funebre' look */
+  .home-features-section .brand-shell {
+    opacity: 1 !important;
+    background:
+      radial-gradient(circle at top, rgba(223, 179, 81, 0.25), transparent 60%),
+      linear-gradient(160deg, #102a45 0%, #091a2b 100%) !important;
+  }
+
+  .home-features-section .glass-panel {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(223, 179, 81, 0.2);
+  }
+
+  .home-testimonials-section {
+    background: linear-gradient(135deg, #e8c782 0%, #cca350 100%) !important;
+  }
+
+  .home-testimonials-overlay {
+    background: rgba(255, 255, 255, 0.1) !important;
+  }
+}
+
+/* Custom Animations */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(calc(-33.333%)); }
+}
+
+.animate-marquee {
+  animation: marquee 20s linear infinite;
+}
+
+/* Brand button styles */
+.btn-primary {
+  background: linear-gradient(135deg, #ddb161 0%, #c99c4a 45%, #b98734 100%);
+  color: #0b1d31;
+  border: 1px solid rgba(221, 177, 97, 0.45);
+  box-shadow: 0 18px 36px rgba(185, 135, 52, 0.32);
+}
+
+.btn-primary:hover {
+  filter: brightness(1.05);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--brand-ivory);
+  border: 1px solid rgba(221, 177, 97, 0.24);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.btn-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.09);
+  border-color: rgba(221, 177, 97, 0.45);
+}
+
+.brand-shell {
+  background:
+    radial-gradient(circle at top, rgba(214, 174, 94, 0.18), transparent 24%),
+    linear-gradient(160deg, rgba(16, 40, 67, 0.94) 0%, rgba(8, 23, 40, 0.97) 100%);
+}
+
+/* Override Tailwind green/emerald/teal utilities to match Abravacon brand colors */
+.bg-green-50,
+.bg-emerald-50,
+.bg-teal-50 {
+  background-color: rgba(221, 177, 97, 0.12) !important;
+}
+.bg-green-100,
+.bg-emerald-100 {
+  background-color: rgba(221, 177, 97, 0.18) !important;
+}
+.bg-green-500,
+.bg-green-600,
+.bg-emerald-500,
+.bg-emerald-600,
+.bg-teal-500 {
+  background-color: var(--brand-gold) !important;
+}
+.bg-green-700,
+.bg-emerald-700 {
+  background-color: var(--brand-gold-soft) !important;
+}
+
+.text-green-600,
+.text-green-700,
+.text-emerald-600,
+.text-emerald-700 {
+  color: var(--brand-gold) !important;
+}
+.text-emerald-400 {
+  color: rgba(221, 177, 97, 0.9) !important;
+}
+
+.border-green-200,
+.border-emerald-200 {
+  border-color: rgba(221, 177, 97, 0.45) !important;
+}
+
+.shadow-green-200 {
+  box-shadow: 0 10px 25px rgba(221, 177, 97, 0.25) !important;
+}
+.hover\:bg-green-50:hover {
+  background-color: rgba(221, 177, 97, 0.12) !important;
+}
+
+.accent-emerald-600 {
+  accent-color: var(--brand-gold) !important;
+}
+.ring-emerald-500 {
+  --tw-ring-color: rgba(221, 177, 97, 0.8) !important;
+}
+
+.focus\:ring-emerald-500:focus {
+  --tw-ring-color: rgba(221, 177, 97, 0.8) !important;
+}
+
+/* Premium Glassmorphism Utilities */
+.glass-panel {
+  background: rgba(13, 34, 56, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.glass-panel:hover {
+  background: rgba(13, 34, 56, 0.6);
+  border-color: rgba(201, 156, 74, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Micro-animations */
+.hover-scale {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.hover-scale:hover {
+  transform: scale(1.02);
+}
+
+.text-gradient-gold {
+  background: linear-gradient(135deg, #f4ecdf 0%, #ddb161 50%, #c99c4a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

@@ -1,0 +1,19 @@
+{
+  "id": "MUtFzlVFlugqP5JkYWEz",
+  "data": {
+    "userName": "Gabriel",
+    "creditAmount": 610000,
+    "status": "pending",
+    "userEmail": "cspgabriel@outlook.com.br",
+    "whatsappNotified": true,
+    "userPhone": "21993165605",
+    "createdAt": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1774237528,
+      "nanoseconds": 445000000
+    },
+    "type": "Imóvel",
+    "userId": null,
+    "acceptWhatsApp": true
+  }
+}

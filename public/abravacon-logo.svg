@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 90" width="320" height="90">
+  <defs>
+    <linearGradient id="goldGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#e5c376"/>
+      <stop offset="100%" stop-color="#bf9a3c"/>
+    </linearGradient>
+    <linearGradient id="navyGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0d2238"/>
+      <stop offset="100%" stop-color="#071726"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background (transparent, so it adapts to page) -->
+  <rect width="320" height="90" fill="none" />
+
+  <!-- Shield icon -->
+  <g transform="translate(18,10)">
+    <path d="M40 0 L80 15 L80 50 C80 70 60 85 40 90 C20 85 0 70 0 50 L0 15 Z" fill="url(#navyGrad)" stroke="url(#goldGrad)" stroke-width="4"/>
+    <path d="M22 28 C22 22 26 18 32 18 C38 18 42 22 42 28 C42 34 38 38 32 38 C26 38 22 34 22 28 Z" fill="url(#goldGrad)"/>
+    <path d="M18 46 C18 42 20 40 24 40 C28 40 30 42 30 46 C30 50 28 52 24 52 C20 52 18 50 18 46 Z" fill="url(#goldGrad)"/>
+    <path d="M22 50 L22 62 C22 66 24 68 28 68 C32 68 34 66 34 62 L34 50" stroke="url(#goldGrad)" stroke-width="3" fill="none"/>
+    <path d="M18 38 L26 46 L34 38" stroke="url(#goldGrad)" stroke-width="3" fill="none"/>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="108" y="52" font-family="Cormorant Garamond, serif" font-weight="900" font-size="38" fill="url(#goldGrad)">Abravacon</text>
+</svg>

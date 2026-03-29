@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% load i18n %}
+
+{% block title %}{% trans 'Email Templates' %}{% endblock %}
+
+{% block main %}
+<div class="container-fluid">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'campaigns:campaigns' %}">{% trans 'Campaigns' %}</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{% trans 'Templates' %}</li>
+    </ol>
+  </nav>
+
+  <div class="row">
+    <div class="col-md-4">
+      <div class="list-group">
+        {% for t in templates %}
+          <a class="list-group-item list-group-item-action" href="{% url 'campaigns:template_preview' t.name %}" target="template_preview_iframe">{{ t.name }}</a>
+        {% empty %}
+          <div class="list-group-item">{% trans 'No templates found in email-templates-master.' %}</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="col-md-8">
+      <iframe name="template_preview_iframe" src="" style="width:100%;height:700px;border:1px solid #ddd;"></iframe>
+    </div>
+  </div>
+</div>
+{% endblock %}
