@@ -14,14 +14,14 @@ export const cleanText = (text: any) => {
     }
 
     let cleaned = text
-        .replace(/HotÃ©isRIO/g, "ABRACON")
-        .replace(/HotÃ©is/g, "ABRACON")
-        .replace(/NÃ£o/g, "Não")
-        .replace(/Ã©/g, "é")
-        .replace(/Ã¡/g, "á")
-        .replace(/Ã£/g, "ã")
-        .replace(/Ã§/g, "ç")
-        .replace(/Ã´/g, "ô")
+        .replace(/HotéisRIO/g, "ABRACON")
+        .replace(/Hotéis/g, "ABRACON")
+        .replace(/Não/g, "Não")
+        .replace(/é/g, "é")
+        .replace(/á/g, "á")
+        .replace(/ã/g, "ã")
+        .replace(/ç/g, "ç")
+        .replace(/ô/g, "ô")
         .replace(/Ã/g, "Í");
 
     const lower = cleaned.toLowerCase();

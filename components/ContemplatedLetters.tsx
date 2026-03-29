@@ -140,15 +140,15 @@ const ContemplatedLetters: React.FC = () => {
       const letterRef = doc(db, 'contemplated_letters', letterId);
       await runTransaction(db, async (transaction) => {
         const snap = await transaction.get(letterRef as any);
-        if (!snap.exists()) throw new Error('Carta nÃ£o encontrada');
+        if (!snap.exists()) throw new Error('Carta não encontrada');
         const data: any = snap.data();
-        if (data.status !== 'available') throw new Error('Carta jÃ¡ reservada');
+        if (data.status !== 'available') throw new Error('Carta já reservada');
         transaction.update(letterRef, { status: 'reserved', userId: auth.currentUser?.uid || null });
       });
       setLetters(prev => prev.map(l => l.id === letterId ? { ...l, status: 'reserved', userId: auth.currentUser?.uid } : l));
     } catch (e) {
       console.error('Error reserving letter:', e);
-      alert('NÃ£o foi possÃ­vel reservar esta carta. Talvez jÃ¡ tenha sido reservada.');
+      alert('Não foi possível reservar esta carta. Talvez já tenha sido reservada.');
     }
   };
 
@@ -175,7 +175,7 @@ const ContemplatedLetters: React.FC = () => {
       setSelectedIds([]);
     } catch (e) {
       console.error('Error reserving selection:', e);
-      alert('Erro ao reservar seleÃ§Ã£o. Tente novamente.');
+      alert('Erro ao reservar seleção. Tente novamente.');
     }
   };
 
@@ -195,7 +195,7 @@ const ContemplatedLetters: React.FC = () => {
       return;
     }
 
-    const msg = `OlÃ¡, tenho interesse nas cartas: ${selectedIds.join(', ')}. CrÃ©dito total: ${formatCurrency(totalCredit)}.`;
+    const msg = `Olá, tenho interesse nas cartas: ${selectedIds.join(', ')}. Crédito total: ${formatCurrency(totalCredit)}.`;
     const phone = PROFILE?.whatsapp?.replace(/\D/g, '') || '';
     const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
     window.open(url, '_blank');
@@ -240,13 +240,13 @@ const ContemplatedLetters: React.FC = () => {
             <span className="hidden sm:inline">Filtros</span>
           </button>
           <select
-            aria-label="Filtro de situaÃ§Ã£o"
+            aria-label="Filtro de situação"
             value={situationFilter}
             onChange={(e) => setSituationFilter(e.target.value as any)}
             className="hidden sm:block flex-shrink-0 px-4 py-3.5 sm:py-4 rounded-2xl bg-[#0a1526]/80 border border-[#1b3152] text-[var(--brand-ivory)] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[var(--brand-gold)] cursor-pointer hover:bg-[#122442] transition-colors appearance-none"
           >
             <option value="all">Ver Todas</option>
-            <option value="available">Somente DisponÃ­veis</option>
+            <option value="available">Somente Disponíveis</option>
             <option value="reserved">Somente Reservadas</option>
             <option value="sold">Vendidas</option>
           </select>
@@ -257,13 +257,13 @@ const ContemplatedLetters: React.FC = () => {
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="bg-[#0a1526]/60 backdrop-blur-xl border border-[#1b3152] rounded-[1.5rem] p-5 shadow-2xl mt-2 overflow-hidden">
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <select
-                aria-label="SituaÃ§Ã£o"
+                aria-label="Situação"
                 value={situationFilter}
                 onChange={(e) => setSituationFilter(e.target.value as any)}
                 className="sm:hidden px-4 py-3 rounded-xl bg-[#08101a] border border-[#1f385c] text-[var(--brand-ivory)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-gold)] col-span-2 appearance-none"
               >
-                <option value="all">Todas as situaÃ§Ãµes</option>
-                <option value="available">DisponÃ­vel</option>
+                <option value="all">Todas as situações</option>
+                <option value="available">Disponível</option>
                 <option value="reserved">Reservada</option>
                 <option value="sold">Vendida</option>
               </select>
@@ -273,19 +273,19 @@ const ContemplatedLetters: React.FC = () => {
                    onChange={(e) => setAdminSearch(e.target.value)}
                    className="w-full px-4 py-3 rounded-xl bg-[#08101a] border border-[#1f385c] text-[var(--brand-ivory)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-gold)] appearance-none"
                  >
-                   <option value="">ConsÃ³rcio/Banco (Todos)</option>
+                   <option value="">Consórcio/Banco (Todos)</option>
                    {uniqueAdmins.map(admin => (
                      <option key={admin} value={admin}>{admin}</option>
                    ))}
                  </select>
               </div>
               <div className="flex gap-3">
-                <input type="number" placeholder="MÃ­n. CrÃ©dito" value={minCredit} onChange={(e) => setMinCredit(e.target.value)} className="w-1/2 px-4 py-3 rounded-xl bg-[#08101a] border border-[#1f385c] text-[var(--brand-ivory)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-gold)] placeholder-white/30" />
-                <input type="number" placeholder="MÃ¡x. CrÃ©dito" value={maxCredit} onChange={(e) => setMaxCredit(e.target.value)} className="w-1/2 px-4 py-3 rounded-xl bg-[#08101a] border border-[#1f385c] text-[var(--brand-ivory)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-gold)] placeholder-white/30" />
+                <input type="number" placeholder="Mín. Crédito" value={minCredit} onChange={(e) => setMinCredit(e.target.value)} className="w-1/2 px-4 py-3 rounded-xl bg-[#08101a] border border-[#1f385c] text-[var(--brand-ivory)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-gold)] placeholder-white/30" />
+                <input type="number" placeholder="Máx. Crédito" value={maxCredit} onChange={(e) => setMaxCredit(e.target.value)} className="w-1/2 px-4 py-3 rounded-xl bg-[#08101a] border border-[#1f385c] text-[var(--brand-ivory)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-gold)] placeholder-white/30" />
               </div>
               <div className="flex gap-3">
-                <input type="number" placeholder="MÃ­n. Parc" value={minParcel} onChange={(e) => setMinParcel(e.target.value)} className="w-1/2 px-4 py-3 rounded-xl bg-[#08101a] border border-[#1f385c] text-[var(--brand-ivory)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-gold)] placeholder-white/30" />
-                <input type="number" placeholder="MÃ¡x. Parc" value={maxParcel} onChange={(e) => setMaxParcel(e.target.value)} className="w-1/2 px-4 py-3 rounded-xl bg-[#08101a] border border-[#1f385c] text-[var(--brand-ivory)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-gold)] placeholder-white/30" />
+                <input type="number" placeholder="Mín. Parc" value={minParcel} onChange={(e) => setMinParcel(e.target.value)} className="w-1/2 px-4 py-3 rounded-xl bg-[#08101a] border border-[#1f385c] text-[var(--brand-ivory)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-gold)] placeholder-white/30" />
+                <input type="number" placeholder="Máx. Parc" value={maxParcel} onChange={(e) => setMaxParcel(e.target.value)} className="w-1/2 px-4 py-3 rounded-xl bg-[#08101a] border border-[#1f385c] text-[var(--brand-ivory)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-gold)] placeholder-white/30" />
               </div>
               <select value={fundoRange} onChange={(e) => setFundoRange(e.target.value)} className="px-4 py-3 rounded-xl bg-[#08101a] border border-[#1f385c] text-[var(--brand-ivory)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-gold)] appearance-none">
                 <option value="all">Fundo Comum (Todos)</option>
@@ -317,7 +317,7 @@ const ContemplatedLetters: React.FC = () => {
           >
             <div className="flex items-center space-x-8">
               <div className="text-center">
-                <p className="text-[10px] font-black uppercase tracking-widest opacity-70">CrÃ©dito Total</p>
+                <p className="text-[10px] font-black uppercase tracking-widest opacity-70">Crédito Total</p>
                 <p className="text-xl font-black">{formatCurrency(totalCredit)}</p>
               </div>
               <div className="text-center">
@@ -333,13 +333,13 @@ const ContemplatedLetters: React.FC = () => {
               </span>
               <button 
                 onClick={() => setSelectedIds([])}
-                aria-label="Limpar seleÃ§Ã£o"
+                aria-label="Limpar seleção"
                 className="p-2 hover:bg-white/10 rounded-full transition-colors"
               >
                 <X size={20} />
               </button>
               <button onClick={reserveSelection} className="bg-white text-emerald-600 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-50 transition-all shadow-lg">
-                Reservar SeleÃ§Ã£o
+                Reservar Seleção
               </button>
               <button onClick={() => alert('Soma: ' + formatCurrency(totalCredit))} className="bg-white text-slate-700 px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm">
                 Somar
@@ -382,11 +382,11 @@ const ContemplatedLetters: React.FC = () => {
               <tr className="bg-[rgba(5,15,26,0.6)] border-b border-white/10 text-white/50 text-[10px] uppercase tracking-[0.25em] font-black">
                 <th className="px-6 py-5 w-14"><div className="w-5 h-5 border-2 border-white/20 rounded" /></th>
                 <th className="px-6 py-5">Tipo / Adm</th>
-                <th className="px-6 py-5">Valor CrÃ©dito</th>
+                <th className="px-6 py-5">Valor Crédito</th>
                 <th className="px-6 py-5">Acesso Completo</th>
                 <th className="px-6 py-5">Saldo Devedor</th>
                 <th className="px-6 py-5">Status</th>
-                <th className="px-6 py-5 text-right w-36">AÃ§Ãµes</th>
+                <th className="px-6 py-5 text-right w-36">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.06]">
@@ -424,7 +424,7 @@ const ContemplatedLetters: React.FC = () => {
                   <td className="px-6 py-5 text-right">
                     <div className="flex items-center justify-end gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
                       <button onClick={(e) => { e.stopPropagation(); reserveLetter(letter.id); }} aria-label={letter.status === 'available' ? 'Reservar carta' : 'Carta reservada'} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg min-w-[90px] ${letter.status === 'available' ? 'bg-[linear-gradient(135deg,#d8ad5b_0%,#b98532_100%)] text-[#081728] border-none hover:scale-105' : 'bg-white/5 text-white/40 border border-white/10'}`}>
-                        {letter.status === 'available' ? 'Reservar' : 'IndisponÃ­vel'}
+                        {letter.status === 'available' ? 'Reservar' : 'Indisponível'}
                       </button>
                     </div>
                   </td>
@@ -465,7 +465,7 @@ const ContemplatedLetters: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-y-2 gap-x-2 mb-4">
                 <div className="bg-black/20 p-2 rounded-xl border border-white/5">
-                  <p className="text-[9px] text-white/50 uppercase font-black tracking-widest mb-0.5">CrÃ©dito</p>
+                  <p className="text-[9px] text-white/50 uppercase font-black tracking-widest mb-0.5">Crédito</p>
                   <p className="font-black text-white text-sm tracking-tight">{formatCurrency(letter.credit)}</p>
                 </div>
                 <div className="bg-black/20 p-2 rounded-xl border border-white/5">
@@ -489,7 +489,7 @@ const ContemplatedLetters: React.FC = () => {
                   onClick={(e) => { e.stopPropagation(); reserveLetter(letter.id); }}
                   className={`flex-1 py-2.5 rounded-xl text-[10px] font-black tracking-widest uppercase transition-all shadow-lg ${letter.status === 'available' ? 'bg-[linear-gradient(135deg,#d8ad5b_0%,#b98532_100%)] text-[#081728] border border-[#d8ad5b]/20 hover:scale-[1.02]' : 'bg-white/5 text-white/30 border border-white/10'}`}
                 >
-                  {letter.status === 'available' ? 'Reservar Oferta' : 'IndisponÃ­vel'}
+                  {letter.status === 'available' ? 'Reservar Oferta' : 'Indisponível'}
                 </button>
               </div>
             </div>
@@ -530,7 +530,7 @@ const ContemplatedLetters: React.FC = () => {
             disabled={currentPage === totalPages}
             className="px-5 py-3 rounded-xl border border-white/10 text-white/70 font-bold text-xs uppercase tracking-widest hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
           >
-            PrÃ³xima
+            Próxima
           </button>
         </div>
       ) : null}

@@ -7,7 +7,7 @@ import PartnerMarquee from '../components/PartnerMarquee';
 import { collection, limit, onSnapshot, orderBy, query } from 'firebase/firestore';
 import { db } from '../firebase';
 
-const heroTitleWords = ['Multiplique', 'seu', 'patrimÃ´nio', 'com'];
+const heroTitleWords = ['Multiplique', 'seu', 'patrimônio', 'com'];
 
 const featureList = [
   {
@@ -33,24 +33,24 @@ const featureList = [
 const testimonials = [
   {
     name: 'Roberto Almeida',
-    role: 'EmpresÃ¡rio',
-    text: 'A Elis achou a carta para ampliar a frota em tempo recorde. Assessoria impecÃ¡vel, sem promessas vazias.',
+    role: 'Empresário',
+    text: 'A Elis achou a carta para ampliar a frota em tempo recorde. Assessoria impecável, sem promessas vazias.',
     rating: 5,
-    date: 'HÃ¡ 2 meses',
+    date: 'Há 2 meses',
   },
   {
     name: 'Mariana Costa',
-    role: 'MÃ©dica',
-    text: 'Estava pagando juros absurdos. Com a carta da Abravacon economizei mais de 40% e ganhei seguranÃ§a.',
+    role: 'Médica',
+    text: 'Estava pagando juros absurdos. Com a carta da Abravacon economizei mais de 40% e ganhei segurança.',
     rating: 5,
-    date: 'HÃ¡ 1 semana',
+    date: 'Há 1 semana',
   },
   {
     name: 'Carlos Eduardo',
-    role: 'EmpresÃ¡rio',
-    text: 'Hoje sÃ³ uso esse caminho para imÃ³veis. A inteligÃªncia matemÃ¡tica da equipe vale cada carta.',
+    role: 'Empresário',
+    text: 'Hoje só uso esse caminho para imóveis. A inteligência matemática da equipe vale cada carta.',
     rating: 5,
-    date: 'HÃ¡ 3 meses',
+    date: 'Há 3 meses',
   },
 ];
 
@@ -119,7 +119,7 @@ const Home: React.FC = () => {
                 variants={{ hidden: { opacity: 0, y: 15 }, visible: { opacity: 1, y: 0 } }}
                 className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-[var(--brand-gold-soft)] to-[var(--brand-gold)]"
               >
-                inteligÃªncia
+                inteligência
               </motion.span>
             </motion.h1>
 
@@ -197,7 +197,7 @@ const HomeFeaturesSection = () => {
             transition={{ delay: 0.15 }}
             className="max-w-3xl mx-auto text-sm font-bold uppercase tracking-[0.2em] text-[var(--brand-gold-soft)]"
           >
-            Oferecemos soluÃ§Ãµes:
+            Oferecemos soluções:
           </motion.p>
         </div>
 
@@ -266,7 +266,7 @@ const HomeTestimonialsSection = () => {
             transition={{ delay: 0.1 }}
             className="mx-auto max-w-2xl text-sm font-bold uppercase tracking-[0.3em] text-[var(--brand-ivory)]"
           >
-            HistÃ³rias reais de quem escolheu alavancar patrimÃ´nio com inteligÃªncia e seguranÃ§a.
+            Histórias reais de quem escolheu alavancar patrimônio com inteligência e segurança.
           </motion.p>
         </div>
 

@@ -28,14 +28,14 @@ const simProtocol = (id?: string) =>
 
 // Map xlsx columns (Portuguese) â†’ ContemplatedLetter fields
 const XLS_MAP: Record<string, keyof ContemplatedLetter> = {
-  'cÃ³digo':              'code',
+  'código':              'code',
   'codigo':              'code',
   'nome/bem':            'name',
   'nome':                'name',
   'categoria':           'category',
-  'crÃ©dito (r$)':        'credit',
+  'crédito (r$)':        'credit',
   'credito (r$)':        'credit',
-  'crÃ©dito':             'credit',
+  'crédito':             'credit',
   'credito':             'credit',
   'entrada (r$)':        'entry',
   'entrada':             'entry',
@@ -44,8 +44,8 @@ const XLS_MAP: Record<string, keyof ContemplatedLetter> = {
   'valor parcela (r$)':  'installmentValue',
   'valor da parcela (r$)': 'installmentValue',
   'valor parcela':       'installmentValue',
-  'taxa transferÃªncia (r$)': 'transferFee',
-  'taxa de transferÃªncia (r$)': 'transferFee',
+  'taxa transferência (r$)': 'transferFee',
+  'taxa de transferência (r$)': 'transferFee',
   'taxa transferencia (r$)': 'transferFee',
   'taxa transferencia':  'transferFee',
   'saldo devedor (r$)':  'saldoDevedor',
@@ -56,25 +56,25 @@ const XLS_MAP: Record<string, keyof ContemplatedLetter> = {
   'fundo comum':         'fundoComum',
   'ref. garantia':       'refGarantia',
   'seguro':              'insurance',
-  'Ã­ndice reajuste':     'reajusteIndex',
+  'índice reajuste':     'reajusteIndex',
   'indice reajuste':     'reajusteIndex',
   'telefone contato':    'contactPhone',
   'email contato':       'contactEmail',
-  'observaÃ§Ãµes':         'observations',
+  'observações':         'observations',
   'observacoes':         'observations',
 };
 
 const normalizeStatus = (v: string): ContemplatedLetter['status'] => {
   const s = String(v).toLowerCase().trim();
-  if (s === 'disponivel' || s === 'disponÃ­vel' || s === 'available') return 'available';
+  if (s === 'disponivel' || s === 'disponível' || s === 'available') return 'available';
   if (s === 'reservada' || s === 'reserved') return 'reserved';
   return 'sold';
 };
 
 const normalizeCategory = (v: string): ContemplatedLetter['category'] => {
   const s = String(v).trim();
-  if (s === 'ImÃ³vel' || s === 'imovel' || s.toLowerCase() === 'imÃ³vel') return 'ImÃ³vel';
-  if (s.toLowerCase() === 'caminhÃ£o' || s.toLowerCase() === 'caminhao') return 'CaminhÃ£o';
+  if (s === 'Imóvel' || s === 'imovel' || s.toLowerCase() === 'imóvel') return 'Imóvel';
+  if (s.toLowerCase() === 'caminhão' || s.toLowerCase() === 'caminhao') return 'Caminhão';
   if (s.toLowerCase() === 'giro') return 'Giro';
   return 'Carro';
 };
@@ -88,12 +88,12 @@ const _ts = (daysOffset: number) => {
 };
 
 const DEMO_SIMULATIONS: Simulation[] = [
-  { id: 'demo-1', type: 'ImÃ³vel', creditAmount: 350000, userName: 'Carlos Eduardo Silva', userPhone: '(11) 98765-4321', userEmail: 'carlos.silva@email.com', createdAt: null, status: 'analyzed', sentAt: _ts(-20) as any, sentBy: 'whatsapp', nextContactAt: _ts(-5) as any, lastActivity: 'CotaÃ§Ã£o enviada via WhatsApp' },
-  { id: 'demo-2', type: 'ImÃ³vel', creditAmount: 250000, userName: 'Ana Paula Ferreira', userPhone: '(21) 99876-5432', userEmail: 'ana.ferreira@email.com', createdAt: null, status: 'analyzed', sentAt: _ts(-10) as any, sentBy: 'email', nextContactAt: _ts(5) as any, lastActivity: 'CotaÃ§Ã£o enviada via E-mail' },
-  { id: 'demo-3', type: 'ImÃ³vel', creditAmount: 180000, userName: 'Roberto Mendes', userPhone: '(31) 97654-3210', userEmail: 'roberto.mendes@email.com', createdAt: null, status: 'completed', sentAt: _ts(-30) as any, sentBy: 'whatsapp', nextContactAt: _ts(-15) as any, lastActivity: 'CotaÃ§Ã£o enviada via WhatsApp' },
-  { id: 'demo-4', type: 'ImÃ³vel', creditAmount: 120000, userName: 'Juliana Costa', userPhone: '(41) 96543-2109', userEmail: 'juliana.costa@email.com', createdAt: null, status: 'pending' },
-  { id: 'demo-5', type: 'ImÃ³vel', creditAmount: 200000, userName: 'Marcos AntÃ´nio Souza', userPhone: '(51) 95432-1098', userEmail: 'marcos.souza@email.com', createdAt: null, status: 'pending' },
-  { id: 'demo-6', type: 'ImÃ³vel', creditAmount: 480000, userName: 'Fernanda Lima', userPhone: '(85) 98888-7777', userEmail: 'fernanda.lima@email.com', createdAt: null, status: 'analyzed', sentAt: _ts(-3) as any, sentBy: 'email', nextContactAt: _ts(12) as any, lastActivity: 'CotaÃ§Ã£o enviada via E-mail' },
+  { id: 'demo-1', type: 'Imóvel', creditAmount: 350000, userName: 'Carlos Eduardo Silva', userPhone: '(11) 98765-4321', userEmail: 'carlos.silva@email.com', createdAt: null, status: 'analyzed', sentAt: _ts(-20) as any, sentBy: 'whatsapp', nextContactAt: _ts(-5) as any, lastActivity: 'Cotação enviada via WhatsApp' },
+  { id: 'demo-2', type: 'Imóvel', creditAmount: 250000, userName: 'Ana Paula Ferreira', userPhone: '(21) 99876-5432', userEmail: 'ana.ferreira@email.com', createdAt: null, status: 'analyzed', sentAt: _ts(-10) as any, sentBy: 'email', nextContactAt: _ts(5) as any, lastActivity: 'Cotação enviada via E-mail' },
+  { id: 'demo-3', type: 'Imóvel', creditAmount: 180000, userName: 'Roberto Mendes', userPhone: '(31) 97654-3210', userEmail: 'roberto.mendes@email.com', createdAt: null, status: 'completed', sentAt: _ts(-30) as any, sentBy: 'whatsapp', nextContactAt: _ts(-15) as any, lastActivity: 'Cotação enviada via WhatsApp' },
+  { id: 'demo-4', type: 'Imóvel', creditAmount: 120000, userName: 'Juliana Costa', userPhone: '(41) 96543-2109', userEmail: 'juliana.costa@email.com', createdAt: null, status: 'pending' },
+  { id: 'demo-5', type: 'Imóvel', creditAmount: 200000, userName: 'Marcos Antônio Souza', userPhone: '(51) 95432-1098', userEmail: 'marcos.souza@email.com', createdAt: null, status: 'pending' },
+  { id: 'demo-6', type: 'Imóvel', creditAmount: 480000, userName: 'Fernanda Lima', userPhone: '(85) 98888-7777', userEmail: 'fernanda.lima@email.com', createdAt: null, status: 'analyzed', sentAt: _ts(-3) as any, sentBy: 'email', nextContactAt: _ts(12) as any, lastActivity: 'Cotação enviada via E-mail' },
 ];
 
 const DEMO_LETTERS: ContemplatedLetter[] = demoLettersData as ContemplatedLetter[];
@@ -210,7 +210,7 @@ const AdminPortal: React.FC = () => {
     const nextContactDate = new Date(nowDate.getTime() + 15 * 24 * 60 * 60 * 1000);
     const nowTs = { seconds: Math.floor(nowDate.getTime() / 1000), nanoseconds: 0 };
     const nextTs = { seconds: Math.floor(nextContactDate.getTime() / 1000), nanoseconds: 0 };
-    const activityDesc = `CotaÃ§Ã£o enviada via ${channel === 'whatsapp' ? 'WhatsApp' : 'E-mail'}`;
+    const activityDesc = `Cotação enviada via ${channel === 'whatsapp' ? 'WhatsApp' : 'E-mail'}`;
 
     // Optimistic local state update (works for demo data too)
     setSimulations(prev => prev.map(s => s.id === sim.id ? {
@@ -245,23 +245,23 @@ const AdminPortal: React.FC = () => {
 
   const sendWhatsApp = async (sim: Simulation) => {
     const phone = sim.userPhone?.replace(/\D/g, '') || '';
-    const msg = `OlÃ¡ ${sim.userName}, segue sua cotaÃ§Ã£o: Tipo: ${sim.type} - Valor: ${fmtBRL(sim.creditAmount)}. ID: ${sim.id}`;
+    const msg = `Olá ${sim.userName}, segue sua cotação: Tipo: ${sim.type} - Valor: ${fmtBRL(sim.creditAmount)}. ID: ${sim.id}`;
     if (phone) {
       window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
       await markSimSent(sim, 'whatsapp');
     } else if (sim.userEmail) {
-      window.open(`mailto:${sim.userEmail}?subject=Sua cotaÃ§Ã£o&body=${encodeURIComponent(msg)}`);
+      window.open(`mailto:${sim.userEmail}?subject=Sua cotação&body=${encodeURIComponent(msg)}`);
       await markSimSent(sim, 'whatsapp');
     } else { 
-      alert('Nenhum contato disponÃ­vel.');
+      alert('Nenhum contato disponível.');
     }
   };
 
   const sendEmailSim = async (sim: Simulation) => {
-    if (!sim.userEmail) { alert('E-mail do cliente nÃ£o cadastrado.'); return; }
-    const subject = encodeURIComponent(`Sua cotaÃ§Ã£o de consÃ³rcio â€” ${sim.type}`);
+    if (!sim.userEmail) { alert('E-mail do cliente não cadastrado.'); return; }
+    const subject = encodeURIComponent(`Sua cotação de consórcio â€” ${sim.type}`);
     const body = encodeURIComponent(
-      `OlÃ¡ ${sim.userName},\n\nSegue sua cotaÃ§Ã£o conforme solicitado:\n\nTipo: ${sim.type}\nCrÃ©dito: ${fmtBRL(sim.creditAmount)}\nID: ${sim.id}\n\nAtenciosamente,\nFinance8 CrÃ©dito & ConsÃ³rcio`
+      `Olá ${sim.userName},\n\nSegue sua cotação conforme solicitado:\n\nTipo: ${sim.type}\nCrédito: ${fmtBRL(sim.creditAmount)}\nID: ${sim.id}\n\nAtenciosamente,\nFinance8 Crédito & Consórcio`
     );
     window.open(`mailto:${sim.userEmail}?subject=${subject}&body=${body}`, '_blank');
     await markSimSent(sim, 'email');
@@ -298,53 +298,53 @@ const AdminPortal: React.FC = () => {
   const sendFollowUpWhatsApp = (sim: Simulation) => {
     const phone = sim.userPhone?.replace(/\D/g, '') || '';
     const protocol = simProtocol(sim.id);
-    const msg = `OlÃ¡ ${sim.userName}, tudo bem? Passando para retornar sobre a cotaÃ§Ã£o ${protocol} (${sim.type} â€” ${fmtBRL(sim.creditAmount)}). Podemos conversar?`;
+    const msg = `Olá ${sim.userName}, tudo bem? Passando para retornar sobre a cotação ${protocol} (${sim.type} â€” ${fmtBRL(sim.creditAmount)}). Podemos conversar?`;
     if (phone) window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
     else if (sim.userEmail) {
-      const subject = encodeURIComponent(`Retorno â€” CotaÃ§Ã£o ${protocol}`);
-      const body = encodeURIComponent(`OlÃ¡ ${sim.userName},\n\nPassando para retornar sobre a cotaÃ§Ã£o ${protocol} (${sim.type} â€” ${fmtBRL(sim.creditAmount)}).\n\nAguardo seu contato.\n\nAtenciosamente,\nFinance8 CrÃ©dito & ConsÃ³rcio`);
+      const subject = encodeURIComponent(`Retorno â€” Cotação ${protocol}`);
+      const body = encodeURIComponent(`Olá ${sim.userName},\n\nPassando para retornar sobre a cotação ${protocol} (${sim.type} â€” ${fmtBRL(sim.creditAmount)}).\n\nAguardo seu contato.\n\nAtenciosamente,\nFinance8 Crédito & Consórcio`);
       window.open(`mailto:${sim.userEmail}?subject=${subject}&body=${body}`, '_blank');
     }
   };
 
   const simStatusLabel = (status: string) => {
-    if (status === 'pending') return 'NÃ£o Enviada';
+    if (status === 'pending') return 'Não Enviada';
     if (status === 'analyzed') return 'Enviada';
-    return 'ConcluÃ­da';
+    return 'Concluída';
   };
 
   const deleteSimulation = async (sim: Simulation) => {
-    if (!window.confirm(`Excluir cotaÃ§Ã£o de ${sim.userName}? Esta aÃ§Ã£o nÃ£o pode ser desfeita.`)) return;
+    if (!window.confirm(`Excluir cotação de ${sim.userName}? Esta ação não pode ser desfeita.`)) return;
     setSimulations(prev => prev.filter(s => s.id !== sim.id));
     if (!sim.id || sim.id.startsWith('demo-')) return;
     try {
       await deleteDoc(doc(db, 'simulations', sim.id));
-    } catch (err) { console.error('Erro ao excluir simulaÃ§Ã£o:', err); }
+    } catch (err) { console.error('Erro ao excluir simulação:', err); }
   };
 
   const deleteUser = async (user: UserProfile) => {
-    if (!window.confirm(`Excluir usuÃ¡rio ${user.displayName || user.email}? Esta aÃ§Ã£o nÃ£o pode ser desfeita.`)) return;
+    if (!window.confirm(`Excluir usuário ${user.displayName || user.email}? Esta ação não pode ser desfeita.`)) return;
     setUsers(prev => prev.filter(u => u.uid !== user.uid));
     if (!user.uid || user.uid.startsWith('demo-')) return;
     try {
       await deleteDoc(doc(db, 'users', user.uid));
-    } catch (err) { console.error('Erro ao excluir usuÃ¡rio:', err); }
+    } catch (err) { console.error('Erro ao excluir usuário:', err); }
   };
 
   const contactUserWhatsApp = (user: UserProfile) => {
     const phone = (user as any).phone?.replace(/\D/g, '') || '';
-    const msg = `OlÃ¡ ${user.displayName || ''}! Aqui Ã© da Finance8 CrÃ©dito & ConsÃ³rcio. Tudo bem?`;
+    const msg = `Olá ${user.displayName || ''}! Aqui é da Finance8 Crédito & Consórcio. Tudo bem?`;
     if (phone) {
       window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
     } else {
-      alert('NÃºmero de WhatsApp nÃ£o cadastrado para este usuÃ¡rio.');
+      alert('Número de WhatsApp não cadastrado para este usuário.');
     }
   };
 
   const contactUserEmail = (user: UserProfile) => {
-    if (!user.email) { alert('E-mail nÃ£o cadastrado.'); return; }
-    const subject = encodeURIComponent('Finance8 CrÃ©dito & ConsÃ³rcio - Contato');
-    const body = encodeURIComponent(`OlÃ¡ ${user.displayName || ''},\n\nEntramos em contato para...\n\nAtenciosamente,\nFinance8 CrÃ©dito & ConsÃ³rcio`);
+    if (!user.email) { alert('E-mail não cadastrado.'); return; }
+    const subject = encodeURIComponent('Finance8 Crédito & Consórcio - Contato');
+    const body = encodeURIComponent(`Olá ${user.displayName || ''},\n\nEntramos em contato para...\n\nAtenciosamente,\nFinance8 Crédito & Consórcio`);
     window.open(`mailto:${user.email}?subject=${subject}&body=${body}`, '_blank');
   };
 
@@ -445,7 +445,7 @@ const AdminPortal: React.FC = () => {
     } catch (err) { console.error(err); }
   };
   const removeLetter = async (id: string) => {
-    if (!confirm('Excluir esta carta? Esta aÃ§Ã£o Ã© irreversÃ­vel.')) return;
+    if (!confirm('Excluir esta carta? Esta ação é irreversível.')) return;
     try {
       await deleteDoc(doc(db, 'contemplated_letters', id));
       setLetters(prev => prev.filter(l => l.id !== id));
@@ -471,16 +471,16 @@ const AdminPortal: React.FC = () => {
   // â”€â”€â”€ XLSX Export â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const exportLettersXlsx = async () => {
     const wb = new ExcelJS.Workbook();
-    const ws = wb.addWorksheet('Cartas DisponÃ­veis');
+    const ws = wb.addWorksheet('Cartas Disponíveis');
     ws.columns = [
-      { header: 'CÃ³digo', key: 'code', width: 12 },
+      { header: 'Código', key: 'code', width: 12 },
       { header: 'Nome/Bem', key: 'name', width: 25 },
       { header: 'Categoria', key: 'category', width: 12 },
-      { header: 'CrÃ©dito (R$)', key: 'credit', width: 14 },
+      { header: 'Crédito (R$)', key: 'credit', width: 14 },
       { header: 'Entrada (R$)', key: 'entry', width: 14 },
       { header: 'Qtd Parcelas', key: 'installmentsCount', width: 13 },
       { header: 'Valor Parcela (R$)', key: 'installmentValue', width: 17 },
-      { header: 'Taxa TransferÃªncia (R$)', key: 'transferFee', width: 20 },
+      { header: 'Taxa Transferência (R$)', key: 'transferFee', width: 20 },
       { header: 'Saldo Devedor (R$)', key: 'saldoDevedor', width: 17 },
       { header: 'Fundo comum (R$)', key: 'fundoComum', width: 17 },
       { header: 'Ref. garantia (R$)', key: 'refGarantia', width: 17 },
@@ -488,10 +488,10 @@ const AdminPortal: React.FC = () => {
       { header: 'Administradora', key: 'administrator', width: 18 },
       { header: 'Status', key: 'status', width: 12 },
       { header: 'Seguro', key: 'insurance', width: 14 },
-      { header: 'Ãndice Reajuste', key: 'reajusteIndex', width: 15 },
+      { header: 'Índice Reajuste', key: 'reajusteIndex', width: 15 },
       { header: 'Telefone Contato', key: 'contactPhone', width: 18 },
       { header: 'Email Contato', key: 'contactEmail', width: 25 },
-      { header: 'ObservaÃ§Ãµes', key: 'observations', width: 25 },
+      { header: 'Observações', key: 'observations', width: 25 },
     ];
 
     const headerRow = ws.getRow(1);
@@ -531,14 +531,14 @@ const AdminPortal: React.FC = () => {
 
   const exportSimulationsXlsx = async () => {
     const wb = new ExcelJS.Workbook();
-    const ws = wb.addWorksheet('SimulaÃ§Ãµes');
+    const ws = wb.addWorksheet('Simulações');
     ws.columns = [
       { header: 'ID', key: 'id', width: 20 },
       { header: 'Nome', key: 'userName', width: 30 },
       { header: 'Email', key: 'userEmail', width: 30 },
       { header: 'Telefone', key: 'userPhone', width: 18 },
       { header: 'Tipo', key: 'type', width: 12 },
-      { header: 'CrÃ©dito (R$)', key: 'creditAmount', width: 14 },
+      { header: 'Crédito (R$)', key: 'creditAmount', width: 14 },
       { header: 'Status', key: 'status', width: 12 },
       { header: 'Criado Em', key: 'createdAt', width: 20 },
       { header: 'Enviado Em', key: 'sentAt', width: 20 },
@@ -636,7 +636,7 @@ const AdminPortal: React.FC = () => {
         imported.push(row_data);
       });
 
-      if (imported.length === 0) throw new Error('Nenhuma linha vÃ¡lida encontrada.');
+      if (imported.length === 0) throw new Error('Nenhuma linha válida encontrada.');
 
       setImportStatus(`Importando ${imported.length} cartas...`);
       const batch = writeBatch(db);
@@ -648,7 +648,7 @@ const AdminPortal: React.FC = () => {
       }
       await batch.commit();
       setLetters(prev => [...newLetters, ...prev]);
-      setImportStatus(`âœ“ ${imported.length} cartas importadas com sucesso!`);
+      setImportStatus(`✓ ${imported.length} cartas importadas com sucesso!`);
       setTimeout(() => setImportStatus(''), 5000);
     } catch (err: any) {
       setImportStatus(`Erro: ${err.message}`);
@@ -751,10 +751,10 @@ const AdminPortal: React.FC = () => {
 
   const TABS: { key: TabType; label: string }[] = [
     { key: 'dashboard', label: 'Painel' },
-    { key: 'simulations', label: 'SimulaÃ§Ãµes' },
+    { key: 'simulations', label: 'Simulações' },
     { key: 'letters', label: 'Cartas' },
-    { key: 'users', label: 'UsuÃ¡rios' },
-    { key: 'contacts', label: 'PrÃ³ximos Contatos' },
+    { key: 'users', label: 'Usuários' },
+    { key: 'contacts', label: 'Próximos Contatos' },
   ];
 
   return (
@@ -766,7 +766,7 @@ const AdminPortal: React.FC = () => {
           <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tighter uppercase italic">
             Painel Administrativo
           </h2>
-          <p className="text-slate-500 text-sm font-medium">Gerencie simulaÃ§Ãµes, cartas e usuÃ¡rios</p>
+          <p className="text-slate-500 text-sm font-medium">Gerencie simulações, cartas e usuários</p>
         </div>
         <button
           onClick={() => { setFetchError(''); fetchData(); }}
@@ -784,11 +784,11 @@ const AdminPortal: React.FC = () => {
         </div>
       ) : !loading && isUnlocked && simulations.length === 0 && users.length === 0 ? (
         <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-3 text-sm text-amber-700 font-medium">
-          âš ï¸ Firebase retornou 0 simulaÃ§Ãµes e 0 usuÃ¡rios. Verifique se as <strong>Regras do Firestore</strong> permitem leitura sem autenticaÃ§Ã£o, e se realmente existem dados nas coleÃ§Ãµes <code>simulations</code> e <code>users</code> no painel do Firebase.
+          ⚠️ Firebase retornou 0 simulações e 0 usuários. Verifique se as <strong>Regras do Firestore</strong> permitem leitura sem autenticação, e se realmente existem dados nas coleções <code>simulations</code> e <code>users</code> no painel do Firebase.
         </div>
       ) : !loading && isUnlocked ? (
         <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-3 text-sm text-emerald-700 font-medium">
-          âœ… Firebase carregado: <strong>{simulations.length}</strong> simulaÃ§Ãµes Â· <strong>{users.length}</strong> usuÃ¡rios
+          ✅ Firebase carregado: <strong>{simulations.length}</strong> simulações Â· <strong>{users.length}</strong> usuários
         </div>
       ) : null}
 
@@ -836,9 +836,9 @@ const AdminPortal: React.FC = () => {
             {showDashFilters && (
               <div className="px-6 pb-6 border-t border-slate-100 pt-5 space-y-5">
 
-                {/* PerÃ­odo */}
+                {/* Período */}
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">PerÃ­odo</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Período</p>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">De</label>
@@ -850,7 +850,7 @@ const AdminPortal: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">AtÃ©</label>
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Até</label>
                       <input
                         type="date"
                         value={dashFilterDateTo}
@@ -861,9 +861,9 @@ const AdminPortal: React.FC = () => {
                   </div>
                 </div>
 
-                {/* UsuÃ¡rio */}
+                {/* Usuário */}
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">UsuÃ¡rio / Cliente</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Usuário / Cliente</p>
                   <div className="relative">
                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
@@ -876,11 +876,11 @@ const AdminPortal: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Tipo de SimulaÃ§Ã£o */}
+                {/* Tipo de Simulação */}
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Tipo de SimulaÃ§Ã£o</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Tipo de Simulação</p>
                   <div className="flex flex-wrap gap-2">
-                    {(['Carro', 'ImÃ³vel', 'CaminhÃ£o', 'Giro'] as const).map(type => (
+                    {(['Carro', 'Imóvel', 'Caminhão', 'Giro'] as const).map(type => (
                       <button
                         key={type}
                         onClick={() => toggleDashFilter(dashFilterSimTypes, setDashFilterSimTypes, type)}
@@ -896,11 +896,11 @@ const AdminPortal: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Status da SimulaÃ§Ã£o */}
+                {/* Status da Simulação */}
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Status da SimulaÃ§Ã£o</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Status da Simulação</p>
                   <div className="flex flex-wrap gap-2">
-                    {([{ key: 'pending', label: 'NÃ£o Enviada' }, { key: 'analyzed', label: 'Enviada' }, { key: 'completed', label: 'ConcluÃ­da' }]).map(s => (
+                    {([{ key: 'pending', label: 'Não Enviada' }, { key: 'analyzed', label: 'Enviada' }, { key: 'completed', label: 'Concluída' }]).map(s => (
                       <button
                         key={s.key}
                         onClick={() => toggleDashFilter(dashFilterSimStatus, setDashFilterSimStatus, s.key)}
@@ -920,7 +920,7 @@ const AdminPortal: React.FC = () => {
                 <div>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Categoria de Carta</p>
                   <div className="flex flex-wrap gap-2">
-                    {(['Carro', 'ImÃ³vel', 'CaminhÃ£o', 'Giro'] as const).map(cat => (
+                    {(['Carro', 'Imóvel', 'Caminhão', 'Giro'] as const).map(cat => (
                       <button
                         key={cat}
                         onClick={() => toggleDashFilter(dashFilterLetterCats, setDashFilterLetterCats, cat)}
@@ -940,7 +940,7 @@ const AdminPortal: React.FC = () => {
                 <div>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Status da Carta</p>
                   <div className="flex flex-wrap gap-2">
-                    {([{ key: 'available', label: 'DisponÃ­vel' }, { key: 'reserved', label: 'Reservada' }, { key: 'sold', label: 'Vendida' }]).map(s => (
+                    {([{ key: 'available', label: 'Disponível' }, { key: 'reserved', label: 'Reservada' }, { key: 'sold', label: 'Vendida' }]).map(s => (
                       <button
                         key={s.key}
                         onClick={() => toggleDashFilter(dashFilterLetterStatus, setDashFilterLetterStatus, s.key)}
@@ -974,20 +974,20 @@ const AdminPortal: React.FC = () => {
             <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-2.5 text-xs text-amber-700 font-bold">
               <Filter size={13} className="flex-shrink-0" />
               <span>
-                Filtros ativos â€” exibindo <strong>{dashSims.length}</strong> de {simulations.length} simulaÃ§Ãµes
+                Filtros ativos â€” exibindo <strong>{dashSims.length}</strong> de {simulations.length} simulações
                 {' '}e <strong>{dashLetters.length}</strong> de {letters.length} cartas
               </span>
             </div>
           )}
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            {/* AtivaÃ§Ãµes */}
+            {/* Ativações */}
             <div className="bg-white border text-center p-6 rounded-3xl relative overflow-hidden flex flex-col items-center justify-center">
               <div className="w-14 h-14 bg-emerald-100 rounded-2xl flex items-center justify-center mb-4 relative z-10">
                 <CheckCircle2 size={28} className="text-emerald-600" />
               </div>
               <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 relative z-10">
-                SimulaÃ§Ãµes Realizadas
+                Simulações Realizadas
               </h3>
               <p className="text-4xl font-black text-slate-900 relative z-10">{dashSims.length}</p>
               <div className="absolute -bottom-10 -right-10 text-emerald-500/5">
@@ -1013,8 +1013,8 @@ const AdminPortal: React.FC = () => {
 
             <div className="col-span-2 grid grid-cols-2 gap-4">
               {[
-                { label: 'NÃ£o Enviadas', value: dashSimByStatus.pending, color: 'bg-red-50 text-red-600' },
-                { label: 'Cartas DisponÃ­veis', value: dashLetByStatus.available, color: 'bg-emerald-50 text-emerald-700' },
+                { label: 'Não Enviadas', value: dashSimByStatus.pending, color: 'bg-red-50 text-red-600' },
+                { label: 'Cartas Disponíveis', value: dashLetByStatus.available, color: 'bg-emerald-50 text-emerald-700' },
               ].map(s => (
                 <div key={s.label} className={`rounded-3xl p-6 ${s.color} border border-white/50 flex flex-col justify-center`}>
                   <p className="text-[10px] font-black uppercase tracking-widest opacity-70">{s.label}</p>
@@ -1025,16 +1025,16 @@ const AdminPortal: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Top Tipos de SimulaÃ§Ã£o */}
+            {/* Top Tipos de Simulação */}
             <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
               <div className="flex items-center gap-2 mb-5">
                 <Tag size={18} className="text-emerald-600" />
                 <h3 className="font-black text-slate-900 uppercase tracking-tight text-sm">
-                  Top Tipos (Volume de SimulaÃ§Ãµes)
+                  Top Tipos (Volume de Simulações)
                 </h3>
               </div>
               {dashSimByTypeSorted.length === 0 ? (
-                <p className="text-slate-400 text-sm text-center py-8">Nenhuma simulaÃ§Ã£o encontrada.</p>
+                <p className="text-slate-400 text-sm text-center py-8">Nenhuma simulação encontrada.</p>
               ) : (
                 <div className="space-y-3">
                   {dashSimByTypeSorted.map(([type, count], i) => (
@@ -1072,7 +1072,7 @@ const AdminPortal: React.FC = () => {
               </div>
               <div className="space-y-4">
                 {[
-                  { label: 'DisponÃ­veis', value: dashLetByStatus.available, color: 'bg-emerald-500', total: dashLetters.length },
+                  { label: 'Disponíveis', value: dashLetByStatus.available, color: 'bg-emerald-500', total: dashLetters.length },
                   { label: 'Reservadas', value: dashLetByStatus.reserved, color: 'bg-amber-400', total: dashLetters.length },
                   { label: 'Vendidas', value: dashLetByStatus.sold, color: 'bg-slate-400', total: dashLetters.length },
                 ].map((item, i) => (
@@ -1095,11 +1095,11 @@ const AdminPortal: React.FC = () => {
 
               <div className="mt-6 pt-5 border-t border-slate-100 space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Total de usuÃ¡rios</span>
+                  <span className="text-slate-500">Total de usuários</span>
                   <span className="font-black text-slate-900">{users.length}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">SimulaÃ§Ãµes concluÃ­das</span>
+                  <span className="text-slate-500">Simulações concluídas</span>
                   <span className="font-black text-slate-900">{dashSimByStatus.completed}</span>
                 </div>
                 <div className="flex justify-between text-sm">
@@ -1136,11 +1136,11 @@ const AdminPortal: React.FC = () => {
                   <tr className="bg-slate-50 border-b border-slate-200 text-slate-400 text-[10px] uppercase tracking-[0.2em] font-black">
                     <th className="px-6 py-5">Cliente</th>
                     <th className="px-6 py-5">Tipo</th>
-                    <th className="px-6 py-5">CrÃ©dito</th>
+                    <th className="px-6 py-5">Crédito</th>
                     <th className="px-6 py-5">Data</th>
                     <th className="px-6 py-5">Status</th>
                     <th className="px-6 py-5">CRM</th>
-                    <th className="px-6 py-5 text-right">AÃ§Ãµes</th>
+                    <th className="px-6 py-5 text-right">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -1224,7 +1224,7 @@ const AdminPortal: React.FC = () => {
                       <p className="font-bold text-slate-700">{sim.type}</p>
                     </div>
                     <div className="ml-auto text-right">
-                      <p className="text-[10px] text-slate-400 uppercase font-black">CrÃ©dito</p>
+                      <p className="text-[10px] text-slate-400 uppercase font-black">Crédito</p>
                       <p className="font-black text-emerald-600">{fmtBRL(sim.creditAmount)}</p>
                     </div>
                   </div>
@@ -1285,13 +1285,13 @@ const AdminPortal: React.FC = () => {
               onClick={exportSimulationsXlsx}
               className="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-50"
             >
-              <Download size={15} /> Exportar SimulaÃ§Ãµes
+              <Download size={15} /> Exportar Simulações
             </button>
             <button
               onClick={exportUsersXlsx}
               className="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-50"
             >
-              <Download size={15} /> Exportar UsuÃ¡rios
+              <Download size={15} /> Exportar Usuários
             </button>
             <button
               onClick={openNewLetterModal}
@@ -1300,7 +1300,7 @@ const AdminPortal: React.FC = () => {
               <Plus size={15} /> Nova Carta
             </button>
             {importStatus && (
-              <span className={`text-xs font-bold px-3 py-2 rounded-xl ${importStatus.startsWith('âœ“') ? 'bg-emerald-50 text-emerald-700' : importStatus.startsWith('Erro') ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'}`}>
+              <span className={`text-xs font-bold px-3 py-2 rounded-xl ${importStatus.startsWith('✓') ? 'bg-emerald-50 text-emerald-700' : importStatus.startsWith('Erro') ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'}`}>
                 {importStatus}
               </span>
             )}
@@ -1342,11 +1342,11 @@ const AdminPortal: React.FC = () => {
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-200 text-slate-400 text-[10px] uppercase tracking-[0.2em] font-black">
                       <th className="px-6 py-5">Adm / Grupo</th>
-                      <th className="px-6 py-5">CrÃ©dito</th>
+                      <th className="px-6 py-5">Crédito</th>
                       <th className="px-6 py-5">Entrada</th>
                       <th className="px-6 py-5">Parcelas</th>
                       <th className="px-6 py-5">Status</th>
-                      <th className="px-6 py-5 text-right">AÃ§Ãµes</th>
+                      <th className="px-6 py-5 text-right">Ações</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -1369,7 +1369,7 @@ const AdminPortal: React.FC = () => {
                               letter.status === 'available' ? 'bg-emerald-100 text-emerald-700' :
                               letter.status === 'reserved' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'
                             }`}>
-                              {letter.status === 'available' ? 'DisponÃ­vel' : letter.status === 'reserved' ? 'Reservada' : 'Vendida'}
+                              {letter.status === 'available' ? 'Disponível' : letter.status === 'reserved' ? 'Reservada' : 'Vendida'}
                             </span>
                           </td>
                           <td className="px-6 py-5 text-right">
@@ -1423,7 +1423,7 @@ const AdminPortal: React.FC = () => {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest">CrÃ©dito</p>
+                      <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Crédito</p>
                       <p className="text-base font-black text-emerald-600">{fmtBRL(letter.credit)}</p>
                     </div>
                     <div>
@@ -1440,7 +1440,7 @@ const AdminPortal: React.FC = () => {
                         letter.status === 'available' ? 'text-emerald-600' :
                         letter.status === 'reserved' ? 'text-amber-600' : 'text-slate-500'
                       }`}>
-                        {letter.status === 'available' ? 'DisponÃ­vel' : letter.status === 'reserved' ? 'Reservada' : 'Vendida'}
+                        {letter.status === 'available' ? 'Disponível' : letter.status === 'reserved' ? 'Reservada' : 'Vendida'}
                       </span>
                     </div>
                   </div>
@@ -1459,7 +1459,7 @@ const AdminPortal: React.FC = () => {
                 <ChevronLeft size={20} />
               </button>
               <span className="text-sm font-black text-slate-700">
-                PÃ¡gina {lettersPage} de {lettersTotalPages}
+                Página {lettersPage} de {lettersTotalPages}
               </span>
               <button
                 onClick={() => setLettersPage(p => Math.min(lettersTotalPages, p + 1))}
@@ -1493,12 +1493,12 @@ const AdminPortal: React.FC = () => {
               <table className="w-full text-left">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200 text-slate-400 text-[10px] uppercase tracking-[0.2em] font-black">
-                    <th className="px-6 py-5">UsuÃ¡rio</th>
+                    <th className="px-6 py-5">Usuário</th>
                     <th className="px-6 py-5">E-mail</th>
-                    <th className="px-6 py-5">FunÃ§Ã£o</th>
-                    <th className="px-6 py-5">Ãšltima interaÃ§Ã£o</th>
+                    <th className="px-6 py-5">Função</th>
+                    <th className="px-6 py-5">Ãšltima interação</th>
                     <th className="px-6 py-5">Criado em</th>
-                    <th className="px-6 py-5 text-right">AÃ§Ãµes</th>
+                    <th className="px-6 py-5 text-right">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -1538,7 +1538,7 @@ const AdminPortal: React.FC = () => {
                               email: u.email,
                               phone: (u as any).phone,
                             })}
-                            title="AnotaÃ§Ãµes e agendamentos"
+                            title="Anotações e agendamentos"
                             className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-all"
                           >
                             <FileText size={14} />
@@ -1559,7 +1559,7 @@ const AdminPortal: React.FC = () => {
                           </button>
                           <button
                             onClick={() => deleteUser(u)}
-                            title="Excluir usuÃ¡rio"
+                            title="Excluir usuário"
                             className="p-1.5 rounded-lg border border-red-100 text-red-400 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all"
                           >
                             <Trash2 size={14} />
@@ -1619,7 +1619,7 @@ const AdminPortal: React.FC = () => {
         </div>
       )}
 
-      {/* â”€â”€ PRÃ“XIMOS CONTATOS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* â”€â”€ PRÓXIMOS CONTATOS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {activeTab === 'contacts' && (() => {
         const getTs = (val: any) => {
            if (!val) return 0;
@@ -1638,8 +1638,8 @@ const AdminPortal: React.FC = () => {
             <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-2xl px-5 py-3 text-sm text-blue-700">
               <Calendar size={16} className="flex-shrink-0 mt-0.5" />
               <span>
-                CotaÃ§Ãµes enviadas aguardando retorno. O botÃ£o de contato Ã© <strong>liberado automaticamente</strong> na
-                data agendada (15 dias apÃ³s o envio). Itens em <span className="text-emerald-700 font-bold">verde</span> estÃ£o vencidos e prontos para contato.
+                Cotações enviadas aguardando retorno. O botão de contato é <strong>liberado automaticamente</strong> na
+                data agendada (15 dias após o envio). Itens em <span className="text-emerald-700 font-bold">verde</span> estão vencidos e prontos para contato.
               </span>
             </div>
 
@@ -1650,10 +1650,10 @@ const AdminPortal: React.FC = () => {
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-200 text-slate-400 text-[10px] uppercase tracking-[0.2em] font-black">
                       <th className="px-6 py-5">Cliente</th>
-                      <th className="px-6 py-5">CotaÃ§Ã£o</th>
+                      <th className="px-6 py-5">Cotação</th>
                       <th className="px-6 py-5">Enviada em</th>
-                      <th className="px-6 py-5">PrÃ³ximo Contato</th>
-                      <th className="px-6 py-5 text-right">AÃ§Ã£o</th>
+                      <th className="px-6 py-5">Próximo Contato</th>
+                      <th className="px-6 py-5 text-right">Ação</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -1702,7 +1702,7 @@ const AdminPortal: React.FC = () => {
                             <button
                               onClick={() => { if (due) sendFollowUpWhatsApp(sim); }}
                               disabled={!due}
-                              title={due ? 'Clique para entrar em contato via WhatsApp' : `DisponÃ­vel em ${days} dia${days !== 1 ? 's' : ''}`}
+                              title={due ? 'Clique para entrar em contato via WhatsApp' : `Disponível em ${days} dia${days !== 1 ? 's' : ''}`}
                               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all ${
                                 due
                                   ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm cursor-pointer'
@@ -1721,8 +1721,8 @@ const AdminPortal: React.FC = () => {
                 {sentSims.length === 0 && (
                   <div className="py-16 text-center">
                     <CalendarCheck size={36} className="mx-auto text-slate-200 mb-3" />
-                    <p className="text-slate-400 text-sm font-medium">Nenhuma cotaÃ§Ã£o enviada ainda.</p>
-                    <p className="text-slate-300 text-xs mt-1">Quando vocÃª enviar uma cotaÃ§Ã£o via WhatsApp ou E-mail, ela aparecerÃ¡ aqui.</p>
+                    <p className="text-slate-400 text-sm font-medium">Nenhuma cotação enviada ainda.</p>
+                    <p className="text-slate-300 text-xs mt-1">Quando você enviar uma cotação via WhatsApp ou E-mail, ela aparecerá aqui.</p>
                   </div>
                 )}
               </div>
@@ -1761,7 +1761,7 @@ const AdminPortal: React.FC = () => {
 
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div>
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">CotaÃ§Ã£o</p>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Cotação</p>
                         <p className="font-black text-slate-800">{protocol}</p>
                         <p className="text-slate-500">{sim.type} Â· {fmtBRL(sim.creditAmount)}</p>
                       </div>
@@ -1772,7 +1772,7 @@ const AdminPortal: React.FC = () => {
                     </div>
 
                     <div className={`flex items-center justify-between text-xs px-3 py-2 rounded-xl ${due ? 'bg-emerald-100' : 'bg-amber-50 border border-amber-100'}`}>
-                      <span className="font-black text-slate-600">PrÃ³ximo Contato</span>
+                      <span className="font-black text-slate-600">Próximo Contato</span>
                       <div className="text-right">
                         <span className={`font-black ${due ? 'text-emerald-700' : 'text-amber-600'}`}>{nextDate}</span>
                         {!due && <span className="text-[9px] text-slate-400 block">em {days}d</span>}
@@ -1798,7 +1798,7 @@ const AdminPortal: React.FC = () => {
               {sentSims.length === 0 && (
                 <div className="bg-white border border-dashed border-slate-200 rounded-2xl p-10 text-center">
                   <CalendarCheck size={36} className="mx-auto text-slate-200 mb-3" />
-                  <p className="text-slate-400 text-sm">Nenhuma cotaÃ§Ã£o enviada ainda.</p>
+                  <p className="text-slate-400 text-sm">Nenhuma cotação enviada ainda.</p>
                 </div>
               )}
             </div>
@@ -1818,11 +1818,11 @@ const AdminPortal: React.FC = () => {
               </div>
               <datalist id="administradoras">
                 <option value="Santander" />
-                <option value="ItaÃº" />
+                <option value="Itaú" />
                 <option value="Bradesco" />
                 <option value="Porto Seguro" />
-                <option value="Caixa ConsÃ³rcios" />
-                <option value="BB ConsÃ³rcios" />
+                <option value="Caixa Consórcios" />
+                <option value="BB Consórcios" />
                 <option value="Embracon" />
                 <option value="Rodobens" />
                 <option value="Ademicon" />
@@ -1831,23 +1831,23 @@ const AdminPortal: React.FC = () => {
                 {[
                   { key: 'administrator', label: 'Administradora', type: 'datalist', list: 'administradoras' },
                   { key: 'group', label: 'Grupo', type: 'text' },
-                  { key: 'code', label: 'CÃ³digo', type: 'text' },
+                  { key: 'code', label: 'Código', type: 'text' },
                   { key: 'name', label: 'Nome / Bem', type: 'text' },
-                  { key: 'category', label: 'Categoria', type: 'select', options: ['Carro', 'ImÃ³vel', 'CaminhÃ£o', 'Giro'] },
-                  { key: 'credit', label: 'CrÃ©dito (R$)', type: 'number' },
+                  { key: 'category', label: 'Categoria', type: 'select', options: ['Carro', 'Imóvel', 'Caminhão', 'Giro'] },
+                  { key: 'credit', label: 'Crédito (R$)', type: 'number' },
                   { key: 'entry', label: 'Entrada (R$)', type: 'number' },
                   { key: 'installmentsCount', label: 'Parcelas', type: 'number' },
                   { key: 'installmentValue', label: 'Valor Parcela (R$)', type: 'number' },
                   { key: 'saldoDevedor', label: 'Saldo Devedor (R$)', type: 'number' },
-                  { key: 'transferFee', label: 'Taxa TransferÃªncia (R$)', type: 'number' },
+                  { key: 'transferFee', label: 'Taxa Transferência (R$)', type: 'number' },
                   { key: 'fundoComum', label: 'Fundo Comum (R$)', type: 'number' },
                   { key: 'refGarantia', label: 'Ref. Garantia (R$)', type: 'number' },
-                  { key: 'insurance', label: 'Seguro', type: 'select', options: ['N/A', 'Incluso', 'NÃ£o Incluso'] },
-                  { key: 'reajusteIndex', label: 'Ãndice de Reajuste', type: 'select', options: ['N/A', 'INCC', 'IGPM', 'IPCA'] },
-                  { key: 'status', label: 'Status', type: 'select', options: [{val: 'available', lbl: 'DisponÃ­vel'}, {val: 'reserved', lbl: 'Reservada'}, {val: 'sold', lbl: 'Vendida'}] },
+                  { key: 'insurance', label: 'Seguro', type: 'select', options: ['N/A', 'Incluso', 'Não Incluso'] },
+                  { key: 'reajusteIndex', label: 'Índice de Reajuste', type: 'select', options: ['N/A', 'INCC', 'IGPM', 'IPCA'] },
+                  { key: 'status', label: 'Status', type: 'select', options: [{val: 'available', lbl: 'Disponível'}, {val: 'reserved', lbl: 'Reservada'}, {val: 'sold', lbl: 'Vendida'}] },
                   { key: 'contactPhone', label: 'Telefone Contato', type: 'text' },
                   { key: 'contactEmail', label: 'Email Contato', type: 'email' },
-                  { key: 'observations', label: 'ObservaÃ§Ãµes', type: 'text', colSpan: 'full' },
+                  { key: 'observations', label: 'Observações', type: 'text', colSpan: 'full' },
                 ].map((field: any) => (
                   <div key={field.key} className={field.colSpan === 'full' ? 'sm:col-span-3 md:col-span-4' : ''}>
                     <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1.5">{field.label}</label>
