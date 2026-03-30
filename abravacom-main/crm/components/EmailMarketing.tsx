@@ -63,7 +63,7 @@ const RECOMMENDED_BULK_LIMIT = 100;
 
 const getResolvedApiBase = (apiBase = '') => {
   if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-    return 'http://localhost:8787';
+    return 'http://localhost:8788';
   }
 
   const fallbackBase = 'https://email-api.abravacom.com.br';
@@ -99,6 +99,7 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
   const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0, success: 0, failed: 0 });
   const [isBulkSending, setIsBulkSending] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  const [serverAuth, setServerAuth] = useState<{ authenticated: boolean; account?: string } | null>(null);
 
   // History
   const [historyItems, setHistoryItems] = useState<SendHistoryItem[]>(() => {
@@ -121,7 +122,9 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
 
   // Parse recipients
   const recipients = useMemo(() => {
-    return recipientsText
+    // Accept recipients separated by newline or comma. Also support `email | Name` format.
+    const normalized = recipientsText.replace(/,/g, '\n');
+    return normalized
       .split('\n')
       .map(line => line.trim())
       .filter(line => line && line.includes('@'))
@@ -163,58 +166,69 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
   }, [historyItems, provider]);
 
   // Send single email
-  const handleSendEmail = async () => {
-    if (!email || !name || !subject || !message) {
-      setStatus('❌ Preencha todos os campos');
+  // Unified send handler (single or multiple recipients)
+  const handleSendUnified = async () => {
+    const resolvedBase = getResolvedApiBase(apiBase);
+    const resolvedApiKey = getResolvedApiKey(apiKey);
+
+    const targets = recipients.length > 0 ? recipients : (email ? [{ email, name: name || 'Contato 1' }] : []);
+
+    if (targets.length === 0) {
+      setStatus('❌ Adicione pelo menos um destinatário');
+      return;
+    }
+
+    if (!subject || !message) {
+      setStatus('❌ Preencha assunto e mensagem');
       return;
     }
 
     setLoading(true);
-    try {
-      const resolvedBase = getResolvedApiBase(apiBase);
-      const resolvedApiKey = getResolvedApiKey(apiKey);
+    let success = 0;
+    let failed = 0;
 
-      const response = await fetch(`${resolvedBase}/email/send`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(resolvedApiKey && { 'x-api-key': resolvedApiKey })
-        },
-        body: JSON.stringify({
-          to: email,
-          recipientName: name,
-          subject,
-          body: message,
-          provider
-        })
-      });
+    for (let i = 0; i < targets.length; i++) {
+      const t = targets[i];
+      try {
+        const resp = await fetch(`${resolvedBase}/send`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(resolvedApiKey && { 'x-api-key': resolvedApiKey })
+          },
+          body: JSON.stringify({
+            to: t.email,
+            recipientName: t.name,
+            subject,
+            body: message,
+            provider
+          })
+        });
 
-      const data = await response.json();
+        const data = await resp.json();
+        const ok = !!data.ok;
 
-      if (data.ok) {
-        setStatus(`✅ Email enviado para ${email}`);
         appendHistoryItem({
-          id: `${Date.now()}`,
-          email,
-          name,
+          id: `${Date.now()}-${i}`,
+          email: t.email,
+          name: t.name,
           subject,
           message,
-          ok: true,
+          ok,
           createdAt: new Date().toISOString(),
           provider
         });
-        setEmail('');
-        setName('');
-        setSubject('');
-        setMessage('');
-      } else {
-        setStatus(`❌ Erro: ${data.error || 'Falha ao enviar'}`);
+
+        if (ok) success++; else failed++;
+      } catch (e) {
+        failed++;
       }
-    } catch (e) {
-      setStatus(`❌ Erro: ${String(e)}`);
-    } finally {
-      setLoading(false);
     }
+
+    setLoading(false);
+    setStatus(`✅ Enviados: ${success} | ❌ Falhados: ${failed}`);
+    if (recipients.length > 0) setRecipientsText('');
+    else { setEmail(''); setName(''); }
   };
 
   // Handle template selection
@@ -224,81 +238,27 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
     setStatus(`✅ Template "${template.name}" aplicado!`);
   };
 
-  // Bulk send
-  const handleBulkSend = async () => {
-    if (recipients.length === 0) {
-      setStatus('❌ Adicione destinatários');
-      return;
-    }
-
-    if (!subject || !message) {
-      setStatus('❌ Preencha assunto e mensagem');
-      return;
-    }
-
-    setIsBulkSending(true);
-    setBulkProgress({ current: 0, total: recipients.length, success: 0, failed: 0 });
-
-    const resolvedBase = getResolvedApiBase(apiBase);
-    const resolvedApiKey = getResolvedApiKey(apiKey);
-
-    for (let i = 0; i < recipients.length; i++) {
-      const recipient = recipients[i];
-      const delay = Math.random() * (bulkMaxDelaySeconds - bulkMinDelaySeconds) + bulkMinDelaySeconds;
-
+  // Check server auth status on mount
+  useEffect(() => {
+    let mounted = true;
+    const check = async () => {
       try {
-        const response = await fetch(`${resolvedBase}/email/send`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(resolvedApiKey && { 'x-api-key': resolvedApiKey })
-          },
-          body: JSON.stringify({
-            to: recipient.email,
-            recipientName: recipient.name,
-            subject,
-            body: message,
-            provider
-          })
-        });
-
-        const data = await response.json();
-        const success = data.ok;
-
-        appendHistoryItem({
-          id: `${Date.now()}-${i}`,
-          email: recipient.email,
-          name: recipient.name,
-          subject,
-          message,
-          ok: success,
-          createdAt: new Date().toISOString(),
-          provider
-        });
-
-        setBulkProgress(prev => ({
-          ...prev,
-          current: i + 1,
-          success: prev.success + (success ? 1 : 0),
-          failed: prev.failed + (success ? 0 : 1)
-        }));
-      } catch {
-        setBulkProgress(prev => ({
-          ...prev,
-          current: i + 1,
-          failed: prev.failed + 1
-        }));
+        const base = getResolvedApiBase(apiBase);
+        const res = await fetch(`${base}/status`);
+        const j = await res.json();
+        if (!mounted) return;
+        setServerAuth({ authenticated: !!j.authenticated, account: j.account });
+        if (!j.authenticated) setStatus('⚠️ Workspace CLI não autenticado. Autentique no servidor para enviar.');
+      } catch (e) {
+        // ignore
       }
+    };
+    check();
+    return () => { mounted = false; };
+  }, [apiBase]);
 
-      if (i < recipients.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, delay * 1000));
-      }
-    }
-
-    setStatus(`✅ Enviados: ${bulkProgress.success} | ❌ Falhados: ${bulkProgress.failed}`);
-    setIsBulkSending(false);
-    setRecipientsText('');
-  };
+  // Bulk send
+  // (Bulk logic merged into unified handler)
 
   // Clear history
   const handleClearHistory = () => {
@@ -381,32 +341,31 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
         </div>
       )}
 
-      {/* Single Email Send */}
+      {/* Unified Send Block: single or multiple recipients (one per line or comma-separated) */}
       <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-        <h2 className="text-xl font-bold text-slate-900 mb-4">📧 Enviar Email Único</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <input
-            type="email"
-            placeholder="Email do destinatário"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <input
-            type="text"
-            placeholder="Nome do destinatário"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+        <h2 className="text-xl font-bold text-slate-900 mb-4">📧 Enviar Email (único ou em massa)</h2>
+
+        <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <p className="text-sm text-yellow-800">Formato: um destinatário por linha ou separados por vírgula. Também suporta <code>email | Nome</code>.</p>
+          <p className="text-xs text-yellow-700 mt-1">Ex: joao@example.com | João Silva</p>
         </div>
+
+        <textarea
+          placeholder="Destinatários (um por linha ou separados por vírgula)"
+          value={recipientsText}
+          onChange={(e) => setRecipientsText(e.target.value)}
+          rows={4}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 font-mono text-sm mb-4"
+        />
+
         <input
           type="text"
           placeholder="Assunto do email"
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 mb-4"
         />
+
         <button
           onClick={() => setIsTemplateModalOpen(true)}
           className="w-full px-4 py-2 mb-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition flex items-center justify-center gap-2"
@@ -414,112 +373,37 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
           <Package className="h-4 w-4" />
           🎨 Escolher Template
         </button>
-        <textarea
-          placeholder="Corpo do email (HTML suportado)"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          rows={6}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm mb-4"
-        />
-        <button
-          onClick={handleSendEmail}
-          disabled={loading}
-          className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition disabled:opacity-50"
-        >
-          {loading ? '⏳ Enviando...' : '📤 Enviar Email'}
-        </button>
-      </div>
-
-      {/* Bulk Send */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-        <h2 className="text-xl font-bold text-slate-900 mb-4">📨 Envio em Massa</h2>
-        
-        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-sm text-blue-800">
-            💡 Formato: um email por linha (opcional: email | Nome)
-          </p>
-          <p className="text-xs text-blue-700 mt-1">Ex: joao@example.com | João Silva</p>
-        </div>
-
-        <textarea
-          placeholder="Emails (um por linha)"
-          value={recipientsText}
-          onChange={(e) => setRecipientsText(e.target.value)}
-          rows={6}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 font-mono text-sm mb-4"
-        />
-
-        <input
-          type="text"
-          placeholder="Assunto do email"
-          value={subject}
-          onChange={(e) => setSubject(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 mb-4"
-        />
 
         <textarea
           placeholder="Corpo do email (HTML suportado)"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           rows={6}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 font-mono text-sm mb-4"
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 font-mono text-sm mb-4"
         />
 
-        <div className="grid grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Delay mínimo (segundos)</label>
-            <input
-              type="number"
-              value={bulkMinDelaySeconds}
-              onChange={(e) => setBulkMinDelaySeconds(parseInt(e.target.value))}
-              min="1"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-            />
+            <label className="block text-sm font-medium text-slate-700 mb-2">Plataforma</label>
+            <select value={provider} onChange={(e) => setProvider(e.target.value as any)} className="w-full px-4 py-2 border rounded-lg">
+              <option value="workspace">🏢 Google Workspace</option>
+              <option value="gmail">📧 Gmail Pessoal</option>
+              <option value="outlook">📨 Outlook</option>
+              <option value="exchange">🏢 Microsoft 365</option>
+            </select>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Delay máximo (segundos)</label>
-            <input
-              type="number"
-              value={bulkMaxDelaySeconds}
-              onChange={(e) => setBulkMaxDelaySeconds(parseInt(e.target.value))}
-              min="1"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-            />
+          <div className="flex items-end">
+            <button
+              onClick={handleSendUnified}
+              disabled={loading}
+              className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition disabled:opacity-50"
+            >
+              {loading ? '⏳ Enviando...' : '📤 Enviar'}
+            </button>
           </div>
         </div>
 
-        <div className="text-sm text-slate-600 mb-4">
-          📊 {recipients.length} email(s) para enviar
-          {recipients.length > RECOMMENDED_BULK_LIMIT && (
-            <span className="text-orange-600 ml-2">⚠️ Pode exceder quota!</span>
-          )}
-        </div>
-
-        {isBulkSending && (
-          <div className="mb-4 space-y-2">
-            <div className="text-sm font-medium text-slate-700">
-              Progresso: {bulkProgress.current}/{bulkProgress.total}
-            </div>
-            <div className="bg-gray-200 rounded-full h-3 overflow-hidden">
-              <div
-                className="h-full bg-green-500 transition-all"
-                style={{ width: `${(bulkProgress.current / bulkProgress.total) * 100}%` }}
-              ></div>
-            </div>
-            <div className="flex gap-4 text-sm">
-              <span className="text-green-600">✅ Sucesso: {bulkProgress.success}</span>
-              <span className="text-red-600">❌ Falha: {bulkProgress.failed}</span>
-            </div>
-          </div>
-        )}
-
-        <button
-          onClick={handleBulkSend}
-          disabled={isBulkSending || recipients.length === 0}
-          className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition disabled:opacity-50"
-        >
-          {isBulkSending ? `⏳ Enviando (${bulkProgress.current}/${bulkProgress.total})` : '📤 Enviar em Massa'}
-        </button>
+        <div className="text-sm text-slate-600">{recipients.length} destinatário(s) detectado(s)</div>
       </div>
 
       {/* History */}
