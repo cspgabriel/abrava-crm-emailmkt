@@ -24,7 +24,7 @@ const ElisBioSection: React.FC = () => {
 
             <div className="space-y-8">
               <div className="space-y-2">
-                <p className="text-emerald-600 font-black text-xs uppercase tracking-[0.3em]">Especialista em Consórcios</p>
+                <p className="text-emerald-600 font-black text-xs uppercase tracking-[0.3em]">{PROFILE.title}</p>
                 <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tighter uppercase italic">{PROFILE.name}</h2>
               </div>
               

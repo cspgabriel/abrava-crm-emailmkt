@@ -14,7 +14,7 @@ import { LinkItem, LinkCategory, ProfileData } from './types';
 
 export const PROFILE: ProfileData = {
   name: "Elisangela Martins Inácio",
-  title: "Especialista em Crédito e Consórcio",
+  title: "Especialista em crédito e consórcio",
   description: "Transformando sonhos em realidade através de soluções financeiras inteligentes.",
   avatarUrl: "https://i.ibb.co/0jv4vmr1/Screenshot-149.png",
   logoUrl: "https://i.postimg.cc/qqQh9Tyk/3cc9175c-0ef1-455b-b9d5-7a9ccd84e8ed-removebg-preview.png",
