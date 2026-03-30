@@ -9,6 +9,7 @@ import ClientPortal from './components/ClientPortal';
 import AdminPortal from './pages/AdminPortal';
 import ThankYou from './pages/ThankYou';
 import ConsorcioLanding from './pages/ConsorcioLanding';
+import SimulationLanding from './pages/SimulationLanding';
 import WhatsAppModal from './components/WhatsAppModal';
 import AuthModal from './components/AuthModal';
 import FloatingWhatsApp from './components/FloatingWhatsApp';
@@ -81,6 +82,7 @@ function App() {
           <Route path="/cartas" element={<ContemplatedLetters />} />
           <Route path="/simulacao" element={<ConsorcioLanding />} />
           <Route path="/consorcio" element={<ConsorcioLanding />} />
+          <Route path="/garantia" element={<SimulationLanding />} />
           <Route path="/obrigado" element={<ThankYou />} />
           <Route path="/acesso" element={<Navigate to="/admin-public" replace />} />
           <Route path="/admin-public" element={<AdminPortal />} />

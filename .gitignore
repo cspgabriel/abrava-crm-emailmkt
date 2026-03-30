@@ -74,3 +74,6 @@ temp_*.js
 !abravacom-main/crm/.env.example
 !/wpp-api-server/.env.example
 launcher/dist-pack/
+launcher/dist-v6/
+launcher/dist*/
+*.exe

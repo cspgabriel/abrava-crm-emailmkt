@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+nao #!/usr/bin/env node
 /**
  * 🆘 QUICK SESSION RESET - Emergency cleanup for stuck Chrome processes
  * 

@@ -63,7 +63,7 @@ const RECOMMENDED_BULK_LIMIT = 100;
 
 const getResolvedApiBase = (apiBase = '') => {
   if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-    return 'http://localhost:8787';
+    return 'http://localhost:8788';
   }
 
   const fallbackBase = 'https://email-api.abravacom.com.br';
@@ -100,6 +100,9 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
   const [isBulkSending, setIsBulkSending] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
 
+  const [workspaceAccount, setWorkspaceAccount] = useState<string | null>(null);
+  const [isWorkspaceAuthOk, setIsWorkspaceAuthOk] = useState(false);
+
   // History
   const [historyItems, setHistoryItems] = useState<SendHistoryItem[]>(() => {
     try {
@@ -133,6 +136,26 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
         };
       });
   }, [recipientsText]);
+
+  // Fetch workspace status
+  useEffect(() => {
+    const fetchStatus = async () => {
+      try {
+        const resolvedBase = getResolvedApiBase(apiBase);
+        const response = await fetch(`${resolvedBase}/status`);
+        const data = await response.json();
+        if (data.ok && data.account) {
+          setWorkspaceAccount(data.account);
+          setIsWorkspaceAuthOk(true);
+          // Auto-fill recipient email with the workspace account
+          setEmail(data.account);
+        }
+      } catch (e) {
+        console.error('Error fetching email status:', e);
+      }
+    };
+    fetchStatus();
+  }, [apiBase]);
 
   // Recompute quota summary
   const quotaSummary = useMemo(() => {
@@ -174,7 +197,7 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
       const resolvedBase = getResolvedApiBase(apiBase);
       const resolvedApiKey = getResolvedApiKey(apiKey);
 
-      const response = await fetch(`${resolvedBase}/email/send`, {
+      const response = await fetch(`${resolvedBase}/send`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -247,7 +270,7 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
       const delay = Math.random() * (bulkMaxDelaySeconds - bulkMinDelaySeconds) + bulkMinDelaySeconds;
 
       try {
-        const response = await fetch(`${resolvedBase}/email/send`, {
+        const response = await fetch(`${resolvedBase}/send`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -323,6 +346,12 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
             <Mail className="h-5 w-5 text-slate-700" />
             <label className="text-sm font-bold text-slate-700">Qual é a sua plataforma de email?</label>
           </div>
+          {workspaceAccount && (
+            <div className="px-3 py-1 bg-green-50 text-green-700 border border-green-200 rounded-full text-xs font-semibold flex items-center gap-1">
+              <CheckCircle className="h-3 w-3" />
+              Conta CLI: {workspaceAccount}
+            </div>
+          )}
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {(Object.entries(emailProviders) as Array<[keyof typeof emailProviders, any]>).map(([type, config]) => (
@@ -384,14 +413,18 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
       {/* Single Email Send */}
       <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
         <h2 className="text-xl font-bold text-slate-900 mb-4">📧 Enviar Email Único</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <input
-            type="email"
-            placeholder="Email do destinatário"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+        <div className="mb-4">
+          {workspaceAccount ? (
+            <div className="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-200">
+              📤 Enviando para sua conta Workspace: <span className="font-bold text-blue-600">{workspaceAccount}</span>
+            </div>
+          ) : (
+             <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-200">
+              ⚠️ Workspace CLI não autenticado. Autentique no servidor para enviar.
+            </div>
+          )}
+        </div>
+        <div className="grid grid-cols-1 gap-4 mb-4">
           <input
             type="text"
             placeholder="Nome do destinatário"

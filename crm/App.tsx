@@ -121,6 +121,8 @@ export const App = () => {
   const [rawImportData, setRawImportData] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilters, setActiveFilters] = useState<{[key:string]: string[]}>({});
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
   const [showFilters, setShowFilters] = useState(true);
   const [filterFormId, setFilterFormId] = useState<string | null>(null);
   const [dashboardSearch, setDashboardSearch] = useState('');
@@ -1037,7 +1039,26 @@ export const App = () => {
       });
 
       byEmail.forEach(v => grouped.push(v));
-      return grouped.map(c => ({ ...c, total_simulations: String(c.companyId || '').split(';').map(s => s.trim()).filter(Boolean).length }));
+      return grouped.map(c => {
+          const ids = String(c.companyId || '').split(';').map(s => s.trim()).filter(Boolean);
+          const linkedSims = companies.filter(sim => ids.includes(String(sim.id)));
+          
+          let totalValue = 0;
+          let count = 0;
+          linkedSims.forEach(sim => {
+              const val = parseCurrencyNumber(sim.creditAmount);
+              if (Number.isFinite(val) && val > 0) {
+                  totalValue += val;
+                  count++;
+              }
+          });
+
+          return { 
+              ...c, 
+              total_simulations: ids.length,
+              avg_simulation_value: count > 0 ? (totalValue / count) : 0
+          };
+      });
   }, [enrichedContacts]);
 
   const filteredContacts = useMemo(() => {
@@ -1062,7 +1083,15 @@ export const App = () => {
         if (hasEmptyOption && isEmpty) return true;
         return itemValues.some(v => selectedOptions.includes(v));
       });
-      return matchesSearch && matchesFilters;
+
+      const matchesPrice = (() => {
+          const simValue = c.avg_simulation_value || 0;
+          const min = parseFloat(minPrice) || 0;
+          const max = parseFloat(maxPrice) || Infinity;
+          return simValue >= min && simValue <= max;
+      })();
+
+      return matchesSearch && matchesFilters && matchesPrice;
     });
     return sortData(data, sortConfig);
   }, [groupedContacts, searchTerm, activeFilters, filterFormId, sortConfig]);
@@ -1088,7 +1117,15 @@ export const App = () => {
          if (hasEmptyOption && isEmpty) return true;
          return itemValues.some(v => selectedOptions.includes(v));
       });
-      return matchesSearch && matchesFilters;
+
+      const matchesPrice = (() => {
+          const val = parseCurrencyNumber(c.creditAmount);
+          const min = parseFloat(minPrice) || 0;
+          const max = parseFloat(maxPrice) || Infinity;
+          return val >= min && val <= max;
+      })();
+
+      return matchesSearch && matchesFilters && matchesPrice;
     });
     return sortData(data, sortConfig);
   }, [companies, searchTerm, activeFilters, sortConfig]);
@@ -1466,7 +1503,14 @@ export const App = () => {
                                     const label = COMPANY_FIELDS.find(f => f.key === colKey)?.label || colKey.replace(/_/g, ' ');
                                     return (<FilterDropdown key={colKey} label={label} options={[...getUniqueValues(companies, colKey), "(Vazio)"]} selectedValues={activeFilters[colKey]} onChange={(val: string[]) => setActiveFilters({...activeFilters, [colKey]: val})} />)
                                 })}
-                                {Object.values(activeFilters).some((v: any) => v && v.length > 0) && (<button onClick={() => setActiveFilters({})} className="col-span-full text-center text-xs text-red-500 hover:underline mt-2">Limpar todos os filtros</button>)}
+                                <div className="flex flex-col gap-1 col-span-2 md:col-span-1">
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase">Faixa de Valor (R$)</label>
+                                    <div className="flex items-center gap-2">
+                                        <input type="number" placeholder="Min" className="w-full px-2 py-1.5 border border-gray-200 rounded text-xs" value={minPrice} onChange={e => setMinPrice(e.target.value)} />
+                                        <input type="number" placeholder="Max" className="w-full px-2 py-1.5 border border-gray-200 rounded text-xs" value={maxPrice} onChange={e => setMaxPrice(e.target.value)} />
+                                    </div>
+                                </div>
+                                {(Object.values(activeFilters).some((v: any) => v && v.length > 0) || minPrice || maxPrice) && (<button onClick={() => { setActiveFilters({}); setMinPrice(''); setMaxPrice(''); }} className="col-span-full text-center text-xs text-red-500 hover:underline mt-2">Limpar todos os filtros</button>)}
                             </div>
                           )}
                       </div>
@@ -1550,7 +1594,7 @@ export const App = () => {
                                                         </div>
                                                     ) : col === 'status' ? (
                                                         <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(cleanText(company.status))}`}>{cleanText(company.status)}</span>
-                                                    ) : col === 'creditAmount' ? (
+                                                    ) : col === 'creditAmount' || col === 'avg_simulation_value' ? (
                                                         <span className="text-sm text-gray-700 font-medium">{formatCurrencyBR(displayValue)}</span>
                                                     ) : (col === 'total_simulations') ? (<span className="text-sm text-gray-700 font-medium">{company.total_simulations || 0}</span>) : (col === 'tags' || col === 'mailing') ? (
                                                         <div className="flex flex-wrap gap-1">
@@ -1703,7 +1747,7 @@ export const App = () => {
                     </div>
                 )}
                 {currentPath === 'company-details' && ( <CompanyDetailsView company={selectedCompany} allCompanies={companies} campaigns={campaigns} onBack={() => setCurrentPath('companies')} onViewCompany={(c: any) => setSelectedCompany(c)} onEdit={() => { setEditingData(selectedCompany); setDataEntryModalOpen('company'); }} onDelete={handleDeleteCompany} detailFields={companyDetailColumns} onEnrich={() => startEnrichment([selectedCompany])} /> )}
-                {currentPath === 'contact-details' && ( <ContactDetailsView contact={selectedContact} companies={companies} onViewCompany={(comp: any) => { setSelectedCompany(comp); setCurrentPath('company-details'); }} onBack={() => setCurrentPath('contacts')} onEdit={() => { setEditingData(selectedContact); setDataEntryModalOpen('contact'); }} campaigns={campaigns} onDelete={handleDeleteContact} detailFields={contactDetailColumns} /> )}
+                {currentPath === 'contact-details' && ( <ContactDetailsView contact={selectedContact} companies={companies} onViewCompany={(comp: any) => { setSelectedCompany(comp); setCurrentPath('company-details'); }} onBack={() => setCurrentPath('contacts')} onEdit={() => { setEditingData(selectedContact); setDataEntryModalOpen('contact'); }} campaigns={campaigns} onDelete={handleDeleteContact} detailFields={contactDetailColumns} formatCurrencyBR={formatCurrencyBR} getStatusColor={getStatusColor} /> )}
                 {currentPath === 'campaigns' && ( <div className="space-y-6 animate-in fade-in zoom-in-95 duration-200"><Header title="Histórico de Campanhas" subtitle="Emails enviados via Outlook." rightElement={<button onClick={() => setCurrentPath('campaign-new')} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700">Nova Campanha</button>} /><div className="bg-white shadow-sm border border-gray-200 rounded-xl overflow-hidden"><table className="w-full text-left"><thead className="bg-gray-50 border-b border-gray-200"><tr><th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Assunto</th><th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Responsável</th><th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Destinatários</th><th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Data</th><th className="px-6 py-3 text-right"></th></tr></thead><tbody className="divide-y divide-gray-100">{campaigns.map(c => (<tr key={c.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => { setSelectedCampaign(c); setCurrentPath('campaign-details'); }}><td className="px-6 py-4 font-medium text-gray-900">{c.subject}</td><td className="px-6 py-4 text-sm text-gray-600">{c.responsible}</td><td className="px-6 py-4 text-sm text-gray-600">{c.recipientCount}</td><td className="px-6 py-4 text-sm text-gray-600">{c.date?.seconds ? new Date(c.date.seconds * 1000).toLocaleDateString('pt-BR') : '-'}</td><td className="px-6 py-4 text-right"><ChevronRight className="h-4 w-4 text-gray-300"/></td></tr>))}</tbody></table></div></div> )}
                 {currentPath === 'campaign-new' && ( <NewCampaignPage contacts={enrichedContacts} onBack={() => setCurrentPath('campaigns')} onSend={handleCreateCampaignPage} /> )}
                 {currentPath === 'campaign-details' && ( <CampaignDetailsView campaign={selectedCampaign} onBack={() => { setSelectedCampaign(null); setCurrentPath('campaigns'); }} onDelete={deleteCampaign} onReuse={handleReuseMailing} allContacts={contacts} /> )}

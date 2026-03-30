@@ -9,6 +9,7 @@ export const COMPANY_FIELDS = [
   { key: 'creditAmount', label: 'Valor Crédito' },
   { key: 'acceptWhatsApp', label: 'Aceita WhatsApp' },
   { key: 'status', label: 'Status' },
+  { key: 'origem', label: 'Origem do Lead', description: 'De onde veio este contato (Página/Formulário)' },
   { key: 'createdAt', label: 'Data Criação' },
   { key: 'updatedAt', label: 'Última Atualização' },
   { key: 'tags', label: 'Tags', description: 'Etiquetas separadas por ;' },
@@ -23,6 +24,8 @@ export const CONTACT_FIELDS = [
   { key: 'role', label: 'Cargo' },
   { key: 'department', label: 'Departamento' },
   { key: 'mailing', label: 'Mailings / Setores', description: 'Separe múltiplos valores com ; (ponto e vírgula)' },
+  { key: 'total_simulations', label: 'Qtd Simulações' },
+  { key: 'avg_simulation_value', label: 'Vlr Médio Simulado' },
   { key: 'updatedAt', label: 'Última Atualização' },
   { key: 'tags', label: 'Tags', description: 'Etiquetas separadas por ;' },
 ];

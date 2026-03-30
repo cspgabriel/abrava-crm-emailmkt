@@ -3,7 +3,7 @@ import { ArrowLeft, Edit2, Trash2, Sparkles, Mail as MailIcon, MessageCircle, Us
 import { AISummaryModal } from './AISummaryModal';
 import { safeRender, cleanArrayValue, getLinkedCompanies, cleanText } from '../utils/helpers';
 
-export const ContactDetailsView = ({ contact, onBack, onEdit, campaigns, onDelete, detailFields, companies, onViewCompany }: any) => {
+export const ContactDetailsView = ({ contact, onBack, onEdit, campaigns, onDelete, detailFields, companies, onViewCompany, formatCurrencyBR, getStatusColor }: any) => {
     const [activeTab, setActiveTab] = useState<'details'|'history'>('details');
     const [aiModalOpen, setAiModalOpen] = useState(false);
     
@@ -18,14 +18,17 @@ export const ContactDetailsView = ({ contact, onBack, onEdit, campaigns, onDelet
         if (!campaigns || !contact.email) return [];
         return campaigns.filter((c: any) => c.recipientEmails && c.recipientEmails.includes(contact.email));
     }, [campaigns, contact]);
+
     const formatWhatsapp = (phone: string) => {
         if (!phone) return '#';
         const cleaned = phone.replace(/\D/g, '');
         return `https://wa.me/55${cleaned}`;
     };
+
     const [showCompose, setShowCompose] = React.useState(false);
     const [tplMessage, setTplMessage] = React.useState('Olá {{name}}, tudo bem? Aqui é da empresa.');
     const [previewVars, setPreviewVars] = React.useState<{[k:string]:string}>({ name: contact.name || '' });
+    
     const formattedPreview = React.useMemo(() => {
         let out = tplMessage;
         Object.keys(previewVars).forEach(k => {
@@ -47,6 +50,7 @@ export const ContactDetailsView = ({ contact, onBack, onEdit, campaigns, onDelet
             alert('Erro ao enviar mensagem.');
         }
     };
+
     const [scheduledAt, setScheduledAt] = React.useState<string>('');
     const sendScheduledWhatsApp = async (toPhone: string, messageText: string, whenIso: string) => {
         try {
@@ -110,7 +114,6 @@ export const ContactDetailsView = ({ contact, onBack, onEdit, campaigns, onDelet
                    <button onClick={() => {
                         const ev = new CustomEvent('openWhatsAppSender', { detail: { phone: contact.phone || '', name: contact.name || '', message: '' } });
                         window.dispatchEvent(ev);
-                        // navigate to CRM main view if needed (sender is present on page)
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                     }} className="py-4 flex items-center justify-center gap-2 text-gray-700 font-bold hover:bg-blue-50 hover:text-blue-600 transition-colors"><MessageCircle className="h-5 w-5"/> +WhatsApp</button>
                  </div>
@@ -120,56 +123,82 @@ export const ContactDetailsView = ({ contact, onBack, onEdit, campaigns, onDelet
                  </div>
                  <div className="p-8">
                      {activeTab === 'details' && (
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                             <div className="space-y-8">
-                                 <div>
-                                     <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Informações de Contato</h3>
-                                     <div className="space-y-4">
-                                         <div className="flex items-center gap-4"><div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600"><MailIcon className="h-5 w-5"/></div><div><p className="text-xs text-gray-500 uppercase font-bold">Email</p><p className="text-gray-900 font-medium">{contact.email || '-'}</p></div></div>
-                                         <div className="flex items-center gap-4"><div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center text-green-600"><Phone className="h-5 w-5"/></div><div><p className="text-xs text-gray-500 uppercase font-bold">Telefone / WhatsApp</p><p className="text-gray-900 font-medium">{contact.phone || '-'}</p></div></div>
-                                         <div className="flex items-center gap-4">
-                                             <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600"><Tag className="h-5 w-5"/></div>
-                                             <div>
-                                                 <p className="text-xs text-gray-500 uppercase font-bold">Mailings / Setores</p>
-                                                 <div className="flex flex-wrap gap-1 mt-1">
-                                                     {cleanArrayValue(contact.mailing).length > 0 ? 
-                                                         cleanArrayValue(contact.mailing).map((m: string, i: number) => (
-                                                             <span key={i} className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-medium border border-purple-200">{m}</span>
-                                                         )) 
-                                                         : <p className="text-gray-900 font-medium">-</p>
-                                                     }
-                                                 </div>
-                                             </div>
-                                         </div>
-                                     </div>
-                                 </div>
-                                 <div>
-                                     <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Outros Dados</h3>
-                                     <div className="grid grid-cols-1 gap-3">
-                                         {fieldsToShow.map((key: string) => {
-                                             const val = contact[key];
-                                             if (val === undefined || val === null || val === '') return null;
-                                             return (<div key={key} className="p-3 bg-gray-50 rounded-lg"><p className="text-xs text-gray-400 uppercase font-bold mb-1">{key.replace(/_/g, ' ')}</p><p className="text-sm font-medium text-gray-800">{safeRender(val)}</p></div>)
-                                         })}
-                                     </div>
-                                 </div>
-                             </div>
-                             <div>
-                                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2 flex items-center gap-2"><MailIcon className="h-4 w-4"/> Histórico de Campanhas Recebidas ({contactCampaigns.length})</h3>
-                                 {contactCampaigns.length === 0 ? (
-                                     <div className="p-12 text-center bg-gray-50 rounded-xl border border-dashed border-gray-200"><MailIcon className="h-10 w-10 mx-auto mb-3 text-gray-300"/><p className="text-sm text-gray-500">Este contato ainda não recebeu nenhuma campanha.</p></div>
-                                 ) : (
-                                     <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
-                                         {contactCampaigns.map((camp: any) => (
-                                             <div key={camp.id} className="flex items-start gap-4 p-4 bg-white border border-gray-100 rounded-xl shadow-sm hover:shadow-md transition-all">
-                                                  <div className="mt-1 w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0"><CheckCircle className="h-4 w-4"/></div>
-                                                  <div><p className="font-bold text-gray-900 text-sm leading-tight mb-1">{camp.subject}</p><p className="text-xs text-gray-500 mb-1">Enviado por {camp.responsible}</p><p className="text-xs text-gray-400 flex items-center gap-1"><Calendar className="h-3 w-3"/> {new Date(camp.date?.seconds * 1000).toLocaleString()}</p></div>
-                                             </div>
-                                         ))}
-                                     </div>
-                                 )}
-                             </div>
-                         </div>
+                         <>
+                            <div className="mb-8 p-6 bg-blue-50 border border-blue-100 rounded-2xl">
+                                <h3 className="text-sm font-bold text-blue-800 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                    <Sparkles className="h-4 w-4"/> Ficha do Cliente (Médias)
+                                </h3>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                                    <div>
+                                        <p className="text-[10px] text-blue-400 font-bold uppercase mb-1">Valor Médio Simulado</p>
+                                        <p className="text-xl font-black text-blue-900">{typeof formatCurrencyBR === 'function' ? formatCurrencyBR(contact.avg_simulation_value || 0) : `R$ ${(contact.avg_simulation_value || 0).toLocaleString('pt-BR')}`}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] text-blue-400 font-bold uppercase mb-1">Total de Simulações</p>
+                                        <p className="text-xl font-black text-blue-900">{contact.total_simulations || 0}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] text-blue-400 font-bold uppercase mb-1">CPF</p>
+                                        <p className="text-xl font-black text-blue-900">{contact.cpf || contact.company_cpf || '-'}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] text-blue-400 font-bold uppercase mb-1">Lead de Origem</p>
+                                        <p className="text-sm font-bold text-blue-800 truncate" title={contact.origem || contact.source || '-'}>{contact.origem || contact.source || '-'}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="space-y-8">
+                                    <div>
+                                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Informações de Contato</h3>
+                                        <div className="space-y-4">
+                                            <div className="flex items-center gap-4"><div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600"><MailIcon className="h-5 w-5"/></div><div><p className="text-xs text-gray-500 uppercase font-bold">Email</p><p className="text-gray-900 font-medium">{contact.email || '-'}</p></div></div>
+                                            <div className="flex items-center gap-4"><div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center text-green-600"><Phone className="h-5 w-5"/></div><div><p className="text-xs text-gray-500 uppercase font-bold">Telefone / WhatsApp</p><p className="text-gray-900 font-medium">{contact.phone || '-'}</p></div></div>
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600"><Tag className="h-5 w-5"/></div>
+                                                <div>
+                                                    <p className="text-xs text-gray-500 uppercase font-bold">Mailings / Setores</p>
+                                                    <div className="flex flex-wrap gap-1 mt-1">
+                                                        {cleanArrayValue(contact.mailing).length > 0 ? 
+                                                            cleanArrayValue(contact.mailing).map((m: string, i: number) => (
+                                                                <span key={i} className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-medium border border-purple-200">{m}</span>
+                                                            )) 
+                                                            : <p className="text-gray-900 font-medium">-</p>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Outros Dados</h3>
+                                        <div className="grid grid-cols-1 gap-3">
+                                            {fieldsToShow.map((key: string) => {
+                                                const val = contact[key];
+                                                if (val === undefined || val === null || val === '') return null;
+                                                return (<div key={key} className="p-3 bg-gray-50 rounded-lg"><p className="text-xs text-gray-400 uppercase font-bold mb-1">{key.replace(/_/g, ' ')}</p><p className="text-sm font-medium text-gray-800">{safeRender(val)}</p></div>)
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2 flex items-center gap-2"><MailIcon className="h-4 w-4"/> Histórico de Campanhas Recebidas ({contactCampaigns.length})</h3>
+                                    {contactCampaigns.length === 0 ? (
+                                        <div className="p-12 text-center bg-gray-50 rounded-xl border border-dashed border-gray-200"><MailIcon className="h-10 w-10 mx-auto mb-3 text-gray-300"/><p className="text-sm text-gray-500">Este contato ainda não recebeu nenhuma campanha.</p></div>
+                                    ) : (
+                                        <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
+                                            {contactCampaigns.map((camp: any) => (
+                                                <div key={camp.id} className="flex items-start gap-4 p-4 bg-white border border-gray-100 rounded-xl shadow-sm hover:shadow-md transition-all">
+                                                     <div className="mt-1 w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0"><CheckCircle className="h-4 w-4"/></div>
+                                                     <div><p className="font-bold text-gray-900 text-sm leading-tight mb-1">{camp.subject}</p><p className="text-xs text-gray-500 mb-1">Enviado por {camp.responsible}</p><p className="text-xs text-gray-400 flex items-center gap-1"><Calendar className="h-3 w-3"/> {new Date(camp.date?.seconds * 1000).toLocaleString()}</p></div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </>
                      )}
 
                     {showCompose && (
@@ -186,7 +215,7 @@ export const ContactDetailsView = ({ contact, onBack, onEdit, campaigns, onDelet
                                     </div>
                                     <div>
                                         <label className="text-xs text-gray-400">Telefone destino</label>
-                                        <input className="w-full p-2 border rounded" value={contact.phone || ''} onChange={e=>{/* noop - use contact phone */}} disabled />
+                                        <input className="w-full p-2 border rounded" value={contact.phone || ''} onChange={e=>{/* noop */}} disabled />
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-1 gap-3 mb-3">
@@ -202,7 +231,6 @@ export const ContactDetailsView = ({ contact, onBack, onEdit, campaigns, onDelet
                                     <button onClick={() => setShowCompose(false)} className="px-3 py-2 rounded border">Fechar</button>
                                     <button onClick={() => {
                                         if (scheduledAt) {
-                                            // convert local datetime to ISO
                                             const iso = new Date(scheduledAt).toISOString();
                                             sendScheduledWhatsApp(contact.phone || '', formattedPreview, iso);
                                         } else {
@@ -213,6 +241,7 @@ export const ContactDetailsView = ({ contact, onBack, onEdit, campaigns, onDelet
                             </div>
                         </div>
                     )}
+
                      {activeTab === 'history' && (
                          <div className="max-w-2xl">
                              {linkedCompanies.length > 0 && (

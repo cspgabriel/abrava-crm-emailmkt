@@ -139,7 +139,7 @@ const ThankYou: React.FC = () => {
           Simulação <span className="text-emerald-600">Enviada!</span>
         </h1>
         <p className="text-slate-500 text-lg leading-relaxed">
-          Recebemos seus dados com sucesso. Nossa equipe já está analisando as melhores opções para o seu perfil.
+          Recebemos seus dados com sucesso. Nossa equipe já está analisando as melhores opções para o seu perfil. Para agilizar, sua pré-simulação foi enviada diretamente pelo WhatsApp.
         </p>
       </div>
 
@@ -153,17 +153,17 @@ const ThankYou: React.FC = () => {
 
         <div className="space-y-4 text-left">
           <h3 className="font-black text-slate-900 uppercase tracking-tight">Próximos Passos:</h3>
-          <ul className="space-y-3">
+          <ul className="space-y-4">
             {[
-              'Defina sua senha para acessar o Portal do Cliente.',
-              'Um consultor entrará em contato via WhatsApp em até 24h.',
-              'Acompanhe o status da sua análise em tempo real.'
+              'Vamos gerar um acesso exclusivo para você em nosso site em até 24h, nosso contato será por e-mail e WhatsApp, onde você poderá realizar todas as simulações tranquilamente em nosso portal',
+              'Redefina sua senha para acessar o portal do cliente.',
+              'Acompanhe o status da sua análise e tire dúvidas em tempo real'
             ].map((step, i) => (
               <li key={i} className="flex items-start space-x-3 text-sm text-slate-600">
-                <div className="w-5 h-5 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 flex-shrink-0 mt-0.5">
+                <div className="w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 flex-shrink-0 mt-0.5">
                   <span className="text-[10px] font-bold">{i + 1}</span>
                 </div>
-                <span>{step}</span>
+                <span className="leading-relaxed">{step}</span>
               </li>
             ))}
           </ul>
@@ -180,7 +180,7 @@ const ThankYou: React.FC = () => {
             <span className="text-xs uppercase tracking-widest">Ver Portal</span>
           </button>
           <a 
-            href="https://wa.me/5551989272794"
+            href="https://wa.me/5551986831896"
             target="_blank"
             rel="noopener noreferrer"
             className="bg-slate-900 hover:bg-slate-800 text-white font-black py-4 rounded-2xl flex items-center justify-center space-x-2 transition-all shadow-lg shadow-slate-900/20"

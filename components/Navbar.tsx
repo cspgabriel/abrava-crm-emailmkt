@@ -14,7 +14,8 @@ import BrandLogo from './BrandLogo';
 const primaryLinks = [
   { name: 'Inicio', path: '/' },
   { name: 'Cartas Contempladas', path: '/cartas' },
-  { name: 'Consorcio', path: '/consorcio' },
+  { name: 'Consórcio', path: '/consorcio' },
+  { name: 'Crédito com Garantia', path: '/garantia' },
   { name: 'Sobre', path: '/sobre' },
 ];
 

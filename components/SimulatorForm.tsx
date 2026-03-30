@@ -46,13 +46,15 @@ const SimulatorForm: React.FC<SimulatorFormProps> = ({ onSuccess }) => {
         type: category,
         mode: simulationMode,
         targetValue: targetValue,
+        creditAmount: simulationMode === 'credito' ? targetValue : 0, // Map to creditAmount for CRM
         userName: name,
         userCpf: cpf,
         userPhone: normalizePhone(phone),
         userEmail: normalizeEmail(email),
         acceptWhatsApp: true,
         createdAt: serverTimestamp(),
-        status: 'pending'
+        status: 'pending',
+        origem: `Simulação de ${category}`
       };
 
       const docRef = await addDoc(collection(db, 'simulations'), simulationData);
@@ -61,8 +63,8 @@ const SimulatorForm: React.FC<SimulatorFormProps> = ({ onSuccess }) => {
       localStorage.setItem('last_simulation_name', name);
       
       const modeText = simulationMode === 'credito' ? 'Valor do Crédito' : 'Valor da Parcela';
-      const msg = `Olá! Fiz uma simulação pelo site.%0A%0A*Objetivo:* ${category}%0A*${modeText}:* ${formatCurrency(targetValue)}%0A%0A*Nome:* ${name}%0A*CPF:* ${cpf}%0A*E-mail:* ${email}%0A*Telefone:* ${phone}`;
-      window.open(`https://api.whatsapp.com/send?phone=5521993165605&text=${msg}`, '_blank');
+      const msg = `Olá! Fiz uma simulação pelo site.%0A%0A*Objetivo:* ${category}%0A*${modeText}:* ${formatCurrency(targetValue)}%0A%0A*Nome:* ${name}%0A*CPF:* ${cpf}%0A*E-mail:* ${email}%0A*Telefone:* ${phone}%0A*Origem:* Simulação de ${category}`;
+      window.open(`https://api.whatsapp.com/send?phone=5551986831896&text=${msg}`, '_blank');
 
       if (onSuccess) {
         onSuccess(docRef.id);

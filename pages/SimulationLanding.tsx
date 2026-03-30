@@ -4,9 +4,13 @@ import { ShieldCheck } from 'lucide-react';
 import SimulatorForm from '../components/SimulatorForm';
 import ElisBioSection from '../components/ElisBioSection';
 import PartnerMarquee from '../components/PartnerMarquee';
+import { db } from '../firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const SimulationLanding: React.FC = () => {
+  const navigate = useNavigate();
   return (
     <div className="w-full">
       <section className="relative flex min-h-[72vh] w-full items-center justify-center overflow-hidden brand-shell pt-28 pb-12">
@@ -17,7 +21,7 @@ const SimulationLanding: React.FC = () => {
         <div className="relative z-10 w-full max-w-5xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
           <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="space-y-6 text-white">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.1] tracking-tighter italic">
-              Crédito com Garantia de Imóvel, <br />
+              Crédito com Garantia, <br />
               <span className="text-[var(--brand-gold)]">Sem Burocracia</span>
             </h1>
 
@@ -48,11 +52,35 @@ const SimulationLanding: React.FC = () => {
                   Preencha os dados e receba sua proposta
                 </p>
                 <form 
-                  onSubmit={(e) => {
+                  onSubmit={async (e) => {
                     e.preventDefault();
                     const fb = new FormData(e.currentTarget);
-                    const msg = `Olá! Tenho interesse em simular um *Crédito com Garantia*.%0A%0A*Nome:* ${fb.get('nome')}%0A*E-mail:* ${fb.get('email')}%0A*Celular:* ${fb.get('celular')}%0A*CPF:* ${fb.get('cpf')}`;
-                    window.open(`https://api.whatsapp.com/send?phone=5521993165605&text=${msg}`, '_blank');
+                    const name = fb.get('nome') as string;
+                    const email = fb.get('email') as string;
+                    const phone = fb.get('celular') as string;
+                    const cpf = fb.get('cpf') as string;
+                    
+                    try {
+                        await addDoc(collection(db, 'simulations'), {
+                            userName: name,
+                            userEmail: email.toLowerCase().trim(),
+                            userPhone: phone,
+                            userCpf: cpf,
+                            origem: "Simulação de Crédito com Garantia",
+                            type: "Crédito com Garantia",
+                            status: "pending",
+                            createdAt: serverTimestamp()
+                        });
+                        
+                        localStorage.setItem('last_simulation_email', email.toLowerCase().trim());
+                        localStorage.setItem('last_simulation_name', name);
+                    } catch (err) {
+                        console.error("Error saving lead:", err);
+                    }
+
+                    const msg = `Olá! Tenho interesse em simular um *Crédito com Garantia*.%0A%0A*Nome:* ${name}%0A*E-mail:* ${email}%0A*Celular:* ${phone}%0A*CPF:* ${cpf}%0A*Origem:* Crédito com Garantia`;
+                    window.open(`https://api.whatsapp.com/send?phone=5551986831896&text=${msg}`, '_blank');
+                    navigate('/obrigado');
                   }}
                   className="space-y-4 relative z-10"
                 >
@@ -80,15 +108,15 @@ const SimulationLanding: React.FC = () => {
       <section className="w-full brand-shell py-16 px-4 text-center shadow-sm relative z-10">
         <div className="max-w-7xl mx-auto space-y-16">
           <div className="text-left md:text-center space-y-4 max-w-3xl mx-auto">
-            <h2 className="text-3xl font-bold tracking-tight text-white">O que é Empréstimo com Garantia de Imóvel?</h2>
+            <h2 className="text-3xl font-bold tracking-tight text-white">O que é Empréstimo com Garantia?</h2>
             <p className="text-[rgba(244,236,223,0.85)] text-[1.05rem] leading-relaxed">
-              O Empréstimo com Garantia de Imóvel, também conhecido como Home Equity, é uma modalidade de crédito em que o proprietário utiliza um imóvel como garantia para obter recursos financeiros. Por contar com essa garantia real, as instituições financeiras oferecem taxas de juros significativamente mais baixas e prazos de pagamento mais longos em comparação a outras modalidades de crédito – o que proporciona condições mais vantajosas para quem busca crédito com planejamento e segurança.
+              O Empréstimo com Garantia é uma modalidade de crédito em que o proprietário utiliza um bem como garantia para obter recursos financeiros. Por contar com essa garantia real, as instituições financeiras oferecem taxas de juros significativamente mais baixas e prazos de pagamento mais longos em comparação a outras modalidades de crédito – o que proporciona condições mais vantajosas para quem busca crédito com planejamento e segurança.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-left mt-8">
             {[
-              { step: '1', title: 'Simulação', desc: 'Faça uma simulação informando o valor do imóvel que será usado como garantia e o valor que deseja de empréstimo' },
+              { step: '1', title: 'Simulação', desc: 'Faça uma simulação informando o valor do bem que será usado como garantia e o valor que deseja de empréstimo' },
               { step: '2', title: 'Análise', desc: 'Nosso time de especialistas avalia a sua proposta para encontrar a opção que se encaixa melhor para você' },
               { step: '3', title: 'Envio de documentos', desc: 'Reúna junto ao seu Personal Banker os documentos necessários para dar continuidade a proposta' },
               { step: '4', title: 'Contratação', desc: 'Finalize a sua contratação de forma simples e rápida' }

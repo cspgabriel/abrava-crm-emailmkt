@@ -23,6 +23,7 @@
     "xlsx": "latest"
   },
   "devDependencies": {
+    "@googleworkspace/cli": "^0.22.3",
     "@tailwindcss/vite": "^4.2.1",
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",

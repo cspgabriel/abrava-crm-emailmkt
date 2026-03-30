@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"path": "../../Elis Martins"
+		}
+	],
+	"settings": {
+		"git.ignoreLimitWarning": true
+	}
+}
