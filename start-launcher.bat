@@ -73,6 +73,10 @@ REM Start wpp-api-server in new PowerShell window
 echo 📂 Abrindo Terminal 2: WPP API Server...
 start "📱 WPP API Server (8787)" powershell -NoExit -Command "Set-Location '%~dp0\wpp-api-server'; Write-Host ''; Write-Host '════════════════════════════════════════════════════════════' -ForegroundColor Yellow; Write-Host '📱 WPP API SERVER - WhatsApp Integration' -ForegroundColor Yellow; Write-Host '════════════════════════════════════════════════════════════' -ForegroundColor Yellow; Write-Host ''; Write-Host '📍 Acesso: http://localhost:8787' -ForegroundColor Green; Write-Host '📍 Status: http://localhost:8787/status' -ForegroundColor Green; Write-Host '📍 QR Code: http://localhost:8787/qr' -ForegroundColor Green; Write-Host ''; Write-Host 'ℹ️  Use commands: npm run session:status, npm run session:clear, etc' -ForegroundColor Cyan; Write-Host ''; if (Test-Path node_modules) { npm run dev } else { npm install; npm run dev }"
 
+REM Open Email Marketing CRM page in default browser (separate window)
+echo 📂 Abrindo: Email Marketing (CRM) no navegador...
+start "📧 Email Marketing - CRM" "%~dp0start-email-marketing.bat"
+
 echo.
 echo ════════════════════════════════════════════════════════════
 echo ✅ Dois servidores foram iniciados!
