@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, MessageCircle, Mail, Info, CheckCircle2, X, FileText, Filter, SlidersHorizontal } from 'lucide-react';
 import { ContemplatedLetter } from '../types';
@@ -202,7 +202,7 @@ const ContemplatedLetters: React.FC = () => {
   };
 
   return (
-    <div className="relative space-y-6 pt-32 sm:pt-36 pb-28 px-3 sm:px-6 max-w-7xl mx-auto">
+    <div className="relative space-y-5 pt-28 pb-20 px-3 sm:px-6 max-w-7xl mx-auto">
 
       <div className="transition-all duration-300">
       {/* Page header */}
@@ -374,19 +374,19 @@ const ContemplatedLetters: React.FC = () => {
       </AnimatePresence>
 
       {/* Desktop table - Glassmorphism Premium Edition */}
-      <div className="hidden md:block overflow-hidden rounded-[2rem] border border-[#1b3152] bg-[rgba(13,34,56,0.65)] backdrop-blur-2xl shadow-[0_25px_80px_rgba(2,6,12,0.4)] relative mt-8">
+      <div className="hidden md:block overflow-hidden rounded-[2rem] border border-[#1b3152] bg-[rgba(13,34,56,0.65)] backdrop-blur-2xl shadow-[0_25px_80px_rgba(2,6,12,0.4)] relative mt-4">
         <div className="absolute inset-0 bg-gradient-to-b from-white/[0.03] to-transparent pointer-events-none" />
         <div className="overflow-x-auto relative z-10 w-full">
           <table className="w-full text-left border-collapse min-w-[900px]">
             <thead>
               <tr className="bg-[rgba(5,15,26,0.6)] border-b border-white/10 text-white/50 text-[10px] uppercase tracking-[0.25em] font-black">
-                <th className="px-6 py-5 w-14"><div className="w-5 h-5 border-2 border-white/20 rounded" /></th>
-                <th className="px-6 py-5">Tipo / Adm</th>
-                <th className="px-6 py-5">Valor Crédito</th>
-                <th className="px-6 py-5">Acesso Completo</th>
-                <th className="px-6 py-5">Saldo Devedor</th>
-                <th className="px-6 py-5">Status</th>
-                <th className="px-6 py-5 text-right w-36">Ações</th>
+                <th className="px-5 py-3 w-14"><div className="w-5 h-5 border-2 border-white/20 rounded" /></th>
+                <th className="px-5 py-3">Tipo / Adm</th>
+                <th className="px-5 py-3">Valor Crédito</th>
+                <th className="px-5 py-3">Acesso Completo</th>
+                <th className="px-5 py-3">Saldo Devedor</th>
+                <th className="px-5 py-3">Status</th>
+                <th className="px-5 py-3 text-right w-36">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.06]">
@@ -400,30 +400,30 @@ const ContemplatedLetters: React.FC = () => {
                   onClick={() => handleOpenFicha(letter)}
                   className={`cursor-pointer transition-all duration-300 group ${selectedIds.includes(letter.id) ? 'bg-[rgba(217,173,87,0.1)] hover:bg-[rgba(217,173,87,0.15)]' : 'hover:bg-white/[0.04]'}`}
                 >
-                  <td className="px-6 py-5">
+                  <td className="px-5 py-2.5">
                     <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${selectedIds.includes(letter.id) ? 'bg-[var(--brand-gold)] border-[var(--brand-gold)]' : 'border-white/20 group-hover:border-[var(--brand-gold-soft)]'}`}>
                       {selectedIds.includes(letter.id) ? <CheckCircle2 size={14} className="text-[#081728]" /> : null}
                     </div>
                   </td>
-                  <td className="px-6 py-5">
+                  <td className="px-5 py-2.5">
                     <span className="text-[var(--brand-gold-soft)] font-black uppercase tracking-widest text-xs">{letter.category}</span>
-                    <div className="text-[11px] text-white/70 font-semibold mt-1 tracking-wide truncate max-w-[180px]">{letter.administrator || letter.group}</div>
+                    <div className="text-[11px] text-white/70 font-semibold mt-0.5 tracking-wide truncate max-w-[180px]">{letter.administrator || letter.group}</div>
                   </td>
-                  <td className="px-6 py-5 text-white font-black text-lg tracking-tight">{formatCurrency(letter.credit)}</td>
-                  <td className="px-6 py-5 text-[var(--brand-ivory)] font-bold text-sm">
-                    <button onClick={(e) => { e.stopPropagation(); handleOpenFicha(letter); }} className="text-[10px] font-black border border-[var(--brand-gold)]/40 hover:border-[var(--brand-gold)] text-[var(--brand-gold-soft)] px-3 py-1.5 rounded-full hover:bg-[var(--brand-gold)]/10 transition-colors">VER ENTRADA</button>
+                  <td className="px-5 py-2.5 text-white font-black text-lg tracking-tight">{formatCurrency(letter.credit)}</td>
+                  <td className="px-5 py-2.5 text-[var(--brand-ivory)] font-bold text-sm">
+                    <button onClick={(e) => { e.stopPropagation(); handleOpenFicha(letter); }} className="text-[10px] font-black border border-[var(--brand-gold)]/40 hover:border-[var(--brand-gold)] text-[var(--brand-gold-soft)] px-3 py-1 rounded-full hover:bg-[var(--brand-gold)]/10 transition-colors">VER ENTRADA</button>
                   </td>
-                  <td className="px-6 py-5">
+                  <td className="px-5 py-2.5">
                     <div className="text-[var(--brand-ivory)] font-black text-sm">{letter.installmentsCount}x <span className="font-semibold opacity-60 ml-1 text-xs">{formatCurrency(letter.installmentValue)}</span></div>
                   </td>
-                  <td className="px-6 py-5">
-                    <span className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest border ${letter.status === 'available' ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/10' : letter.status === 'reserved' ? 'border-amber-500/30 text-amber-400 bg-amber-500/10' : 'border-white/20 text-white/40 bg-white/5'}`}>
+                  <td className="px-5 py-2.5">
+                    <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest border ${letter.status === 'available' ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/10' : letter.status === 'reserved' ? 'border-amber-500/30 text-amber-400 bg-amber-500/10' : 'border-white/20 text-white/40 bg-white/5'}`}>
                       {letter.status === 'available' ? 'Livre' : letter.status === 'reserved' ? 'Reservada' : 'Vendida'}
                     </span>
                   </td>
-                  <td className="px-6 py-5 text-right">
+                  <td className="px-5 py-2.5 text-right">
                     <div className="flex items-center justify-end gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
-                      <button onClick={(e) => { e.stopPropagation(); reserveLetter(letter.id); }} aria-label={letter.status === 'available' ? 'Reservar carta' : 'Carta reservada'} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg min-w-[90px] ${letter.status === 'available' ? 'bg-[linear-gradient(135deg,#d8ad5b_0%,#b98532_100%)] text-[#081728] border-none hover:scale-105' : 'bg-white/5 text-white/40 border border-white/10'}`}>
+                      <button onClick={(e) => { e.stopPropagation(); reserveLetter(letter.id); }} aria-label={letter.status === 'available' ? 'Reservar carta' : 'Carta reservada'} className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg min-w-[90px] ${letter.status === 'available' ? 'bg-[linear-gradient(135deg,#d8ad5b_0%,#b98532_100%)] text-[#081728] border-none hover:scale-105' : 'bg-white/5 text-white/40 border border-white/10'}`}>
                         {letter.status === 'available' ? 'Reservar' : 'Indisponível'}
                       </button>
                     </div>
@@ -436,7 +436,7 @@ const ContemplatedLetters: React.FC = () => {
       </div>
 
       {/* Mobile card grid - Dark Theme Premium */}
-      <div className="md:hidden grid grid-cols-1 gap-3 mt-6">
+      <div className="md:hidden grid grid-cols-1 gap-2 mt-4">
         {paginatedLetters.map((letter, i) => (
           <motion.div
             layout
@@ -445,12 +445,12 @@ const ContemplatedLetters: React.FC = () => {
             transition={{ duration: 0.4, delay: i * 0.05 }}
             key={letter.id}
             onClick={() => handleOpenFicha(letter)}
-            className={`relative overflow-hidden border rounded-[1.5rem] p-4 shadow-xl cursor-pointer transition-all ${selectedIds.includes(letter.id) ? 'border-[var(--brand-gold)] bg-[#0d2238]/90' : 'border-[#1b3152] bg-[rgba(13,34,56,0.65)] hover:bg-[rgba(13,34,56,0.8)]'} backdrop-blur-xl`}
+            className={`relative overflow-hidden border rounded-2xl p-3 shadow-xl cursor-pointer transition-all ${selectedIds.includes(letter.id) ? 'border-[var(--brand-gold)] bg-[#0d2238]/90' : 'border-[#1b3152] bg-[rgba(13,34,56,0.65)] hover:bg-[rgba(13,34,56,0.8)]'} backdrop-blur-xl`}
           >
             <div className="absolute inset-0 bg-gradient-to-tr from-white/[0.02] to-transparent pointer-events-none" />
             
             <div className="relative z-10">
-              <div className="flex justify-between items-start mb-3">
+              <div className="flex justify-between items-start mb-2">
                 <div>
                   <span className="px-3 py-1 text-[var(--brand-gold-soft)] bg-[var(--brand-gold)]/10 border border-[var(--brand-gold)]/20 text-[10px] font-black uppercase tracking-widest rounded-full shadow-sm">
                     {letter.category}
@@ -463,7 +463,7 @@ const ContemplatedLetters: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-y-2 gap-x-2 mb-4">
+              <div className="grid grid-cols-2 gap-y-1.5 gap-x-1.5 mb-2.5">
                 <div className="bg-black/20 p-2 rounded-xl border border-white/5">
                   <p className="text-[9px] text-white/50 uppercase font-black tracking-widest mb-0.5">Crédito</p>
                   <p className="font-black text-white text-sm tracking-tight">{formatCurrency(letter.credit)}</p>
