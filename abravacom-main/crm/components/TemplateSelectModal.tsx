@@ -7,6 +7,7 @@ interface TemplateSelectModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSelect: (template: EmailTemplate) => void;
+  onPreview?: (template: EmailTemplate | null) => void;
 }
 
 const getStoredTemplates = (): EmailTemplate[] => {
@@ -19,10 +20,9 @@ const getStoredTemplates = (): EmailTemplate[] => {
   return DEFAULT_TEMPLATES_LIST;
 };
 
-export const TemplateSelectModal: React.FC<TemplateSelectModalProps> = ({ isOpen, onClose, onSelect }) => {
+export const TemplateSelectModal: React.FC<TemplateSelectModalProps> = ({ isOpen, onClose, onSelect, onPreview }) => {
   const [templates, setTemplates] = useState<EmailTemplate[]>(getStoredTemplates());
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [previewId, setPreviewId] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -97,7 +97,10 @@ export const TemplateSelectModal: React.FC<TemplateSelectModalProps> = ({ isOpen
                 {/* Preview & Select */}
                 <div className="p-4 flex gap-2">
                   <button
-                    onClick={() => setPreviewId(previewId === template.id ? null : template.id)}
+                    onClick={() => {
+                      // delegate preview handling to parent (sidebar)
+                      onPreview?.(template);
+                    }}
                     className="flex-1 px-3 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm flex items-center justify-center gap-1 transition"
                   >
                     <Eye className="h-4 w-4" />
@@ -111,16 +114,7 @@ export const TemplateSelectModal: React.FC<TemplateSelectModalProps> = ({ isOpen
                   </button>
                 </div>
 
-                {/* Preview */}
-                {previewId === template.id && (
-                  <div className="border-t border-gray-100 p-4 bg-slate-50">
-                    <iframe
-                      srcDoc={template.htmlContent}
-                      className="w-full h-48 border border-slate-300 rounded-lg"
-                      title="Preview"
-                    />
-                  </div>
-                )}
+                {/* Inline preview removed — parent component shows a sidebar preview */}
               </div>
             ))}
           </div>

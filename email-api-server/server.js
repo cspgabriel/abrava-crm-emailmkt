@@ -46,22 +46,29 @@ function runGws(command, callback) {
  */
 app.get('/status', async (req, res) => {
   try {
-    runGws('gmail account', (error, stdout, stderr) => {
+    // Use `gws auth status` which returns JSON about the authenticated user
+    runGws('auth status', (error, stdout, stderr) => {
       if (error) {
-        return res.json({ 
-          ok: false, 
-          authenticated: false, 
+        return res.json({
+          ok: false,
+          authenticated: false,
           error: error.message,
           setupNeeded: true
         });
       }
 
-      const accountEmail = stdout.trim();
-      res.json({ 
-        ok: true, 
-        authenticated: true, 
-        account: accountEmail 
-      });
+      try {
+        const info = JSON.parse(stdout);
+        res.json({
+          ok: true,
+          authenticated: !!info.user,
+          account: info.user || null,
+          token_valid: info.token_valid || false,
+          client_config_error: info.client_config_error || null
+        });
+      } catch (parseErr) {
+        res.json({ ok: true, authenticated: false, error: 'invalid_auth_status_json', raw: stdout });
+      }
     });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
@@ -84,14 +91,24 @@ app.post('/send', async (req, res) => {
     if (provider === 'workspace' || provider === 'gmail') {
       const tempBodyFile = path.join(__dirname, `temp_email_${Date.now()}.html`);
       fs.writeFileSync(tempBodyFile, body, 'utf8');
-      const gwsCmd = `gmail send --to "${to}" --subject "${subject}" --body-file "${tempBodyFile}"`;
+      let bodyContent = '';
+      try {
+        bodyContent = fs.readFileSync(tempBodyFile, 'utf8');
+      } catch (e) {
+        bodyContent = body;
+      }
+
+      // Remove temp file early; we'll send body as inline HTML via --body + --html
+      try { fs.unlinkSync(tempBodyFile); } catch (e) {}
+
+      // Escape double-quotes for safe shell embedding
+      const escapedBody = bodyContent.replace(/"/g, '\\"').replace(/\r?\n/g, '\n');
+      const gwsCmd = `gmail +send --to "${to}" --subject "${subject}" --body "${escapedBody}" --html`;
 
       runGws(gwsCmd, (error, stdout, stderr) => {
-        try { fs.unlinkSync(tempBodyFile); } catch (e) {}
-
         if (error) {
             console.error(`[EMAIL] ❌ GWS Error: ${error.message}`);
-            return res.status(500).json({ ok: false, error: 'gws_failed', detail: error.message });
+            return res.status(500).json({ ok: false, error: 'gws_failed', detail: (stderr || error.message) });
         }
 
         console.log(`[EMAIL] ✅ Sent successfully: ${stdout}`);

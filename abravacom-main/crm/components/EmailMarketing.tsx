@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, History, Mail, Search, Info, Copy, Trash2, Package } from 'lucide-react';
+import { AlertTriangle, History, Mail, Search, Info, Copy, Trash2, Package, CheckCircle } from 'lucide-react';
 import { TemplateSelectModal } from './TemplateSelectModal';
 
 type SendHistoryItem = {
@@ -62,12 +62,8 @@ const emailProviders = {
 const RECOMMENDED_BULK_LIMIT = 100;
 
 const getResolvedApiBase = (apiBase = '') => {
-  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-    return 'http://localhost:8788';
-  }
-
-  const fallbackBase = 'https://email-api.abravacom.com.br';
   const envBase = ((import.meta as any)?.env?.VITE_EMAIL_API_URL || '').trim();
+  const fallbackBase = 'https://email-api.abravacom.com.br';
   return (apiBase || envBase || fallbackBase).replace(/\/$/, '');
 };
 
@@ -93,7 +89,11 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
   const [recipientsText, setRecipientsText] = useState('');
   const [bulkMinDelaySeconds, setBulkMinDelaySeconds] = useState(2);
   const [bulkMaxDelaySeconds, setBulkMaxDelaySeconds] = useState(5);
-  const [provider, setProvider] = useState<'gmail' | 'outlook' | 'workspace' | 'exchange'>('gmail');
+  // Platform selection removed — default to workspace
+  const [provider] = useState<'gmail' | 'outlook' | 'workspace' | 'exchange'>('workspace');
+  const [editorMode, setEditorMode] = useState<'visual' | 'code'>('visual');
+  const [previewTemplate, setPreviewTemplate] = useState<any | null>(null);
+  const [isPreviewSidebarOpen, setIsPreviewSidebarOpen] = useState(false);
   
   // Bulk send progress tracking
   const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0, success: 0, failed: 0 });
@@ -257,6 +257,12 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
     return () => { mounted = false; };
   }, [apiBase]);
 
+  // preview handler from TemplateSelectModal
+  const handlePreview = (template: any | null) => {
+    setPreviewTemplate(template);
+    setIsPreviewSidebarOpen(!!template);
+  };
+
   // Bulk send
   // (Bulk logic merged into unified handler)
 
@@ -276,33 +282,20 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
         <p className="text-slate-600">Envie campanhas de email em massa com controle de quotas</p>
       </div>
 
-      {/* Provider Selection */}
       <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-        <div className="flex items-center justify-between gap-3 mb-4">
+        <div className="flex items-center justify-between gap-3 mb-2">
           <div className="flex items-center gap-2">
             <Mail className="h-5 w-5 text-slate-700" />
-            <label className="text-sm font-bold text-slate-700">Qual é a sua plataforma de email?</label>
+            <label className="text-sm font-bold text-slate-700">Envio via Google Workspace (padrão)</label>
           </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {(Object.entries(emailProviders) as Array<[keyof typeof emailProviders, any]>).map(([type, config]) => (
-            <div key={type} className="relative">
-              <label className={`flex items-center gap-3 p-4 border cursor-pointer hover:bg-slate-50 transition rounded-lg ${provider === type ? `${config.borderColor} border-2` : 'border-slate-200'}`}>
-                <input
-                  type="radio"
-                  value={type}
-                  checked={provider === type}
-                  onChange={(e) => setProvider(e.target.value as any)}
-                  className="cursor-pointer w-4 h-4"
-                />
-                <div className="flex-1">
-                  <div className="font-semibold text-slate-900">{config.emoji} {config.name}</div>
-                  <div className="text-xs text-slate-600">{config.description}</div>
-                </div>
-              </label>
+          {serverAuth?.authenticated && serverAuth.account && (
+            <div className="px-3 py-1 bg-green-50 text-green-700 border border-green-200 rounded-full text-xs font-semibold flex items-center gap-1">
+              <CheckCircle className="h-3 w-3" />
+              Conta CLI: {serverAuth.account}
             </div>
-          ))}
+          )}
         </div>
+        <div className="text-sm text-slate-600">As mensagens serão enviadas usando a conta Workspace autenticada no servidor.</div>
       </div>
 
       {/* Quota Summary */}
@@ -374,13 +367,44 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
           🎨 Escolher Template
         </button>
 
-        <textarea
-          placeholder="Corpo do email (HTML suportado)"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          rows={6}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 font-mono text-sm mb-4"
-        />
+        <div className="mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="text-sm text-slate-700 font-medium">Corpo do email</div>
+            <div className="ml-auto flex gap-2">
+              <button onClick={() => setEditorMode('visual')} className={`px-3 py-1 rounded ${editorMode === 'visual' ? 'bg-blue-600 text-white' : 'bg-slate-100'}`}>Visual</button>
+              <button onClick={() => setEditorMode('code')} className={`px-3 py-1 rounded ${editorMode === 'code' ? 'bg-blue-600 text-white' : 'bg-slate-100'}`}>Código</button>
+            </div>
+          </div>
+          {editorMode === 'visual' ? (
+            <div className="border border-gray-300 rounded-lg mb-2">
+              <div className="p-2 flex gap-2 border-b bg-slate-50">
+                <button type="button" onClick={() => document.execCommand('bold')} className="px-2 py-1 bg-white rounded">B</button>
+                <button type="button" onClick={() => document.execCommand('italic')} className="px-2 py-1 bg-white rounded">I</button>
+                <button type="button" onClick={() => {
+                  const url = prompt('Inserir link (https://...)');
+                  if (url) document.execCommand('createLink', false, url);
+                }} className="px-2 py-1 bg-white rounded">Link</button>
+                <button type="button" onClick={() => document.execCommand('unlink')} className="px-2 py-1 bg-white rounded">Remover Link</button>
+                <button type="button" onClick={() => setMessage('')} className="px-2 py-1 bg-red-50 text-red-600 rounded">Limpar</button>
+              </div>
+              <div
+                contentEditable
+                suppressContentEditableWarning
+                onInput={(e) => setMessage((e.target as HTMLDivElement).innerHTML)}
+                className="p-4 min-h-[240px] max-h-[60vh] overflow-auto"
+                dangerouslySetInnerHTML={{ __html: message }}
+              />
+            </div>
+          ) : (
+            <textarea
+              placeholder="Corpo do email (HTML suportado)"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              rows={12}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 font-mono text-sm mb-4"
+            />
+          )}
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div>
@@ -456,7 +480,29 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
         isOpen={isTemplateModalOpen}
         onClose={() => setIsTemplateModalOpen(false)}
         onSelect={handleSelectTemplate}
+        onPreview={handlePreview}
       />
+
+      {/* Right-side preview sidebar */}
+      {isPreviewSidebarOpen && previewTemplate && (
+        <div className="fixed right-0 top-0 h-full w-96 bg-white border-l border-gray-200 shadow-lg z-50 flex flex-col">
+          <div className="p-4 border-b flex items-center justify-between">
+            <div>
+              <div className="text-sm text-slate-600">Preview</div>
+              <div className="font-semibold text-slate-900">{previewTemplate.name}</div>
+              <div className="text-xs text-slate-500">{previewTemplate.subject}</div>
+            </div>
+            <button onClick={() => handlePreview(null)} className="text-slate-500 hover:text-slate-700">Fechar</button>
+          </div>
+          <div className="p-4 overflow-auto flex-1">
+            <iframe srcDoc={previewTemplate.htmlContent} title="template-preview" className="w-full min-h-[200px] border rounded" />
+          </div>
+          <div className="p-3 border-t flex gap-2">
+            <button onClick={() => { handleSelectTemplate(previewTemplate); handlePreview(null); setIsTemplateModalOpen(false); }} className="flex-1 bg-green-600 text-white rounded-lg px-3 py-2">✅ Usar</button>
+            <button onClick={() => handlePreview(null)} className="flex-1 bg-slate-200 rounded-lg px-3 py-2">Fechar</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
