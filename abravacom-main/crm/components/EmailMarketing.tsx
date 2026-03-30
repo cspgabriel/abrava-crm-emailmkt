@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, History, Mail, Search, Info, Copy, Trash2, Package, CheckCircle } from 'lucide-react';
-import { TemplateSelectModal } from './TemplateSelectModal';
+
 
 type SendHistoryItem = {
   id: string;
@@ -92,14 +92,9 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
   // Platform selection removed — default to workspace
   const [provider] = useState<'gmail' | 'outlook' | 'workspace' | 'exchange'>('workspace');
   const [editorMode, setEditorMode] = useState<'visual' | 'code'>('visual');
-  const [previewTemplate, setPreviewTemplate] = useState<any | null>(null);
-  const [isPreviewSidebarOpen, setIsPreviewSidebarOpen] = useState(false);
-  
-  // Bulk send progress tracking
-  const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0, success: 0, failed: 0 });
-  const [isBulkSending, setIsBulkSending] = useState(false);
-  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [serverAuth, setServerAuth] = useState<{ authenticated: boolean; account?: string } | null>(null);
+
+  const visualEditorRef = React.useRef<HTMLIFrameElement | null>(null);
 
   // History
   const [historyItems, setHistoryItems] = useState<SendHistoryItem[]>(() => {
@@ -136,6 +131,15 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
         };
       });
   }, [recipientsText]);
+
+  useEffect(() => {
+    if (editorMode === 'visual' && visualEditorRef.current) {
+      const doc = visualEditorRef.current.contentDocument;
+      if (doc && doc.body.innerHTML !== message) {
+        doc.body.innerHTML = message || '<p><br></p>';
+      }
+    }
+  }, [message, editorMode]);
 
   // Recompute quota summary
   const quotaSummary = useMemo(() => {
@@ -231,13 +235,6 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
     else { setEmail(''); setName(''); }
   };
 
-  // Handle template selection
-  const handleSelectTemplate = (template: any) => {
-    setSubject(template.subject);
-    setMessage(template.htmlContent);
-    setStatus(`✅ Template "${template.name}" aplicado!`);
-  };
-
   // Check server auth status on mount
   useEffect(() => {
     let mounted = true;
@@ -257,12 +254,6 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
     return () => { mounted = false; };
   }, [apiBase]);
 
-  // preview handler from TemplateSelectModal
-  const handlePreview = (template: any | null) => {
-    setPreviewTemplate(template);
-    setIsPreviewSidebarOpen(!!template);
-  };
-
   // Bulk send
   // (Bulk logic merged into unified handler)
 
@@ -275,7 +266,7 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
   };
 
   return (
-    <div className="space-y-6 p-6 max-w-6xl mx-auto">
+    <div className="space-y-6 p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="space-y-2">
         <h1 className="text-3xl font-bold text-slate-900">📨 E-mail Marketing</h1>
@@ -359,13 +350,7 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 mb-4"
         />
 
-        <button
-          onClick={() => setIsTemplateModalOpen(true)}
-          className="w-full px-4 py-2 mb-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition flex items-center justify-center gap-2"
-        >
-          <Package className="h-4 w-4" />
-          🎨 Escolher Template
-        </button>
+        
 
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-2">
@@ -378,21 +363,32 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
           {editorMode === 'visual' ? (
             <div className="border border-gray-300 rounded-lg mb-2">
               <div className="p-2 flex gap-2 border-b bg-slate-50">
-                <button type="button" onClick={() => document.execCommand('bold')} className="px-2 py-1 bg-white rounded">B</button>
-                <button type="button" onClick={() => document.execCommand('italic')} className="px-2 py-1 bg-white rounded">I</button>
+                <button type="button" onClick={() => visualEditorRef.current?.contentDocument?.execCommand('bold')} className="px-2 py-1 bg-white rounded">B</button>
+                <button type="button" onClick={() => visualEditorRef.current?.contentDocument?.execCommand('italic')} className="px-2 py-1 bg-white rounded">I</button>
                 <button type="button" onClick={() => {
                   const url = prompt('Inserir link (https://...)');
-                  if (url) document.execCommand('createLink', false, url);
+                  if (url) visualEditorRef.current?.contentDocument?.execCommand('createLink', false, url);
                 }} className="px-2 py-1 bg-white rounded">Link</button>
-                <button type="button" onClick={() => document.execCommand('unlink')} className="px-2 py-1 bg-white rounded">Remover Link</button>
-                <button type="button" onClick={() => setMessage('')} className="px-2 py-1 bg-red-50 text-red-600 rounded">Limpar</button>
+                <button type="button" onClick={() => visualEditorRef.current?.contentDocument?.execCommand('unlink')} className="px-2 py-1 bg-white rounded">Remover Link</button>
+                <button type="button" onClick={() => {
+                  setMessage('');
+                  if (visualEditorRef.current?.contentDocument) visualEditorRef.current.contentDocument.body.innerHTML = '';
+                }} className="px-2 py-1 bg-red-50 text-red-600 rounded">Limpar</button>
               </div>
-              <div
-                contentEditable
-                suppressContentEditableWarning
-                onInput={(e) => setMessage((e.target as HTMLDivElement).innerHTML)}
-                className="p-4 min-h-[240px] max-h-[60vh] overflow-auto"
-                dangerouslySetInnerHTML={{ __html: message }}
+              <iframe
+                ref={visualEditorRef}
+                onLoad={(e) => {
+                  const doc = (e.target as HTMLIFrameElement).contentDocument;
+                  if (doc) {
+                    doc.designMode = 'on';
+                    doc.body.innerHTML = message;
+                    doc.body.addEventListener('input', () => {
+                      setMessage(doc.body.innerHTML);
+                    });
+                  }
+                }}
+                className="w-full min-h-[400px] border-0"
+                style={{ backgroundColor: 'white' }}
               />
             </div>
           ) : (
@@ -406,25 +402,14 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Plataforma</label>
-            <select value={provider} onChange={(e) => setProvider(e.target.value as any)} className="w-full px-4 py-2 border rounded-lg">
-              <option value="workspace">🏢 Google Workspace</option>
-              <option value="gmail">📧 Gmail Pessoal</option>
-              <option value="outlook">📨 Outlook</option>
-              <option value="exchange">🏢 Microsoft 365</option>
-            </select>
-          </div>
-          <div className="flex items-end">
-            <button
-              onClick={handleSendUnified}
-              disabled={loading}
-              className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition disabled:opacity-50"
-            >
-              {loading ? '⏳ Enviando...' : '📤 Enviar'}
-            </button>
-          </div>
+        <div className="mb-4">
+          <button
+            onClick={handleSendUnified}
+            disabled={loading}
+            className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-lg transition disabled:opacity-50"
+          >
+            {loading ? '⏳ Enviando...' : '📤 Enviar Email'}
+          </button>
         </div>
 
         <div className="text-sm text-slate-600">{recipients.length} destinatário(s) detectado(s)</div>
@@ -475,34 +460,6 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
         </div>
       </div>
 
-      {/* Template Selection Modal */}
-      <TemplateSelectModal
-        isOpen={isTemplateModalOpen}
-        onClose={() => setIsTemplateModalOpen(false)}
-        onSelect={handleSelectTemplate}
-        onPreview={handlePreview}
-      />
-
-      {/* Right-side preview sidebar */}
-      {isPreviewSidebarOpen && previewTemplate && (
-        <div className="fixed right-0 top-0 h-full w-96 bg-white border-l border-gray-200 shadow-lg z-50 flex flex-col">
-          <div className="p-4 border-b flex items-center justify-between">
-            <div>
-              <div className="text-sm text-slate-600">Preview</div>
-              <div className="font-semibold text-slate-900">{previewTemplate.name}</div>
-              <div className="text-xs text-slate-500">{previewTemplate.subject}</div>
-            </div>
-            <button onClick={() => handlePreview(null)} className="text-slate-500 hover:text-slate-700">Fechar</button>
-          </div>
-          <div className="p-4 overflow-auto flex-1">
-            <iframe srcDoc={previewTemplate.htmlContent} title="template-preview" className="w-full min-h-[200px] border rounded" />
-          </div>
-          <div className="p-3 border-t flex gap-2">
-            <button onClick={() => { handleSelectTemplate(previewTemplate); handlePreview(null); setIsTemplateModalOpen(false); }} className="flex-1 bg-green-600 text-white rounded-lg px-3 py-2">✅ Usar</button>
-            <button onClick={() => handlePreview(null)} className="flex-1 bg-slate-200 rounded-lg px-3 py-2">Fechar</button>
-          </div>
-        </div>
-      )}
-    </div>
+      </div>
   );
 };

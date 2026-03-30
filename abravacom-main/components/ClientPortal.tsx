@@ -11,7 +11,8 @@ import {
   LogOut,
   ChevronRight,
   DollarSign,
-  MessageCircle
+  MessageCircle,
+  Search
 } from 'lucide-react';
 import { auth, db } from '../firebase';
 import { collection, query, where, getDocs, orderBy, doc, updateDoc } from 'firebase/firestore';
@@ -25,6 +26,10 @@ const ClientPortal: React.FC = () => {
   const [letters, setLetters] = useState<ContemplatedLetter[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(auth.currentUser);
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   // Listen for auth state – important when navigating here directly after sign-up
   useEffect(() => {
@@ -75,7 +80,7 @@ const ClientPortal: React.FC = () => {
           query(collection(db, 'contemplated_letters'), where('status', '==', 'available'))
         );
         let letterData = letterSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ContemplatedLetter));
-        setLetters(letterData.slice(0, 10));
+        setLetters(letterData);
 
       } catch (error) {
         console.error('Error fetching portal data:', error);
@@ -100,7 +105,22 @@ const ClientPortal: React.FC = () => {
 
   // Derived flags for cross-promo banners
   const hasConsorcioSimulation = simulations.some(s => (s.type || '').toString().toLowerCase().includes('consorci'));
-  const hasAnyLetter = letters.length > 0;
+  const safeVal = (v: any) => {
+    if (!v) return 0;
+    if (typeof v === 'number') return v;
+    const clean = String(v).replace(/\D/g, '');
+    const num = Number(clean);
+    return isNaN(num) ? 0 : num;
+  };
+
+  const filteredLetters = letters.filter(l => 
+    (l.administrator || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (l.group || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (String(l.credit) || '').includes(searchTerm)
+  );
+
+  const totalPages = Math.ceil(filteredLetters.length / itemsPerPage);
+  const paginatedLetters = filteredLetters.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   if (!user) {
     return (
@@ -237,7 +257,7 @@ const ClientPortal: React.FC = () => {
           </div>
           <div>
             <p className="text-slate-400 text-[10px] uppercase font-black tracking-[0.2em] mb-1">Total das cotações</p>
-            <p className="text-3xl font-black text-slate-900">{formatCurrency(simulations.reduce((acc, curr) => acc + curr.creditAmount, 0))}</p>
+            <p className="text-3xl font-black text-slate-900">{formatCurrency(simulations.reduce((acc, curr) => acc + safeVal(curr.creditAmount) + safeVal((curr as any).targetValue), 0))}</p>
           </div>
         </div>
 
@@ -249,7 +269,7 @@ const ClientPortal: React.FC = () => {
           </div>
           <div>
             <p className="text-slate-400 text-[10px] uppercase font-black tracking-[0.2em] mb-1">Cartas Disponíveis Hoje</p>
-            <p className="text-3xl font-black text-slate-900">+100</p>
+            <p className="text-3xl font-black text-slate-900">{letters.length}</p>
           </div>
         </div>
       </div>
@@ -266,11 +286,11 @@ const ClientPortal: React.FC = () => {
               </div>
               <div className="text-center">
                 <div className="text-[10px] text-slate-400 uppercase">Total Cotações</div>
-                <div className="text-base font-black text-slate-900">{formatCurrency(simulations.reduce((acc, curr) => acc + curr.creditAmount, 0))}</div>
+                <div className="text-base font-black text-slate-900">{formatCurrency(simulations.reduce((acc, curr) => acc + safeVal(curr.creditAmount) + safeVal((curr as any).targetValue), 0))}</div>
               </div>
               <div className="text-center">
                 <div className="text-[10px] text-slate-400 uppercase">Cartas P/ Você</div>
-                <div className="text-base font-black text-emerald-600">+100</div>
+                <div className="text-base font-black text-emerald-600">{letters.length}</div>
               </div>
             </div>
           </div>
@@ -318,8 +338,12 @@ const ClientPortal: React.FC = () => {
               {simulations.slice(0, 5).map((sim) => (
                 <div key={sim.id} className="bg-white border border-slate-200 p-3 rounded-xl flex items-center justify-between text-sm">
                   <div>
-                    <div className="font-black text-slate-900">{sim.type} • {new Date(sim.createdAt?.seconds * 1000).toLocaleDateString('pt-BR')}</div>
-                    <div className="text-[12px] text-emerald-600 font-black">{formatCurrency(sim.creditAmount)}</div>
+                    <div className="font-black text-slate-900">{sim.type} • {sim.createdAt && (sim.createdAt as any).seconds ? new Date((sim.createdAt as any).seconds * 1000).toLocaleDateString('pt-BR') : 'Hoje'}</div>
+                    {safeVal(sim.creditAmount) + safeVal((sim as any).targetValue) > 0 ? (
+                      <div className="text-[12px] text-emerald-600 font-black">{formatCurrency(safeVal(sim.creditAmount) + safeVal((sim as any).targetValue))}</div>
+                    ) : (
+                      <div className="text-[12px] text-slate-400 font-black">Em Análise</div>
+                    )}
                   </div>
                   <div className="text-right text-[11px] font-black text-emerald-600">✓ Cotação Enviada</div>
                 </div>
@@ -328,23 +352,25 @@ const ClientPortal: React.FC = () => {
           )}
         </div>
 
-        {/* Compact Letters list */}
+        {/* Full Letters list with Pagination */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-black text-slate-900 uppercase tracking-tighter">Últimas Cartas</h3>
-            <a href="/cartas" className="bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-colors shadow-md shadow-emerald-600/20">
-              Ver Todas
-            </a>
+            <h3 className="text-lg font-black text-slate-900 uppercase tracking-tighter">Explorar Cartas ({filteredLetters.length})</h3>
+          </div>
+          
+          <div className="relative">
+             <input type="text" placeholder="Buscar por banco, grupo ou valor..." value={searchTerm} onChange={(e) => {setSearchTerm(e.target.value); setCurrentPage(1);}} className="w-full bg-white border border-slate-200 text-sm py-3 pl-4 pr-10 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm transition-all" />
+             <Search size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
           </div>
 
-          {letters.length === 0 ? (
+          {paginatedLetters.length === 0 ? (
             <div className="bg-white border border-dashed border-slate-200 p-6 rounded-2xl text-center">
               <FileText className="mx-auto text-slate-300" size={36} />
-              <p className="text-slate-500 font-medium mt-2">Nenhuma carta disponível no momento.</p>
+              <p className="text-slate-500 font-medium mt-2">Nenhuma carta encontrada.</p>
             </div>
           ) : (
             <div className="space-y-2">
-              {letters.map((letter) => (
+              {paginatedLetters.map((letter) => (
                 <div key={letter.id} className="bg-white border border-slate-100 p-3 rounded-xl flex items-center justify-between text-sm shadow-sm hover:border-emerald-200 transition-colors cursor-pointer" onClick={() => window.location.href='/cartas'}>
                   <div>
                     <div className="font-black text-slate-900 text-xs uppercase">{letter.administrator} • <span className="text-slate-500">{letter.category}</span></div>
@@ -355,6 +381,26 @@ const ClientPortal: React.FC = () => {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+          
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 pt-2">
+              <button 
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-white border border-slate-200 text-slate-600 disabled:opacity-50 hover:bg-slate-50"
+              >
+                Anterior
+              </button>
+              <span className="text-xs font-bold text-slate-400">{currentPage} de {totalPages}</span>
+              <button 
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-white border border-slate-200 text-slate-600 disabled:opacity-50 hover:bg-slate-50"
+              >
+                Próxima
+              </button>
             </div>
           )}
         </div>

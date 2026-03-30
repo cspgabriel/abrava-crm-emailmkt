@@ -18,7 +18,28 @@ export default defineConfig(({ mode }) => {
           ignored: ['**/.wwebjs_auth/**', '**/.whatsapp_profile/**', '**/launcher/**', '**/node_modules/**/.cache/**', '**/**/dist/**']
         },
         // Explicit allowlist for tunnel hosts used in testing and production
-        allowedHosts: ['abravacom.com.br', 'wpp-api.abravacom.com.br', 'localhost', '127.0.0.1']
+        allowedHosts: ['abravacom.com.br', 'wpp-api.abravacom.com.br', 'localhost', '127.0.0.1'],
+        // Proxy backend API calls during local development to avoid CORS issues
+        proxy: {
+          // Proxy /status and /send to the production API host (change target if needed)
+          '/status': {
+            target: 'https://wpp-api.abravacom.com.br',
+            changeOrigin: true,
+            secure: false,
+          },
+          '/send': {
+            target: 'https://wpp-api.abravacom.com.br',
+            changeOrigin: true,
+            secure: false,
+          },
+          // If your frontend calls /api/*, forward to the email-api server instead
+          '^/api': {
+            target: 'https://email-api.abravacom.com.br',
+            changeOrigin: true,
+            secure: false,
+            rewrite: (path) => path.replace(/^\/api/, '')
+          }
+        }
       },
       preview: {
         port: 3001,

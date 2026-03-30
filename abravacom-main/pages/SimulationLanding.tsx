@@ -1,15 +1,93 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, Loader2 } from 'lucide-react';
 import SimulatorForm from '../components/SimulatorForm';
 import ElisBioSection from '../components/ElisBioSection';
 import PartnerMarquee from '../components/PartnerMarquee';
-import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { db, auth } from '../firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 const SimulationLanding: React.FC = () => {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [nome, setNome] = useState('');
+  const [email, setEmail] = useState('');
+  const [celular, setCelular] = useState('');
+  const [cpf, setCpf] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const name = nome;
+
+      const user = auth.currentUser;
+      
+      const simulationData = {
+        userId: user?.uid || null,
+        type: 'Crédito com Garantia de Imóvel',
+        mode: 'credito',
+        userName: name,
+        userCpf: cpf,
+        userPhone: celular,
+        userEmail: email,
+        origem: 'Landing Page: Crédito com Garantia',
+        acceptWhatsApp: true,
+        createdAt: serverTimestamp(),
+        status: 'pending'
+      };
+
+      const docRef = await addDoc(collection(db, 'simulations'), simulationData);
+      
+      localStorage.setItem('last_simulation_email', email.toLowerCase());
+      localStorage.setItem('last_simulation_name', name);
+      
+      const msg = `Olá! Tenho interesse em simular um *Crédito com Garantia*.%0A%0A*Nome:* ${name}%0A*E-mail:* ${email}%0A*Celular:* ${celular}%0A*CPF:* ${cpf}`;
+
+      try {
+        const portalUrl = 'https://abravacom.com.br/login';
+        const htmlContent = `
+          <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #c99c4a;">Olá, ${name}!</h2>
+            <p>Sua simulação de <strong>Crédito com Garantia</strong> foi recebida com sucesso pela nossa equipe.</p>
+            <p>No nosso portal você pode acompanhar essa e outras simulações.</p>
+            <p><strong>Novo por aqui?</strong> É só acessar o portal e clicar em "Criar Conta" utilizando este mesmo e-mail (<strong>${email}</strong>) para criar sua senha. Se já tiver conta, basta fazer login.</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${portalUrl}" style="background-color: #081728; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Acessar Meu Portal</a>
+            </div>
+            <p style="color: #666; font-size: 12px; margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px;">
+              Equipe Abrava Consórcios
+            </p>
+          </div>
+        `.replace(/\n/g, '').replace(/\s{2,}/g, ' ');
+
+        fetch('https://email-api.abravacom.com.br/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: email,
+            recipientName: name,
+            subject: 'Simulação de Crédito com Garantia - Abrava Consórcios',
+            body: htmlContent,
+            provider: 'workspace'
+          })
+        }).catch(err => console.error('Erro ao enviar email automático:', err));
+      } catch (err) {}
+
+      window.open(`https://api.whatsapp.com/send?phone=5551986831896&text=${msg}`, '_blank');
+      navigate(`/obrigado?id=${docRef.id}`);
+
+    } catch (error) {
+      console.error('Error saving simulation:', error);
+      alert('Erro ao processar simulação. Verifique sua conexão.');
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <div className="w-full">
-      <section className="relative flex min-h-[72vh] w-full items-center justify-center overflow-hidden brand-shell pt-28 pb-12">
+      <section className="relative flex min-h-[85vh] w-full items-center justify-center overflow-hidden brand-shell pt-44 pb-20 mt-12 sm:mt-0">
         <div className="absolute inset-0 opacity-80" />
         <div className="absolute -top-16 -right-12 h-[28rem] w-[28rem] rounded-full bg-[rgba(214,174,94,0.25)] blur-[160px] opacity-60" />
         <div className="absolute -left-24 top-20 h-[28rem] w-[28rem] rounded-full bg-[rgba(5,9,19,0.65)] blur-[140px] opacity-90" />
@@ -39,7 +117,7 @@ const SimulationLanding: React.FC = () => {
 
           <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="flex justify-center lg:justify-end">
             <div className="w-full max-w-md transform sm:scale-100 scale-95">
-              <div className="bg-white rounded-3xl p-8 shadow-[0_30px_80px_rgba(0,0,0,0.3)] relative overflow-hidden">
+              <div className="bg-white rounded-[2rem] p-6 shadow-2xl relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-[#c99c4a] opacity-[0.08] rounded-bl-[100px]" />
                 <h3 className="text-2xl font-black uppercase tracking-tighter text-[#081728] mb-1">
                   Simule Agora
@@ -48,28 +126,48 @@ const SimulationLanding: React.FC = () => {
                   Preencha os dados e receba sua proposta
                 </p>
                 <form 
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    const fb = new FormData(e.currentTarget);
-                    const msg = `Olá! Tenho interesse em simular um *Crédito com Garantia*.%0A%0A*Nome:* ${fb.get('nome')}%0A*E-mail:* ${fb.get('email')}%0A*Celular:* ${fb.get('celular')}%0A*CPF:* ${fb.get('cpf')}`;
-                    window.open(`https://api.whatsapp.com/send?phone=5521993165605&text=${msg}`, '_blank');
-                  }}
+                  onSubmit={handleSubmit}
                   className="space-y-4 relative z-10"
                 >
                   <div>
-                    <input required name="nome" type="text" placeholder="Seu nome completo" className="w-full px-4 py-4 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-[var(--brand-gold)] focus:ring-1 focus:ring-[var(--brand-gold)] outline-none text-[#081728] font-medium transition" />
+                    <input value={nome} onChange={e => setNome(e.target.value)} required disabled={loading} name="nome" type="text" placeholder="Seu nome completo" className="w-full px-4 py-4 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-[var(--brand-gold)] focus:ring-1 focus:ring-[var(--brand-gold)] outline-none text-[#081728] font-medium transition" />
                   </div>
                   <div>
-                    <input required name="email" type="email" placeholder="Seu melhor e-mail" className="w-full px-4 py-4 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-[var(--brand-gold)] focus:ring-1 focus:ring-[var(--brand-gold)] outline-none text-[#081728] font-medium transition" />
+                    <input value={email} onChange={e => setEmail(e.target.value)} required disabled={loading} name="email" type="email" placeholder="Seu melhor e-mail" className="w-full px-4 py-4 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-[var(--brand-gold)] focus:ring-1 focus:ring-[var(--brand-gold)] outline-none text-[#081728] font-medium transition" />
                   </div>
                   <div>
-                    <input required name="celular" type="tel" placeholder="Seu Celular (WhatsApp)" className="w-full px-4 py-4 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-[var(--brand-gold)] focus:ring-1 focus:ring-[var(--brand-gold)] outline-none text-[#081728] font-medium transition" />
+                    <input 
+                      value={celular} 
+                      onChange={e => {
+                        const val = e.target.value.replace(/\D/g, '');
+                        let formatted = val;
+                        if (val.length <= 11) {
+                          formatted = val.replace(/^(\d{2})(\d)/g,"($1) $2").replace(/(\d)(\d{4})$/,"$1-$2");
+                        }
+                        setCelular(formatted);
+                      }} 
+                      maxLength={15}
+                      required disabled={loading} name="celular" type="tel" placeholder="Seu Celular (WhatsApp)" className="w-full px-4 py-4 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-[var(--brand-gold)] focus:ring-1 focus:ring-[var(--brand-gold)] outline-none text-[#081728] font-medium transition" 
+                    />
                   </div>
                   <div>
-                    <input required name="cpf" type="text" placeholder="CPF" className="w-full px-4 py-4 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-[var(--brand-gold)] focus:ring-1 focus:ring-[var(--brand-gold)] outline-none text-[#081728] font-medium transition" />
+                    <input 
+                      value={cpf} 
+                      onChange={e => {
+                        let val = e.target.value.replace(/\D/g, '');
+                        if (val.length <= 11) {
+                          val = val.replace(/(\d{3})(\d)/, '$1.$2');
+                          val = val.replace(/(\d{3})(\d)/, '$1.$2');
+                          val = val.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+                        }
+                        setCpf(val);
+                      }}
+                      maxLength={14}
+                      required disabled={loading} name="cpf" type="text" placeholder="CPF" className="w-full px-4 py-4 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-[var(--brand-gold)] focus:ring-1 focus:ring-[var(--brand-gold)] outline-none text-[#081728] font-medium transition" 
+                    />
                   </div>
-                  <button type="submit" className="w-full btn-primary py-5 rounded-2xl mt-4 font-black uppercase tracking-[0.2em] text-sm shadow-[0_14px_30px_rgba(185,133,50,0.35)] transition hover:brightness-105 active:scale-95 text-[#081728]">
-                    Simular Agora →
+                  <button type="submit" disabled={loading} className="w-full flex justify-center items-center gap-2 btn-primary py-5 rounded-2xl mt-4 font-black uppercase tracking-[0.2em] text-sm shadow-[0_14px_30px_rgba(185,133,50,0.35)] transition hover:brightness-105 active:scale-95 text-[#081728] disabled:opacity-70">
+                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Simular Agora →'}
                   </button>
                 </form>
               </div>

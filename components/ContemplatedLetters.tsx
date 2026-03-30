@@ -239,7 +239,7 @@ const ContemplatedLetters: React.FC = () => {
             <SlidersHorizontal size={18} />
             <span className="hidden sm:inline">Filtros</span>
           </button>
-          <select
+            <select
             aria-label="Filtro de situação"
             value={situationFilter}
             onChange={(e) => setSituationFilter(e.target.value as any)}
@@ -250,6 +250,24 @@ const ContemplatedLetters: React.FC = () => {
             <option value="reserved">Somente Reservadas</option>
             <option value="sold">Vendidas</option>
           </select>
+        </div>
+
+        {/* Category filters */}
+        <div className="flex flex-wrap gap-2 sm:gap-3 py-2 scrollbar-hide overflow-x-auto">
+          {[
+            { id: 'all', label: 'Ver Tudo' },
+            { id: 'Imóvel', label: 'Imóvel' },
+            { id: 'Veículo', label: 'Veículo' },
+            { id: 'Serviço', label: 'Serviço' }
+          ].map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setFilter(cat.id)}
+              className={`flex-shrink-0 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${filter === cat.id ? 'bg-[var(--brand-gold)] text-[#081728] shadow-[0_4px_15px_rgba(217,173,87,0.4)]' : 'bg-[#0a1526]/60 border border-[#1b3152] text-[var(--brand-ivory)]/70 hover:text-white hover:bg-[#122442]'}`}
+            >
+              {cat.label}
+            </button>
+          ))}
         </div>
 
         {/* Expanded filters */}
@@ -298,7 +316,7 @@ const ContemplatedLetters: React.FC = () => {
                 <option value="com-fundo">Com Ref. Garantia</option>
               </select>
               <div className="flex items-center gap-3 col-span-2 sm:col-span-1">
-                <button onClick={() => { setSearchTerm(''); setAdminSearch(''); setMinCredit(''); setMaxCredit(''); setMinParcel(''); setMaxParcel(''); setFundoRange('all'); setRefRange('all'); setSituationFilter('all'); }} className="flex-1 px-4 py-3 rounded-xl border border-white/10 text-[var(--brand-ivory)] text-sm font-bold hover:bg-white/5 transition-all">Limpar</button>
+                <button onClick={() => { setFilter('all'); setSearchTerm(''); setAdminSearch(''); setMinCredit(''); setMaxCredit(''); setMinParcel(''); setMaxParcel(''); setFundoRange('all'); setRefRange('all'); setSituationFilter('all'); }} className="flex-1 px-4 py-3 rounded-xl border border-white/10 text-[var(--brand-ivory)] text-sm font-bold hover:bg-white/5 transition-all">Limpar</button>
                 <button onClick={() => setShowFilters(false)} className="flex-1 px-4 py-3 rounded-xl bg-[linear-gradient(135deg,#d8ad5b_0%,#b98532_100%)] text-[#081728] text-sm font-black shadow-[0_4px_20px_rgba(185,133,50,0.3)] transition-transform hover:brightness-110 active:scale-95">Aplicar</button>
               </div>
             </div>

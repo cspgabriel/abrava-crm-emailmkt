@@ -79,7 +79,7 @@ const SimulatorForm: React.FC<SimulatorFormProps> = ({ onSuccess }) => {
     }
   };
 
-  const categories = ['Imóvel', 'Veículo', 'Serviços', 'Cartas Contempladas Disponíveis'];
+  const categories = ['Imóvel', 'Veículo', 'Serviço'];
 
   return (
     <div className="w-full max-w-md mx-auto relative z-20 my-8 lg:my-0">

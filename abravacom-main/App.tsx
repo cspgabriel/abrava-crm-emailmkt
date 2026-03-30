@@ -14,6 +14,7 @@ import WhatsAppModal from './components/WhatsAppModal';
 import AuthModal from './components/AuthModal';
 import FloatingWhatsApp from './components/FloatingWhatsApp';
 import Sobre from './pages/Sobre';
+import LoginPage from './pages/LoginPage';
 import { auth, db } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
@@ -83,6 +84,7 @@ function App() {
           <Route path="/simulacao" element={<SimulationLanding />} />
           <Route path="/consorcio" element={<ConsorcioLanding />} />
           <Route path="/obrigado" element={<ThankYou />} />
+          <Route path="/login" element={<LoginPage />} />
           <Route path="/acesso" element={<Navigate to="/admin-public" replace />} />
           <Route path="/admin-public" element={<AdminPortal />} />
           <Route path="/portal" element={<ClientPortal />} />

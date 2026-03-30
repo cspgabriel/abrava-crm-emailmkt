@@ -64,7 +64,14 @@ const RECOMMENDED_BULK_LIMIT = 100;
 const getResolvedApiBase = (apiBase = '') => {
   const envBase = ((import.meta as any)?.env?.VITE_EMAIL_API_URL || '').trim();
   const fallbackBase = 'https://email-api.abravacom.com.br';
-  return (apiBase || envBase || fallbackBase).replace(/\/$/, '');
+  const resolved = (apiBase || envBase || fallbackBase).replace(/\/$/, '');
+  
+  // When running on localhost, use the direct local email API URL to avoid CORS and proxy restarts
+  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+    return 'http://localhost:8788';
+  }
+  
+  return resolved;
 };
 
 const getResolvedApiKey = (apiKey = '') => {
@@ -102,6 +109,8 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
 
   const [workspaceAccount, setWorkspaceAccount] = useState<string | null>(null);
   const [isWorkspaceAuthOk, setIsWorkspaceAuthOk] = useState(false);
+
+  const visualEditorRef = React.useRef<HTMLDivElement | null>(null);
 
   // History
   const [historyItems, setHistoryItems] = useState<SendHistoryItem[]>(() => {
@@ -161,6 +170,15 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
     setPreviewTemplate(template);
     setIsPreviewSidebarOpen(!!template);
   };
+
+  useEffect(() => {
+    if (editorMode === 'visual' && visualEditorRef.current) {
+      // Keep the visible content in sync without forcing rerender cursor reset
+      if (visualEditorRef.current.innerHTML !== message) {
+        visualEditorRef.current.innerHTML = message || '<p><br></p>';
+      }
+    }
+  }, [message, editorMode]);
 
   // Recompute quota summary
   const quotaSummary = useMemo(() => {
@@ -337,7 +355,7 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
   };
 
   return (
-    <div className="space-y-6 p-6 max-w-6xl mx-auto">
+    <div className="space-y-6 p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="space-y-2">
         <h1 className="text-3xl font-bold text-slate-900">📨 E-mail Marketing</h1>
@@ -452,14 +470,20 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
                   if (url) document.execCommand('createLink', false, url);
                 }} className="px-2 py-1 bg-white rounded">Link</button>
                 <button type="button" onClick={() => document.execCommand('unlink')} className="px-2 py-1 bg-white rounded">Remover Link</button>
-                <button type="button" onClick={() => setMessage('')} className="px-2 py-1 bg-red-50 text-red-600 rounded">Limpar</button>
+                <button type="button" onClick={() => {
+                  setMessage('');
+                  if (visualEditorRef.current) visualEditorRef.current.innerHTML = '';
+                }} className="px-2 py-1 bg-red-50 text-red-600 rounded">Limpar</button>
               </div>
               <div
+                ref={visualEditorRef}
                 contentEditable
                 suppressContentEditableWarning
                 onInput={(e) => setMessage((e.target as HTMLDivElement).innerHTML)}
                 className="p-4 min-h-[240px] max-h-[60vh] overflow-auto"
-                dangerouslySetInnerHTML={{ __html: message }}
+                dir="ltr"
+                spellCheck={true}
+                style={{ direction: 'ltr', unicodeBidi: 'plaintext', textAlign: 'left', whiteSpace: 'pre-wrap' }}
               />
             </div>
           ) : (
@@ -628,7 +652,7 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
 
       {/* Right-side preview sidebar */}
       {isPreviewSidebarOpen && previewTemplate && (
-        <div className="fixed right-0 top-0 h-full w-full md:w-1/2 bg-white border-l border-gray-200 shadow-lg z-50 flex flex-col">
+        <div className="fixed right-0 top-0 h-full w-full md:w-3/4 bg-white border-l border-gray-200 shadow-lg z-50 flex flex-col">
           <div className="p-4 border-b flex items-center justify-between">
             <div>
               <div className="text-sm text-slate-600">Preview</div>
@@ -637,8 +661,13 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
             </div>
             <button onClick={() => handlePreview(null)} className="text-slate-500 hover:text-slate-700">Fechar</button>
           </div>
-          <div className="p-4 overflow-auto flex-1">
-            <iframe srcDoc={previewTemplate.htmlContent} title="template-preview" className="w-full h-full border rounded" />
+          <div className="flex-1 overflow-hidden flex flex-col">
+            <iframe
+              srcDoc={previewTemplate.htmlContent}
+              title="template-preview"
+              className="flex-1 w-full h-full border-0"
+              style={{ minHeight: 0 }}
+            />
           </div>
           <div className="p-3 border-t flex gap-2">
             <button onClick={() => { handleSelectTemplate(previewTemplate); handlePreview(null); setIsTemplateModalOpen(false); }} className="flex-1 bg-green-600 text-white rounded-lg px-3 py-2">✅ Usar</button>

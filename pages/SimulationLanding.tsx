@@ -21,7 +21,7 @@ const SimulationLanding: React.FC = () => {
         <div className="relative z-10 w-full max-w-5xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
           <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="space-y-6 text-white">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.1] tracking-tighter italic">
-              Crédito com Garantia, <br />
+              Crédito, <br />
               <span className="text-[var(--brand-gold)]">Sem Burocracia</span>
             </h1>
 
@@ -30,7 +30,7 @@ const SimulationLanding: React.FC = () => {
                 <strong>Pare de pagar juros altos sem necessidade.</strong>
               </p>
               <p>
-                Trabalhamos com os principais bancos e instituições financeiras do país, como Bradesco, Santander, Cashme, Creditas, C6 Bank e Inter, para buscar as melhores condições de crédito com garantia de acordo com o seu perfil.
+                Trabalhamos com os principais bancos e instituições financeiras do país, como Bradesco, Santander, Cashme, Creditas, C6 Bank e Inter, para buscar as melhores condições de crédito de acordo com o seu perfil.
               </p>
               <p>
                 Através da nossa plataforma, com apoio da Franq, analisamos seu cenário e apresentamos as opções mais vantajosas — com um processo rápido, seguro e sem burocracia.
@@ -66,8 +66,8 @@ const SimulationLanding: React.FC = () => {
                             userEmail: email.toLowerCase().trim(),
                             userPhone: phone,
                             userCpf: cpf,
-                            origem: "Simulação de Crédito com Garantia",
-                            type: "Crédito com Garantia",
+                            origem: "Simulação de Crédito",
+                            type: "Crédito",
                             status: "pending",
                             createdAt: serverTimestamp()
                         });
@@ -78,7 +78,7 @@ const SimulationLanding: React.FC = () => {
                         console.error("Error saving lead:", err);
                     }
 
-                    const msg = `Olá! Tenho interesse em simular um *Crédito com Garantia*.%0A%0A*Nome:* ${name}%0A*E-mail:* ${email}%0A*Celular:* ${phone}%0A*CPF:* ${cpf}%0A*Origem:* Crédito com Garantia`;
+                    const msg = `Olá! Tenho interesse em simular um *Crédito*.%0A%0A*Nome:* ${name}%0A*E-mail:* ${email}%0A*Celular:* ${phone}%0A*CPF:* ${cpf}%0A*Origem:* Crédito`;
                     window.open(`https://api.whatsapp.com/send?phone=5551986831896&text=${msg}`, '_blank');
                     navigate('/obrigado');
                   }}
@@ -108,10 +108,8 @@ const SimulationLanding: React.FC = () => {
       <section className="w-full brand-shell py-16 px-4 text-center shadow-sm relative z-10">
         <div className="max-w-7xl mx-auto space-y-16">
           <div className="text-left md:text-center space-y-4 max-w-3xl mx-auto">
-            <h2 className="text-3xl font-bold tracking-tight text-white">O que é Empréstimo com Garantia?</h2>
-            <p className="text-[rgba(244,236,223,0.85)] text-[1.05rem] leading-relaxed">
-              O Empréstimo com Garantia é uma modalidade de crédito em que o proprietário utiliza um bem como garantia para obter recursos financeiros. Por contar com essa garantia real, as instituições financeiras oferecem taxas de juros significativamente mais baixas e prazos de pagamento mais longos em comparação a outras modalidades de crédito – o que proporciona condições mais vantajosas para quem busca crédito com planejamento e segurança.
-            </p>
+            <h2 className="text-3xl font-bold tracking-tight text-white">O que é Crédito Inteligente?</h2>
+              O Crédito no modelo de consórcio ou garantia é uma modalidade em que você utiliza o potencial de bens ou planejamento para obter recursos financeiros. As instituições financeiras oferecem taxas de juros significativamente mais baixas e prazos de pagamento mais longos – o que proporciona condições mais vantajosas para quem busca crédito com planejamento e segurança.
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-left mt-8">

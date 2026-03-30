@@ -65,6 +65,60 @@ export const ContactDetailsView = ({ contact, onBack, onEdit, campaigns, onDelet
         }
     };
 
+    const [showEmailCompose, setShowEmailCompose] = React.useState(false);
+    const [emailSubject, setEmailSubject] = React.useState('Contato da empresa');
+    const [emailMessage, setEmailMessage] = React.useState('Olá {{name}}, tudo bem?');
+
+    const formattedEmailPreview = React.useMemo(() => {
+        let out = emailMessage;
+        Object.keys(previewVars).forEach(k => {
+            const re = new RegExp(`{{\\s*${k}\\s*}}`, 'gi');
+            out = out.replace(re, previewVars[k] || '');
+        });
+        return out;
+    }, [emailMessage, previewVars]);
+
+    const sendEmailAPI = async (toEmail: string, subject: string, messageHtml: string) => {
+        try {
+            let envBase = ((import.meta as any)?.env?.VITE_EMAIL_API_URL || '').trim();
+            const fallbackBase = 'https://email-api.abravacom.com.br';
+            let resolvedBase = (envBase || fallbackBase).replace(/\/$/, '');
+            if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+                resolvedBase = 'http://localhost:8788';
+            }
+            
+            const sendUrl = `${resolvedBase}/send`;
+            const apiKey = ((import.meta as any)?.env?.VITE_EMAIL_API_KEY || localStorage.getItem('crm_email_api_key') || '').trim();
+
+            const response = await fetch(sendUrl, { 
+                method: 'POST', 
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(apiKey && { 'x-api-key': apiKey })
+                }, 
+                body: JSON.stringify({ 
+                    to: toEmail, 
+                    recipientName: contact.name || '', 
+                    subject: subject, 
+                    body: messageHtml.replace(/\n/g, '<br/>'),
+                    provider: 'workspace' 
+                }) 
+            });
+            
+            const data = await response.json();
+
+            if (data.ok) {
+                setShowEmailCompose(false);
+                alert('E-mail enviado via API com sucesso!');
+            } else {
+                alert(`Erro ao enviar email: ${data.error || 'Falha desconhecida'}`);
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Erro ao enviar e-mail via API.');
+        }
+    };
+
     const fieldsToShow = useMemo(() => {
         return detailFields || [];
     }, [detailFields]);
@@ -108,14 +162,14 @@ export const ContactDetailsView = ({ contact, onBack, onEdit, campaigns, onDelet
                          <button onClick={() => onDelete(contact.id)} className="p-2 bg-red-500/80 hover:bg-red-500 rounded-lg text-white transition-colors" title="Excluir"><Trash2 className="h-5 w-5"/></button>
                      </div>
                  </div>
-                 <div className="grid grid-cols-2 border-b border-gray-200 divide-x divide-gray-200">
-                     <a href={`mailto:${contact.email}`} className="py-4 flex items-center justify-center gap-2 text-gray-700 font-bold hover:bg-gray-50 hover:text-blue-600 transition-colors"><MailIcon className="h-5 w-5"/> Enviar Email</a>
-                    <button onClick={() => setShowCompose(true)} className="py-4 flex items-center justify-center gap-2 text-gray-700 font-bold hover:bg-green-50 hover:text-green-600 transition-colors"><MessageCircle className="h-5 w-5"/> Enviar WhatsApp</button>
+                 <div className="grid grid-cols-3 border-b border-gray-200 divide-x divide-gray-200">
+                     <button onClick={() => setShowEmailCompose(true)} className="py-4 flex items-center justify-center gap-2 text-gray-700 font-bold hover:bg-gray-50 hover:text-blue-600 transition-colors"><MailIcon className="h-5 w-5"/> Enviar Email API</button>
+                    <a href={formatWhatsapp(contact.phone)} target="_blank" rel="noreferrer" className="py-4 flex items-center justify-center gap-2 text-gray-700 font-bold hover:bg-green-50 hover:text-green-600 transition-colors"><MessageCircle className="h-5 w-5"/> WhatsApp CHAT</a>
                    <button onClick={() => {
                         const ev = new CustomEvent('openWhatsAppSender', { detail: { phone: contact.phone || '', name: contact.name || '', message: '' } });
                         window.dispatchEvent(ev);
                         window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }} className="py-4 flex items-center justify-center gap-2 text-gray-700 font-bold hover:bg-blue-50 hover:text-blue-600 transition-colors"><MessageCircle className="h-5 w-5"/> +WhatsApp</button>
+                    }} className="py-4 flex items-center justify-center gap-2 text-gray-700 font-bold hover:bg-blue-50 hover:text-blue-600 transition-colors"><MessageCircle className="h-5 w-5"/> Enviar Mensagens API</button>
                  </div>
                  <div className="flex border-b border-gray-200 px-8 bg-gray-50">
                      <button onClick={() => setActiveTab('details')} className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'details' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}><UserPlus className="h-4 w-4"/> Detalhes & Campanhas</button>
@@ -202,7 +256,7 @@ export const ContactDetailsView = ({ contact, onBack, onEdit, campaigns, onDelet
                      )}
 
                     {showCompose && (
-                        <div className="fixed inset-0 z-[1000] flex items-center justify-center">
+                        <div className="fixed inset-0 z-[1000] flex items-center justify-center border-box">
                             <div className="absolute inset-0 bg-black/40" onClick={() => setShowCompose(false)} />
                             <div className="relative bg-white rounded-2xl p-6 w-[520px] shadow-lg z-10">
                                 <h4 className="font-bold mb-2">Enviar WhatsApp — Pré-visualização</h4>
@@ -237,6 +291,54 @@ export const ContactDetailsView = ({ contact, onBack, onEdit, campaigns, onDelet
                                             sendQuickWhatsApp(contact.phone || '', formattedPreview);
                                         }
                                     }} className="px-4 py-2 bg-emerald-600 text-white rounded">{scheduledAt ? 'Agendar' : 'Enviar'}</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {showEmailCompose && (
+                        <div className="fixed inset-0 z-[1000] flex items-center justify-center border-box">
+                            <div className="absolute inset-0 bg-black/40" onClick={() => setShowEmailCompose(false)} />
+                            <div className="relative bg-white rounded-2xl p-6 w-[520px] shadow-lg z-10">
+                                <h4 className="font-bold mb-4 flex items-center gap-2"><MailIcon className="h-5 w-5" /> Enviar E-mail via API</h4>
+                                
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Destinatário</label>
+                                        <input className="w-full p-2 border rounded bg-gray-50 mb-2" value={contact.email || ''} disabled />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Assunto do E-mail</label>
+                                        <input className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500" value={emailSubject} onChange={e=>setEmailSubject(e.target.value)} placeholder="Ex: Proposta Comercial" />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Corpo da Mensagem (use {'{{name}}'})</label>
+                                        <textarea value={emailMessage} onChange={e=>setEmailMessage(e.target.value)} rows={5} className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 font-sans" />
+                                    </div>
+
+                                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                        <label className="text-xs text-slate-500 block mb-1">Pré-visualização</label>
+                                        <div className="text-sm text-gray-800 whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: formattedEmailPreview.replace(/\n/g, '<br/>') }}></div>
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end gap-2 mt-6">
+                                    <button onClick={() => setShowEmailCompose(false)} className="px-4 py-2 rounded-lg border text-gray-600 hover:bg-gray-50">Cancelar</button>
+                                    <button onClick={() => {
+                                        if (!contact.email) {
+                                            alert('Contato não possui e-mail cadastrado.');
+                                            return;
+                                        }
+                                        if (!emailSubject || !emailMessage) {
+                                            alert('Preencha assunto e mensagem.');
+                                            return;
+                                        }
+                                        sendEmailAPI(contact.email, emailSubject, formattedEmailPreview);
+                                    }} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2">
+                                        <MailIcon className="h-4 w-4" /> Enviar Agora
+                                    </button>
                                 </div>
                             </div>
                         </div>

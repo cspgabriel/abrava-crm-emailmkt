@@ -14,6 +14,26 @@ const ThankYou: React.FC = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [userExists, setUserExists] = useState<boolean | null>(null);
+
+  React.useEffect(() => {
+    const checkEmail = async () => {
+      if (auth.currentUser) {
+        setUserExists(true);
+        return;
+      }
+      const email = localStorage.getItem('last_simulation_email');
+      if (email) {
+        try {
+          const methods = await fetchSignInMethodsForEmail(auth, email.toLowerCase());
+          setUserExists(methods && methods.length > 0);
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    };
+    checkEmail();
+  }, []);
 
   const handleVerPortal = async () => {
     if (auth.currentUser) {
@@ -155,9 +175,9 @@ const ThankYou: React.FC = () => {
           <h3 className="font-black text-slate-900 uppercase tracking-tight">Próximos Passos:</h3>
           <ul className="space-y-3">
             {[
-              'Defina sua senha para acessar o Portal do Cliente.',
-              'Um consultor entrará em contato via WhatsApp em até 24h.',
-              'Acompanhe o status da sua análise em tempo real.'
+              'Vamos gerar um acesso exclusivo para você em nosso site em até 24h, nosso contato será por e-mail e WhatsApp, onde você poderá realizar todas as simulações tranquilamente em nosso portal.',
+              'Redefina sua senha para acessar o portal do cliente.',
+              'Acompanhe o status da sua análise e tire dúvidas em tempo real.'
             ].map((step, i) => (
               <li key={i} className="flex items-start space-x-3 text-sm text-slate-600">
                 <div className="w-5 h-5 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 flex-shrink-0 mt-0.5">
@@ -172,15 +192,17 @@ const ThankYou: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
           <button 
             onClick={handleVerPortal}
-            title="Ver Portal"
-            aria-label="Ver Portal"
+            title={auth.currentUser ? "Ver Portal" : (userExists ? "Fazer Login" : "Criar Senha e Acessar")}
+            aria-label={auth.currentUser ? "Ver Portal" : (userExists ? "Fazer Login" : "Criar Senha e Acessar")}
             className="bg-emerald-600 hover:bg-emerald-700 text-white font-black py-4 rounded-2xl flex items-center justify-center space-x-2 transition-all shadow-lg shadow-emerald-600/20"
           >
             <LayoutDashboard size={18} />
-            <span className="text-xs uppercase tracking-widest">Ver Portal</span>
+            <span className="text-xs uppercase tracking-widest">
+              {auth.currentUser ? "Ver Portal" : (userExists ? "Fazer Login" : "Criar Senha e Acessar")}
+            </span>
           </button>
           <a 
-            href="https://wa.me/5551989272794"
+            href="https://wa.me/5551986831896"
             target="_blank"
             rel="noopener noreferrer"
             className="bg-slate-900 hover:bg-slate-800 text-white font-black py-4 rounded-2xl flex items-center justify-center space-x-2 transition-all shadow-lg shadow-slate-900/20"

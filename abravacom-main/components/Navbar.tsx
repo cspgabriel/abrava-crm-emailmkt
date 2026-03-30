@@ -22,11 +22,7 @@ const primaryLinks = [
   { name: 'Sobre', path: '/sobre' },
 ];
 
-const utilityLinks = [
-  { name: 'Portal', path: '/portal', icon: LayoutDashboard },
-  { name: 'Admin', path: '/admin-public', icon: ShieldCheck },
-  { name: 'Acesso', path: '/acesso', icon: LogIn },
-];
+const utilityLinks: any[] = [];
 
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -100,25 +96,7 @@ const Navbar: React.FC = () => {
           </div>
 
           <div className="hidden items-center gap-3 xl:flex">
-            <div className="rounded-full border border-[rgba(217,173,87,0.14)] bg-[rgba(255,255,255,0.03)] p-1">
-              {utilityLinks.map((link) => {
-                const Icon = link.icon;
-                return (
-                  <Link
-                    key={link.path}
-                    to={link.path}
-                    className={`inline-flex items-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.22em] transition-all ${
-                      isActive(link.path)
-                        ? 'bg-[rgba(217,173,87,0.14)] text-[var(--brand-gold-soft)]'
-                        : 'text-white/85 hover:text-white'
-                    }`}
-                  >
-                    <Icon size={14} />
-                    {link.name}
-                  </Link>
-                );
-              })}
-            </div>
+
 
             {user ? (
               <div className="flex items-center gap-2">
@@ -193,22 +171,7 @@ const Navbar: React.FC = () => {
                 ))}
               </div>
 
-              <div className="mt-4 grid gap-2">
-                {utilityLinks.map((link) => {
-                  const Icon = link.icon;
-                  return (
-                    <Link
-                      key={link.path}
-                      to={link.path}
-                      onClick={() => setIsOpen(false)}
-                      className="flex items-center gap-3 rounded-2xl bg-white/5 px-4 py-4 text-sm font-semibold uppercase tracking-[0.22em] text-[rgba(244,236,223,0.78)] transition hover:bg-white/10"
-                    >
-                      <Icon size={16} />
-                      {link.name}
-                    </Link>
-                  );
-                })}
-              </div>
+
 
               <div className="mt-5 grid gap-3">
                 {user ? (

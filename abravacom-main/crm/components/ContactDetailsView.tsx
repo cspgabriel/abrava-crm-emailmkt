@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { ArrowLeft, Edit2, Trash2, Sparkles, Mail as MailIcon, MessageCircle, UserPlus, History as HistoryIcon, Phone, Building2, CheckCircle, Calendar, Tag } from 'lucide-react';
+import { ArrowLeft, Edit2, Trash2, Sparkles, Mail as MailIcon, MessageCircle, UserPlus, History as HistoryIcon, Phone, Building2, CheckCircle, Calendar, Tag, ExternalLink } from 'lucide-react';
+import { db, auth } from '../../firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { AISummaryModal } from './AISummaryModal';
 import { safeRender, cleanArrayValue, getLinkedCompanies, cleanText } from '../utils/helpers';
 
@@ -18,15 +20,10 @@ export const ContactDetailsView = ({ contact, onBack, onEdit, campaigns, onDelet
         if (!campaigns || !contact.email) return [];
         return campaigns.filter((c: any) => c.recipientEmails && c.recipientEmails.includes(contact.email));
     }, [campaigns, contact]);
-    const formatWhatsapp = (phone: string) => {
-        if (!phone) return '#';
-        const cleaned = phone.replace(/\D/g, '');
-        return `https://wa.me/55${cleaned}`;
-    };
-    const [showCompose, setShowCompose] = React.useState(false);
-    const [tplMessage, setTplMessage] = React.useState('Olá {{name}}, tudo bem? Aqui é da empresa.');
-    const [previewVars, setPreviewVars] = React.useState<{[k:string]:string}>({ name: contact.name || '' });
-    const formattedPreview = React.useMemo(() => {
+    const [showCompose, setShowCompose] = useState(false);
+    const [tplMessage, setTplMessage] = useState('Olá {{name}}, tudo bem? Aqui é da empresa.');
+    const [previewVars, setPreviewVars] = useState<{[k:string]:string}>({ name: contact.name || '' });
+    const formattedPreview = useMemo(() => {
         let out = tplMessage;
         Object.keys(previewVars).forEach(k => {
             const re = new RegExp(`{{\\s*${k}\\s*}}`, 'gi');
@@ -35,29 +32,130 @@ export const ContactDetailsView = ({ contact, onBack, onEdit, campaigns, onDelet
         return out;
     }, [tplMessage, previewVars]);
 
+    const formatWhatsapp = (phone: string) => {
+        if (!phone) return '#';
+        let clean = phone.replace(/\D/g, '');
+        // If it starts with 55 and has 12-13 digits, it's already full
+        if (clean.length >= 12 && clean.startsWith('55')) {
+            return `https://wa.me/${clean}`;
+        }
+        // If it's a Brazilian mobile (10 or 11 digits), prepend 55
+        return `https://wa.me/55${clean}`;
+    };
+
+    const normalizeWhatsAppPhone = (phone: string) => {
+        let clean = (phone || '').replace(/\D/g, '');
+        if (clean.length === 11 && !clean.startsWith('55')) clean = '55' + clean;
+        if (clean.length === 10 && !clean.startsWith('55')) clean = '55' + clean;
+        return clean;
+    };
+
+    const getAuthHeaders = () => {
+        const apiKey = (import.meta as any)?.env?.VITE_WPP_API_KEY || (import.meta as any)?.env?.VITE_X_API_KEY || localStorage.getItem('crm_api_key') || '';
+        return {
+            'Content-Type': 'application/json',
+            ...(apiKey ? { 'X-API-Key': apiKey, 'x-api-key': apiKey } : {})
+        };
+    };
+
+    const registerCampaign = async (subject: string, body: string, recipient: string, type: 'email' | 'whatsapp') => {
+        try {
+            await addDoc(collection(db, 'campaigns'), {
+                subject: `${type.toUpperCase()}: ${subject}`,
+                body: body,
+                recipientEmails: [contact.email].filter(Boolean),
+                recipientPhones: type === 'whatsapp' ? [recipient] : [],
+                date: serverTimestamp(),
+                responsible: auth.currentUser?.email || 'CRM Admin',
+                status: 'sent',
+                provider: type === 'email' ? 'workspace' : 'whatsapp-api'
+            });
+        } catch (e) {
+            console.error('Failed to register campaign:', e);
+        }
+    };
+
     const sendQuickWhatsApp = async (toPhone: string, messageText: string) => {
         try {
-            const resolvedBase = ((import.meta as any)?.env?.VITE_API_WPP || '').replace(/\/$/, '') || '';
-            const sendUrl = `${resolvedBase || ''}/send`;
-            await fetch(sendUrl, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ phone: toPhone.replace(/\D/g,''), message: messageText, name: contact.name }) });
-            setShowCompose(false);
-            alert('Mensagem enviada (verifique o servidor para confirmar).');
-        } catch (e) {
+            const resolvedBase = ((import.meta as any)?.env?.VITE_API_WPP || '').replace(/\/$/, '') || 'https://wpp-api.abravacom.com.br';
+            const sendUrl = `${resolvedBase}/send`;
+            const cleanPhone = normalizeWhatsAppPhone(toPhone);
+            
+            const resp = await fetch(sendUrl, { 
+                method: 'POST', 
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ phone: cleanPhone, message: messageText, name: contact.name }) 
+            });
+            const data = await resp.json();
+
+            if (data?.ok) {
+                await registerCampaign('Mensagem Direct', messageText, cleanPhone, 'whatsapp');
+                setShowCompose(false);
+                alert('Mensagem enviada com sucesso!');
+            } else {
+                throw new Error(data?.error || 'Erro desconhecido');
+            }
+        } catch (e: any) {
             console.error(e);
-            alert('Erro ao enviar mensagem.');
+            alert('Erro ao enviar mensagem: ' + (e?.message || e));
         }
     };
     const [scheduledAt, setScheduledAt] = React.useState<string>('');
     const sendScheduledWhatsApp = async (toPhone: string, messageText: string, whenIso: string) => {
         try {
-            const resolvedBase = ((import.meta as any)?.env?.VITE_API_WPP || '').replace(/\/$/, '') || '';
-            const sendUrl = `${resolvedBase || ''}/schedule`;
-            await fetch(sendUrl, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ phone: toPhone.replace(/\D/g,''), message: messageText, name: contact.name, scheduledAt: whenIso }) });
-            setShowCompose(false);
-            alert('Envio agendado (verifique o servidor para confirmar).');
+            const resolvedBase = ((import.meta as any)?.env?.VITE_API_WPP || '').replace(/\/$/, '') || 'https://wpp-api.abravacom.com.br';
+            const sendUrl = `${resolvedBase}/schedule`;
+            const cleanPhone = normalizeWhatsAppPhone(toPhone);
+
+            const resp = await fetch(sendUrl, { 
+                method: 'POST', 
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ phone: cleanPhone, message: messageText, name: contact.name, scheduledAt: whenIso }) 
+            });
+            const data = await resp.json();
+
+            if (data?.ok) {
+                await registerCampaign('Agendado', messageText, cleanPhone, 'whatsapp');
+                setShowCompose(false);
+                alert('Envio agendado com sucesso!');
+            } else {
+                throw new Error(data?.error || 'Erro desconhecido');
+            }
+        } catch (e: any) {
+            console.error(e);
+            alert('Erro ao agendar mensagem: ' + (e?.message || e));
+        }
+    };
+
+    const [showComposeEmail, setShowComposeEmail] = React.useState(false);
+    const [emailSubject, setEmailSubject] = React.useState('Contato | Abrava');
+    const [emailBody, setEmailBody] = React.useState('Olá {{name}}, ');
+
+    const sendQuickEmail = async (toEmail: string, subject: string, bodyText: string) => {
+        try {
+            const sendUrl = 'https://email-api.abravacom.com.br/send';
+            
+            // Format for one line HTML securely
+            let safeHtml = bodyText.replace(/\n/g, '<br>').replace(/"/g, '&quot;');
+            safeHtml = `<div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; padding: 20px;">${safeHtml}</div>`;
+
+            await fetch(sendUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    to: toEmail, 
+                    recipientName: contact.name, 
+                    subject, 
+                    body: safeHtml, 
+                    provider: 'workspace' 
+                })
+            });
+            await registerCampaign(subject, bodyText, toEmail, 'email');
+            setShowComposeEmail(false);
+            alert('E-mail enviado via API com sucesso!');
         } catch (e) {
             console.error(e);
-            alert('Erro ao agendar mensagem.');
+            alert('Erro ao enviar e-mail pela API.');
         }
     };
 
@@ -104,15 +202,18 @@ export const ContactDetailsView = ({ contact, onBack, onEdit, campaigns, onDelet
                          <button onClick={() => onDelete(contact.id)} className="p-2 bg-red-500/80 hover:bg-red-500 rounded-lg text-white transition-colors" title="Excluir"><Trash2 className="h-5 w-5"/></button>
                      </div>
                  </div>
-                 <div className="grid grid-cols-2 border-b border-gray-200 divide-x divide-gray-200">
-                     <a href={`mailto:${contact.email}`} className="py-4 flex items-center justify-center gap-2 text-gray-700 font-bold hover:bg-gray-50 hover:text-blue-600 transition-colors"><MailIcon className="h-5 w-5"/> Enviar Email</a>
-                    <button onClick={() => setShowCompose(true)} className="py-4 flex items-center justify-center gap-2 text-gray-700 font-bold hover:bg-green-50 hover:text-green-600 transition-colors"><MessageCircle className="h-5 w-5"/> Enviar WhatsApp</button>
-                   <button onClick={() => {
-                        const ev = new CustomEvent('openWhatsAppSender', { detail: { phone: contact.phone || '', name: contact.name || '', message: '' } });
-                        window.dispatchEvent(ev);
-                        // navigate to CRM main view if needed (sender is present on page)
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }} className="py-4 flex items-center justify-center gap-2 text-gray-700 font-bold hover:bg-blue-50 hover:text-blue-600 transition-colors"><MessageCircle className="h-5 w-5"/> +WhatsApp</button>
+                 <div className="grid grid-cols-1 md:grid-cols-4 border-b border-gray-200 divide-y md:divide-y-0 md:divide-x divide-gray-200">
+                     <a href={`mailto:${contact.email}`} className="py-4 flex items-center justify-center gap-2 text-gray-700 font-bold hover:bg-red-50 hover:text-red-600 transition-colors group"><MailIcon className="h-5 w-5 text-red-500 group-hover:scale-110 transition-transform"/> Email (Outlook)</a>
+                     <button onClick={() => setShowComposeEmail(true)} className="py-4 flex items-center justify-center gap-2 text-gray-700 font-bold hover:bg-amber-50 hover:text-[#c99c4a] transition-colors group"><MailIcon className="h-5 w-5 text-[#c99c4a] group-hover:scale-110 transition-transform"/> Email (API)</button>
+                     <a href={formatWhatsapp(contact.phone)} target="_blank" rel="noreferrer" className="py-4 flex items-center justify-center gap-2 text-gray-700 font-bold hover:bg-green-50 hover:text-green-600 transition-colors group">
+                        <MessageCircle className="h-5 w-5 text-green-500 group-hover:scale-110 transition-transform"/> 
+                        WhatsApp (Web)
+                        <ExternalLink className="w-3 h-3 text-gray-300" />
+                     </a>
+                     <button onClick={() => setShowCompose(true)} className="py-4 flex items-center justify-center gap-2 text-gray-700 font-bold hover:bg-emerald-50 hover:text-emerald-600 transition-colors group">
+                        <MessageCircle className="h-5 w-5 text-emerald-600 group-hover:scale-110 transition-transform"/> 
+                        WhatsApp (API)
+                     </button>
                  </div>
                  <div className="flex border-b border-gray-200 px-8 bg-gray-50">
                      <button onClick={() => setActiveTab('details')} className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'details' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}><UserPlus className="h-4 w-4"/> Detalhes & Campanhas</button>
@@ -208,7 +309,46 @@ export const ContactDetailsView = ({ contact, onBack, onEdit, campaigns, onDelet
                                         } else {
                                             sendQuickWhatsApp(contact.phone || '', formattedPreview);
                                         }
-                                    }} className="px-4 py-2 bg-emerald-600 text-white rounded">{scheduledAt ? 'Agendar' : 'Enviar'}</button>
+                                    }} className="px-5 py-2 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-all shadow-md">{scheduledAt ? 'Agendar' : 'Enviar WhatsApp'}</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {showComposeEmail && (
+                        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
+                            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowComposeEmail(false)} />
+                            <div className="relative bg-white rounded-3xl p-8 w-full max-w-[500px] shadow-2xl z-10 border border-amber-100 flex flex-col">
+                                <div className="absolute top-0 left-0 w-full h-1.5 bg-[#c99c4a]" />
+                                <h4 className="text-xl font-black mb-6 text-slate-900 flex items-center gap-2 italic">
+                                    <MailIcon className="w-6 h-6 text-[#c99c4a]"/> 
+                                    ENVIAR <span className="text-[#c99c4a]">DIRECT EMAIL</span>
+                                </h4>
+                                
+                                <div className="space-y-4 flex-1">
+                                    <div className="space-y-1">
+                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Assunto</label>
+                                         <input value={emailSubject} onChange={e=>setEmailSubject(e.target.value)} className="w-full p-4 border border-slate-200 rounded-2xl bg-slate-50 focus:bg-white focus:border-[#c99c4a] outline-none font-bold text-slate-700 transition-all font-sans" placeholder="Assunto da mensagem" />
+                                    </div>
+                                    <div className="space-y-1">
+                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Mensagem (HTML)</label>
+                                         <textarea value={emailBody} onChange={e=>setEmailBody(e.target.value)} rows={6} className="w-full p-4 border border-slate-200 rounded-2xl bg-slate-50 focus:bg-white focus:border-[#c99c4a] outline-none font-medium text-slate-700 transition-all resize-none font-sans" placeholder="Olá {{name}}, ..." />
+                                         <p className="text-[10px] text-slate-400 mt-2 ml-1 italic font-medium">Use {'{{name}}'} para substituir pelo nome.</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end gap-3 mt-8">
+                                     <button onClick={() => setShowComposeEmail(false)} className="px-6 py-3 rounded-2xl border border-slate-200 font-bold text-slate-500 hover:bg-slate-50 transition-all">Fechar</button>
+                                     <button 
+                                        onClick={() => {
+                                            let out = emailBody;
+                                            Object.keys(previewVars).forEach(k => {
+                                                out = out.replace(new RegExp(`{{\\s*${k}\\s*}}`, 'gi'), previewVars[k] || '');
+                                            });
+                                            sendQuickEmail(contact.email || '', emailSubject, out);
+                                        }} 
+                                        className="px-8 py-3 bg-[#c99c4a] text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-amber-200 hover:bg-[#b88c3d] transition-all"
+                                     >Enviar Agora →</button>
                                 </div>
                             </div>
                         </div>
