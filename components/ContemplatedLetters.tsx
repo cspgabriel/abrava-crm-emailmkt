@@ -97,7 +97,7 @@ const ContemplatedLetters: React.FC = () => {
     };
 
     const matchesCredit = checkRange(letter.credit, minCredit, maxCredit);
-    const matchesParcel = checkRange(letter.installmentsCount, minParcel, maxParcel);
+    const matchesParcel = checkRange(letter.installmentValue, minParcel, maxParcel);
     const matchesFundo = checkFundoRef(letter.fundoComum || 0, fundoRange);
     const matchesRef = checkFundoRef(letter.refGarantia || 0, refRange);
 
@@ -302,8 +302,8 @@ const ContemplatedLetters: React.FC = () => {
                 <input type="number" placeholder="Máx. Crédito" value={maxCredit} onChange={(e) => setMaxCredit(e.target.value)} className="w-1/2 px-4 py-3 rounded-xl bg-[#08101a] border border-[#1f385c] text-[var(--brand-ivory)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-gold)] placeholder-white/30" />
               </div>
               <div className="flex gap-3">
-                <input type="number" placeholder="Mín. Parc" value={minParcel} onChange={(e) => setMinParcel(e.target.value)} className="w-1/2 px-4 py-3 rounded-xl bg-[#08101a] border border-[#1f385c] text-[var(--brand-ivory)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-gold)] placeholder-white/30" />
-                <input type="number" placeholder="Máx. Parc" value={maxParcel} onChange={(e) => setMaxParcel(e.target.value)} className="w-1/2 px-4 py-3 rounded-xl bg-[#08101a] border border-[#1f385c] text-[var(--brand-ivory)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-gold)] placeholder-white/30" />
+                <input type="number" placeholder="Mín. Valor Parcela" value={minParcel} onChange={(e) => setMinParcel(e.target.value)} className="w-1/2 px-4 py-3 rounded-xl bg-[#08101a] border border-[#1f385c] text-[var(--brand-ivory)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-gold)] placeholder-white/30" />
+                <input type="number" placeholder="Máx. Valor Parcela" value={maxParcel} onChange={(e) => setMaxParcel(e.target.value)} className="w-1/2 px-4 py-3 rounded-xl bg-[#08101a] border border-[#1f385c] text-[var(--brand-ivory)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-gold)] placeholder-white/30" />
               </div>
               <select value={fundoRange} onChange={(e) => setFundoRange(e.target.value)} className="px-4 py-3 rounded-xl bg-[#08101a] border border-[#1f385c] text-[var(--brand-ivory)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-gold)] appearance-none">
                 <option value="all">Fundo Comum (Todos)</option>

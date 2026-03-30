@@ -13,7 +13,7 @@ import {
 import { LinkItem, LinkCategory, ProfileData } from './types';
 
 export const PROFILE: ProfileData = {
-  name: "Elisangela Inacio",
+  name: "Elisangela Martins Inácio",
   title: "Especialista em Crédito e Consórcio",
   description: "Transformando sonhos em realidade através de soluções financeiras inteligentes.",
   avatarUrl: "https://i.ibb.co/0jv4vmr1/Screenshot-149.png",

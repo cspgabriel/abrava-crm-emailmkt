@@ -13,16 +13,15 @@ const SimulationLanding: React.FC = () => {
   const navigate = useNavigate();
   return (
     <div className="w-full">
-      <section className="relative flex min-h-[72vh] w-full items-center justify-center overflow-hidden brand-shell pt-28 pb-12">
+      <section className="relative flex min-h-[72vh] w-full items-center justify-center overflow-hidden brand-shell pt-36 pb-12 sm:pt-44">
         <div className="absolute inset-0 opacity-80" />
         <div className="absolute -top-16 -right-12 h-[28rem] w-[28rem] rounded-full bg-[rgba(214,174,94,0.25)] blur-[160px] opacity-60" />
         <div className="absolute -left-24 top-20 h-[28rem] w-[28rem] rounded-full bg-[rgba(5,9,19,0.65)] blur-[140px] opacity-90" />
 
         <div className="relative z-10 w-full max-w-5xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
           <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="space-y-6 text-white">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.1] tracking-tighter italic">
-              Crédito, <br />
-              <span className="text-[var(--brand-gold)]">Sem Burocracia</span>
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black leading-tight tracking-tighter italic">
+              <span className="block sm:inline whitespace-nowrap">Crédito <span className="text-[var(--brand-gold)]">Sem Burocracia</span></span>
             </h1>
 
             <div className="text-[rgba(244,236,223,0.92)] max-w-xl text-base sm:text-lg font-medium leading-relaxed space-y-4">
@@ -80,7 +79,7 @@ const SimulationLanding: React.FC = () => {
 
                     const msg = `Olá! Tenho interesse em simular um *Crédito*.%0A%0A*Nome:* ${name}%0A*E-mail:* ${email}%0A*Celular:* ${phone}%0A*CPF:* ${cpf}%0A*Origem:* Crédito`;
                     window.open(`https://api.whatsapp.com/send?phone=5551986831896&text=${msg}`, '_blank');
-                    navigate('/obrigado');
+                    window.location.href = "https://shop.franq.com.br/elisangela-inacio/produtos/emprestimo-com-garantia-de-imovel?utm_source=befranq&utm_medium=NovaVenda";
                   }}
                   className="space-y-4 relative z-10"
                 >

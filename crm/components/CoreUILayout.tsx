@@ -10,11 +10,11 @@ interface CoreUILayoutProps {
 }
 
 export const CoreUILayout: React.FC<CoreUILayoutProps> = ({ children, currentPath, onNavigate, onLogout }) => {
-  const [sidebarShow, setSidebarShow] = useState(window.innerWidth >= 1024);
+  const [sidebarShow, setSidebarShow] = useState(window.innerWidth >= 768);
 
   // Auto-close sidebar on mobile when navigating
   useEffect(() => {
-    if (window.innerWidth < 1024) {
+    if (window.innerWidth < 768) {
       setSidebarShow(false);
     }
   }, [currentPath]);
