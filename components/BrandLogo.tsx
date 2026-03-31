@@ -9,7 +9,8 @@ type BrandLogoProps = {
 };
 
 // Prefer local logo first, then try externally hosted logo
-const LOCAL_LOGO = '/logo.png';
+// prefer the transparent abravacom logo included in `public/`
+const LOCAL_LOGO = '/logo_abravacom_transparent.png';
 const BRAND_LOGO_URL = 'https://gcdnb.pbrd.co/images/b2tTs3cm8rnE.png?o=1';
 
 // Primary BrandLogo component (below) is exported as default.
