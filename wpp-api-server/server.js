@@ -86,6 +86,10 @@ app.use((req, res, next) => {
   
   // Pré-flight
   if (req.method === 'OPTIONS') {
+    // ensure preflight requests receive the Access-Control-Allow-Origin header
+    res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, X-API-Key, x-api-key, Authorization, Accept');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
     return res.sendStatus(200);
   }
   next();
