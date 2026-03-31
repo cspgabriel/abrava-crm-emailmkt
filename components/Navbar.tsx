@@ -74,7 +74,7 @@ const Navbar: React.FC = () => {
             <BrandLogo />
           </Link>
 
-          <div className="hidden items-center gap-2 xl:flex">
+          <div className="hidden items-center gap-2 lg:flex">
             {primaryLinks.map((link) => (
               <Link
                 key={link.path}
@@ -90,7 +90,7 @@ const Navbar: React.FC = () => {
             ))}
           </div>
 
-          <div className="hidden items-center gap-3 xl:flex">
+          <div className="hidden items-center gap-3 lg:flex">
             {user ? (
               <div className="flex items-center gap-2">
                 <Link
@@ -119,7 +119,7 @@ const Navbar: React.FC = () => {
           </div>
 
           <button
-            className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-[rgba(217,173,87,0.12)] bg-[rgba(255,255,255,0.02)] text-[var(--brand-ivory)] transition hover:bg-[rgba(255,255,255,0.04)] xl:hidden"
+            className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-[rgba(217,173,87,0.12)] bg-[rgba(255,255,255,0.02)] text-[var(--brand-ivory)] transition hover:bg-[rgba(255,255,255,0.04)] lg:hidden"
             onClick={() => setIsOpen((value) => !value)}
             aria-label={isOpen ? 'Fechar menu' : 'Abrir menu'}
           >
@@ -136,14 +136,14 @@ const Navbar: React.FC = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsOpen(false)}
-              className="fixed inset-0 z-[140] bg-[rgba(2,8,14,0.7)] backdrop-blur-sm xl:hidden"
+              className="fixed inset-0 z-[140] bg-[rgba(2,8,14,0.7)] backdrop-blur-sm lg:hidden"
             />
             <motion.div
               initial={{ y: -24, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: -24, opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="fixed inset-x-4 top-24 z-[145] rounded-[30px] border border-[rgba(217,173,87,0.18)] bg-[linear-gradient(180deg,rgba(13,34,56,0.98)_0%,rgba(7,23,38,0.98)_100%)] p-5 shadow-[0_25px_80px_rgba(3,10,20,0.55)] xl:hidden"
+              className="fixed inset-x-4 top-24 z-[145] rounded-[30px] border border-[rgba(217,173,87,0.18)] bg-[linear-gradient(180deg,rgba(13,34,56,0.98)_0%,rgba(7,23,38,0.98)_100%)] p-5 shadow-[0_25px_80px_rgba(3,10,20,0.55)] lg:hidden"
             >
               <BrandLogo compact wordmarkClassName="text-[2.4rem]" />
 
