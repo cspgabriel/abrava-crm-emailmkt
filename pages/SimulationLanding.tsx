@@ -80,7 +80,8 @@ const SimulationLanding: React.FC = () => {
 
                     const msg = `Olá! Tenho interesse em simular um *Crédito*.%0A%0A*Nome:* ${name}%0A*E-mail:* ${email}%0A*Celular:* ${phone}%0A*CPF:* ${cpf}%0A*Origem:* Crédito`;
                     window.open(`https://api.whatsapp.com/send?phone=5551986831896&text=${msg}`, '_blank');
-                    window.location.href = "https://shop.franq.com.br/elisangela-inacio/produtos/emprestimo-com-garantia-de-imovel?utm_source=befranq&utm_medium=NovaVenda";
+                    // Keep previous behavior for the Simulação page: do not redirect to Franq here.
+                    // The Crédito com Garantia page will continue to handle its own redirect flow.
                   }}
                   className="space-y-4 relative z-10"
                 >

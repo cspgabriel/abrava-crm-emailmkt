@@ -84,11 +84,14 @@ export const DataEntryModal = ({ isOpen, onClose, onSave, fields, title, initial
                 <div className="p-6 border-b border-gray-100 flex justify-between items-center"><h3 className="text-lg font-bold text-gray-900">{title}</h3><button onClick={onClose}><X className="h-5 w-5 text-gray-400" /></button></div>
                 <div className="p-6 overflow-y-auto flex-1">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {allFields.map((f: any) => (
-                            <div key={f.key} className={`relative ${f.key === 'id' || f.key === 'name' || f.key === 'mailing' || f.key === 'tags' ? 'md:col-span-2' : ''}`}>
-                                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">{f.label} {f.required && <span className="text-red-500">*</span>}</label>
+                        {allFields
+                            // Only render core manual-entry fields to match landing: name, email, phone, cpf, tags
+                            .filter((f: any) => ['name','email','phone','cpf','tags'].includes(f.key))
+                            .map((f: any) => (
+                                <div key={f.key} className={`relative ${f.key === 'id' || f.key === 'name' || f.key === 'tags' ? 'md:col-span-2' : ''}`}>
+                                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">{f.label} {f.required && <span className="text-red-500">*</span>}</label>
                                 
-                                {f.key === 'tags' ? (
+                                    {f.key === 'tags' ? (
                                     <div className="w-full border border-gray-300 rounded-lg px-3 py-2 min-h-[42px] flex flex-wrap gap-2 focus-within:ring-2 focus-within:ring-blue-500 bg-white">
                                         {(Array.isArray(data.tags) ? data.tags : []).map((tag: string) => (
                                             <span key={tag} className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded flex items-center gap-1">
