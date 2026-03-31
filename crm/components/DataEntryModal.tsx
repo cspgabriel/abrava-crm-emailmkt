@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { X } from 'lucide-react';
 import { cleanText } from '../utils/helpers';
+import { COMPANY_FIELDS, CONTACT_FIELDS } from '../config/constants';
 
 export const DataEntryModal = ({ isOpen, onClose, onSave, fields, title, initialData, companiesList, allTags = [] }: any) => {
     const [data, setData] = useState<any>({});
@@ -10,8 +11,12 @@ export const DataEntryModal = ({ isOpen, onClose, onSave, fields, title, initial
     const [showTagSuggestions, setShowTagSuggestions] = useState(false);
 
     const allFields = useMemo(() => {
-        return fields;
-    }, [fields]);
+        // prefer provided fields; if none, infer from title (Contato vs Simulação)
+        if (fields && fields.length > 0) return fields;
+        if (title && /contat/i.test(title)) return CONTACT_FIELDS;
+        if (title && /simula/i.test(title)) return COMPANY_FIELDS;
+        return CONTACT_FIELDS.concat(COMPANY_FIELDS);
+    }, [fields, title]);
 
     useEffect(() => {
         if (isOpen) { 
@@ -84,10 +89,12 @@ export const DataEntryModal = ({ isOpen, onClose, onSave, fields, title, initial
                 <div className="p-6 border-b border-gray-100 flex justify-between items-center"><h3 className="text-lg font-bold text-gray-900">{title}</h3><button onClick={onClose}><X className="h-5 w-5 text-gray-400" /></button></div>
                 <div className="p-6 overflow-y-auto flex-1">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {allFields
-                            // Only render core manual-entry fields to match landing: name, email, phone, cpf, tags
-                            .filter((f: any) => ['name','email','phone','cpf','tags'].includes(f.key))
-                            .map((f: any) => (
+                        {(() => {
+                            // render all available fields for this modal (preserve order)
+                            const renderFields = allFields;
+                            // ensure data has keys for all fields so inputs are controlled
+                            renderFields.forEach((f: any) => { if (data[f.key] === undefined) data[f.key] = ''; });
+                            return renderFields.map((f: any) => (
                                 <div key={f.key} className={`relative ${f.key === 'id' || f.key === 'name' || f.key === 'tags' ? 'md:col-span-2' : ''}`}>
                                     <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">{f.label} {f.required && <span className="text-red-500">*</span>}</label>
                                 

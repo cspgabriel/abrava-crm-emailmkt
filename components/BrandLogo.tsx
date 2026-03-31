@@ -8,7 +8,8 @@ type BrandLogoProps = {
   compact?: boolean;
 };
 
-// Use externally hosted logo (provided by user)
+// Prefer local logo first, then try externally hosted logo
+const LOCAL_LOGO = '/logo.png';
 const BRAND_LOGO_URL = 'https://gcdnb.pbrd.co/images/b2tTs3cm8rnE.png?o=1';
 
 // Primary BrandLogo component (below) is exported as default.
@@ -20,6 +21,7 @@ const BrandLogo: React.FC<BrandLogoProps> = ({
   compact = false,
 }) => {
   const [logoLoaded, setLogoLoaded] = useState(true);
+  const [triedExternal, setTriedExternal] = useState(false);
 
   const heightClass = compact ? 'h-14 sm:h-16' : 'h-20 sm:h-[6.5rem]';
 
@@ -27,10 +29,18 @@ const BrandLogo: React.FC<BrandLogoProps> = ({
     <div className={`flex items-center gap-3 ${className}`.trim()}>
       {logoLoaded ? (
         <img
-          src={BRAND_LOGO_URL}
+          src={LOCAL_LOGO}
           alt="Abravacon"
           className={`${heightClass} w-auto object-contain ${iconClassName}`.trim()}
-          onError={() => setLogoLoaded(false)}
+          onError={(e) => {
+            if (!triedExternal) {
+              // try external URL if local asset failed to load
+              setTriedExternal(true);
+              (e.target as HTMLImageElement).src = BRAND_LOGO_URL;
+            } else {
+              setLogoLoaded(false);
+            }
+          }}
         />
       ) : (
         <div className={`${heightClass} w-48 rounded-xl bg-slate-800/50 animate-pulse`} />
