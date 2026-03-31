@@ -55,9 +55,10 @@ service cloud.firestore {
     }
 
     // CAMPAIGNS and nested messages
+    // Allow authenticated users to create campaign history entries (UI saves history documents).
     match /campaigns/{campaignId} {
       allow read: if true;
-      allow create: if isAdmin();
+      allow create: if isAuthenticated();
       allow update: if isAdmin();
       allow delete: if isAdmin();
 
@@ -131,11 +132,7 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // DEVELOPMENT CATCH-ALL (DEV ONLY)
-    // WARNING: for development convenience only. Remove or tighten for production.
-    match /{document=**} {
-      allow read, write: if isAuthenticated();
-    }
+    // NOTE: removed development catch-all to enforce explicit rules in production.
   }
 }
 
