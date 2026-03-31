@@ -109,6 +109,7 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
 
   const [workspaceAccount, setWorkspaceAccount] = useState<string | null>(null);
   const [isWorkspaceAuthOk, setIsWorkspaceAuthOk] = useState(false);
+  const [isCheckingAccount, setIsCheckingAccount] = useState(true);
 
   const visualEditorRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -152,6 +153,7 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
   // Fetch workspace status
   useEffect(() => {
     const fetchStatus = async () => {
+      setIsCheckingAccount(true);
       try {
         const resolvedBase = getResolvedApiBase(apiBase);
         const response = await fetch(`${resolvedBase}/status`);
@@ -165,6 +167,7 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
       } catch (e) {
         console.error('Error fetching email status:', e);
       }
+      setIsCheckingAccount(false);
     };
     fetchStatus();
   }, [apiBase]);
@@ -403,12 +406,24 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
       )}
 
       {/* Status Message */}
-      {status && (
+      {isCheckingAccount ? (
+        <div className="p-4 rounded-lg bg-blue-50 text-slate-800 flex items-center gap-3">
+          <div className="w-full">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm font-semibold text-slate-700">Conectando conta de email...</div>
+              <div className="text-xs text-slate-500">Aguarde</div>
+            </div>
+            <div className="w-full bg-white rounded-full h-2 overflow-hidden border border-slate-100">
+              <div className="h-full bg-gradient-to-r from-blue-400 to-indigo-500 animate-progress" style={{ width: '60%' }} />
+            </div>
+          </div>
+        </div>
+      ) : status ? (
         <div className="p-4 rounded-lg bg-slate-100 text-slate-800 flex items-center gap-2">
           <AlertTriangle className="h-5 w-5" />
           {status}
         </div>
-      )}
+      ) : null}
 
       {/* Main Email Block */}
       <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
@@ -423,9 +438,16 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
               📤 Enviando via: <span className="font-bold text-blue-600">{workspaceAccount}</span>
             </div>
           ) : (
-             <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-200">
-              ⚠️ Workspace CLI não autenticado. Autentique no servidor para enviar.
-            </div>
+             isCheckingAccount ? (
+               <div className="text-sm text-slate-600 bg-yellow-50 p-3 rounded-lg border border-yellow-200 flex items-center gap-2">
+                 <div className="h-3 w-3 rounded-full bg-yellow-400 animate-pulse" />
+                 Conectando conta de email...
+               </div>
+             ) : (
+               <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-200">
+                 ⚠️ Workspace CLI não autenticado. Autentique no servidor para enviar.
+               </div>
+             )
           )}
         </div>
 
