@@ -2,19 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { X } from 'lucide-react';
 import { cleanText } from '../utils/helpers';
 import { COMPANY_FIELDS, CONTACT_FIELDS } from '../config/constants';
-
-export const DataEntryModal = ({ isOpen, onClose, onSave, fields, title, initialData, companiesList, allTags = [] }: any) => {
-    const [data, setData] = useState<any>({});
-    const [suggestions, setSuggestions] = useState<any[]>([]);
-    const [showSuggestions, setShowSuggestions] = useState(false);
-    const [tagInput, setTagInput] = useState('');
-    const [showTagSuggestions, setShowTagSuggestions] = useState(false);
-
-    const allFields = useMemo(() => {
-        // prefer provided fields; if none, infer from title (Contato vs Simulação)
-        if (fields && fields.length > 0) return fields;
-        if (title && /contat/i.test(title)) return CONTACT_FIELDS;
-        if (title && /simula/i.test(title)) return COMPANY_FIELDS;
+                        })}
         return CONTACT_FIELDS.concat(COMPANY_FIELDS);
     }, [fields, title]);
 
