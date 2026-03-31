@@ -110,6 +110,7 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
   const [workspaceAccount, setWorkspaceAccount] = useState<string | null>(null);
   const [isWorkspaceAuthOk, setIsWorkspaceAuthOk] = useState(false);
   const [isCheckingAccount, setIsCheckingAccount] = useState(true);
+  const [checkProgressPct, setCheckProgressPct] = useState(0);
 
   const visualEditorRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -154,6 +155,17 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
   useEffect(() => {
     const fetchStatus = async () => {
       setIsCheckingAccount(true);
+      setCheckProgressPct(0);
+      // start progress timer that increments until fetch completes
+      let mounted = true;
+      const interval = setInterval(() => {
+        setCheckProgressPct(prev => {
+          if (!mounted) return prev;
+          // increment faster when low, slower as it approaches 90
+          const next = Math.min(95, prev + Math.ceil((100 - prev) * 0.12));
+          return next;
+        });
+      }, 400);
       try {
         const resolvedBase = getResolvedApiBase(apiBase);
         const response = await fetch(`${resolvedBase}/status`);
@@ -167,7 +179,13 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
       } catch (e) {
         console.error('Error fetching email status:', e);
       }
-      setIsCheckingAccount(false);
+      // complete progress
+      setCheckProgressPct(100);
+      setTimeout(() => {
+        setIsCheckingAccount(false);
+        clearInterval(interval);
+      }, 300);
+      mounted = false;
     };
     fetchStatus();
   }, [apiBase]);
@@ -410,11 +428,14 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
         <div className="p-4 rounded-lg bg-blue-50 text-slate-800 flex items-center gap-3">
           <div className="w-full">
             <div className="flex items-center justify-between mb-2">
-              <div className="text-sm font-semibold text-slate-700">Conectando conta de email...</div>
-              <div className="text-xs text-slate-500">Aguarde</div>
+              <div className="text-sm font-semibold text-slate-700">Iniciando conta de email {workspaceAccount || 'elis@abravacom.com.br'}</div>
+              <div className="text-xs text-slate-500">{checkProgressPct}%</div>
             </div>
-            <div className="w-full bg-white rounded-full h-2 overflow-hidden border border-slate-100">
-              <div className="h-full bg-gradient-to-r from-blue-400 to-indigo-500 animate-progress" style={{ width: '60%' }} />
+            <div className="w-full bg-white rounded-full h-3 overflow-hidden border border-slate-100">
+              <div
+                className="h-full bg-gradient-to-r from-blue-400 to-indigo-500 transition-[width] duration-300"
+                style={{ width: `${Math.min(Math.max(checkProgressPct, 2), 100)}%` }}
+              />
             </div>
           </div>
         </div>
