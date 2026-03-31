@@ -117,7 +117,7 @@ export const LINKS: LinkItem[] = [
 export const SOCIAL_LINKS = [
   {
     id: 'instagram',
-    url: 'https://www.instagram.com/abravacon?igsh=eW9pcjR5amw5Y2xv',
+    url: 'https://www.instagram.com/abravacom?igsh=eW9pcjR5amw5Y2xv',
     icon: Instagram,
     label: 'Instagram'
   },

@@ -559,7 +559,7 @@ export const EmailMarketingWorkspace: React.FC<{ contacts?: any[]; campaigns?: a
                     {token}
                   </button>
                 ))}
-                <button onClick={() => insertSnippet('<a href="https://abravacon.com.br" style="color:#2563eb;">CTA principal</a>')} className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100">
+                <button onClick={() => insertSnippet('<a href="https://abravacom.com.br" style="color:#2563eb;">CTA principal</a>')} className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100">
                   Inserir CTA
                 </button>
                 <button onClick={() => insertSnippet('<table width="100%" cellpadding="0" cellspacing="0" style="background:#eff6ff;border-radius:16px;"><tr><td style="padding:24px;">Novo bloco</td></tr></table>')} className="rounded-full bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-700 hover:bg-violet-100">
@@ -762,3 +762,4 @@ export const EmailMarketingWorkspace: React.FC<{ contacts?: any[]; campaigns?: a
     </div>
   );
 };
+

@@ -32,9 +32,9 @@ const getResolvedApiKey = (apiKey = '') => {
 
 const getResolvedApiBase = (apiBase = '') => {
   // SEMPRE usar a URL pública da API (não localhost)
-  // O servidor deve estar acessível em https://wpp-api.abravacon.com.br
+  // O servidor deve estar acessível em https://wpp-api.abravacom.com.br
   
-  const fallbackBase = 'https://wpp-api.abravacon.com.br';
+  const fallbackBase = 'https://wpp-api.abravacom.com.br';
   const envBase = ((import.meta as any)?.env?.VITE_API_WPP || (import.meta as any)?.env?.VITE_WHATSAPP_API_URL || '').trim();
   
   return (apiBase || envBase || fallbackBase).replace(/\/$/, '');

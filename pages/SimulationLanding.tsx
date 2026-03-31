@@ -21,7 +21,8 @@ const SimulationLanding: React.FC = () => {
         <div className="relative z-10 w-full max-w-5xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
           <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="space-y-6 text-white">
             <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black leading-tight tracking-tighter italic">
-              <span className="block sm:inline whitespace-nowrap">Crédito <span className="text-[var(--brand-gold)]">Sem Burocracia</span></span>
+              <span className="block whitespace-nowrap">Crédito com Garantia</span>
+              <span className="block text-[var(--brand-gold)] whitespace-nowrap">Sem Burocracia</span>
             </h1>
 
             <div className="text-[rgba(244,236,223,0.92)] max-w-xl text-base sm:text-lg font-medium leading-relaxed space-y-4">

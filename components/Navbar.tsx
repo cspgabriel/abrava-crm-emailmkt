@@ -15,7 +15,7 @@ const primaryLinks = [
   { name: 'Inicio', path: '/' },
   { name: 'Cartas Contempladas', path: '/cartas' },
   { name: 'Consórcio', path: '/consorcio' },
-  { name: 'Crédito', path: '/garantia' },
+  { name: 'Crédito com garantia', path: '/garantia' },
   { name: 'Sobre', path: '/sobre' },
 ];
 

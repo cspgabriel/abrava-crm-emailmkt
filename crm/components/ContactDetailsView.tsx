@@ -81,7 +81,7 @@ export const ContactDetailsView = ({ contact, onBack, onEdit, campaigns, onDelet
     const sendEmailAPI = async (toEmail: string, subject: string, messageHtml: string) => {
         try {
             let envBase = ((import.meta as any)?.env?.VITE_EMAIL_API_URL || '').trim();
-            const fallbackBase = 'https://email-api.abravacon.com.br';
+            const fallbackBase = 'https://email-api.abravacom.com.br';
             let resolvedBase = (envBase || fallbackBase).replace(/\/$/, '');
             if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
                 resolvedBase = 'http://localhost:8788';
@@ -371,3 +371,4 @@ export const ContactDetailsView = ({ contact, onBack, onEdit, campaigns, onDelet
           </div>
     )
 };
+

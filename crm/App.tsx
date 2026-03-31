@@ -52,7 +52,7 @@ export const App = () => {
         const WHATSAPP_API_URL = (
             (import.meta as any)?.env?.VITE_API_WPP?.trim?.() ||
             (import.meta as any)?.env?.VITE_WHATSAPP_API_URL?.trim?.() ||
-            'https://wpp-api.abravacon.com.br'
+            'https://wpp-api.abravacom.com.br'
         ).replace(/\/$/, '');
         const WPP_API_KEY = (
             (import.meta as any)?.env?.VITE_WPP_API_KEY?.trim?.() ||
@@ -1398,7 +1398,17 @@ export const App = () => {
   return (
     <CoreUILayout 
       currentPath={currentPath}
-      onNavigate={setCurrentPath}
+      onNavigate={(path) => {
+          if (path === 'new-company') {
+              setEditingData(null);
+              setDataEntryModalOpen('company');
+          } else if (path === 'new-contact') {
+              setEditingData(null);
+              setDataEntryModalOpen('contact');
+          } else {
+              setCurrentPath(path);
+          }
+      }}
       onLogout={() => { localStorage.removeItem('crm_auth_token'); setIsAuthenticated(false); }}
     >
         {globalStatus && (<div className="bg-[#0b1a3a] text-[#f3e6bf] text-xs font-bold px-4 py-2 text-center animate-in slide-in-from-top border-b border-[#d4af37]/30">{globalStatus}</div>)}

@@ -95,7 +95,7 @@ app.use((req, res, next) => {
 const authDir = path.join(__dirname, '.wwebjs_auth');
 if (!fs.existsSync(authDir)) fs.mkdirSync(authDir, { recursive: true });
 
-const SESSION_CLIENT_ID = 'session-abravacon-wpp';
+const SESSION_CLIENT_ID = 'session-abravacom-wpp';
 const sessionPath = path.join(authDir, SESSION_CLIENT_ID);
 const doesSessionExist = fs.existsSync(sessionPath) && fs.readdirSync(sessionPath).length > 0;
 
@@ -283,7 +283,7 @@ async function forceKillBrowser() {
 
     // ===== 3. Limpar lock files do Chromium =====
     try {
-      const sessionPath = path.join(__dirname, '.wwebjs_auth', 'session-abravacon-wpp');
+      const sessionPath = path.join(__dirname, '.wwebjs_auth', 'session-abravacom-wpp');
       if (fs.existsSync(sessionPath)) {
         // Lock files comum: LevelDB writing lock
         const lockFiles = [

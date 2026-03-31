@@ -63,7 +63,7 @@ const RECOMMENDED_BULK_LIMIT = 100;
 
 const getResolvedApiBase = (apiBase = '') => {
   const envBase = ((import.meta as any)?.env?.VITE_EMAIL_API_URL || '').trim();
-  const fallbackBase = 'https://email-api.abravacon.com.br';
+  const fallbackBase = 'https://email-api.abravacom.com.br';
   const resolved = (apiBase || envBase || fallbackBase).replace(/\/$/, '');
   
   // When running on localhost, use the direct local email API URL to avoid CORS and proxy restarts

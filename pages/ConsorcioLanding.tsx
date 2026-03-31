@@ -28,7 +28,7 @@ const ConsorcioLanding: React.FC = () => {
 
             <p className="text-[rgba(244,236,223,0.92)] max-w-md text-base sm:text-lg font-medium leading-relaxed">
               Dê o primeiro passo para a sua próxima grande conquista. Simule agora!<br/><br/>
-              <span className="text-[var(--brand-gold-soft)] font-black tracking-widest text-[13px] uppercase block">Consórcios: imóveis — veículos — serviços</span>
+              <span className="text-[var(--brand-gold-soft)] font-black tracking-widest text-[13px] uppercase block">Consórcios de Imóveis, Veículos e Serviços</span>
             </p>
           </motion.div>
 

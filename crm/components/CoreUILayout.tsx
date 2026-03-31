@@ -61,7 +61,7 @@ export const CoreUILayout: React.FC<CoreUILayoutProps> = ({ children, currentPat
         className={`fixed inset-y-0 left-0 w-64 bg-gradient-to-b from-[#0b1a3a] to-[#071226] border-r border-[#10224a] shadow-2xl z-[100] flex flex-col transition-transform duration-300 ease-in-out ${sidebarShow ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
         <div className="p-6 flex flex-col items-center border-b border-[#10224a] text-center shrink-0">
-             <img src="/logo_abravacon_transparent.png" alt="ABRACON" className="h-[90px] w-auto object-contain mb-1" />
+             <img src="/logo_abravacom_transparent.png" alt="ABRAVACOM" className="h-[90px] w-auto object-contain mb-1" />
              <div className="text-center">
                <h1 className="font-bold text-sm tracking-[0.3em] text-[#d4af37]">CRM</h1>
              </div>
@@ -91,6 +91,14 @@ export const CoreUILayout: React.FC<CoreUILayoutProps> = ({ children, currentPat
             </CNavItem>
             <CNavItem href="#" active={currentPath === 'settings'} onClick={(e: any) => { e.preventDefault(); onNavigate('settings'); }}>
               Configurações
+            </CNavItem>
+            {/* New menu items */}
+            <hr className="border-white/10 my-2" />
+            <CNavItem href="#" onClick={(e: any) => { e.preventDefault(); onNavigate('new-company'); }} className="text-[#d8ad5b] font-bold">
+              + Nova Simulação
+            </CNavItem>
+            <CNavItem href="#" onClick={(e: any) => { e.preventDefault(); onNavigate('new-contact'); }} className="text-[#d8ad5b] font-bold">
+              + Novo Contato
             </CNavItem>
           </CSidebarNav>
         </div>

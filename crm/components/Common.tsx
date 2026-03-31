@@ -120,7 +120,7 @@ export const LoginScreen = ({ onLogin }: any) => {
             <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md text-center animate-in fade-in zoom-in-95 duration-300">
         <div className="mb-6 flex justify-center">
           <img
-            src="/logo_abravacon_transparent.png"
+            src="/logo_abravacom_transparent.png"
             alt="ABRACON"
             className="h-14 w-auto object-contain"
           />
@@ -136,3 +136,4 @@ export const LoginScreen = ({ onLogin }: any) => {
         </div>
     )
 }
+
