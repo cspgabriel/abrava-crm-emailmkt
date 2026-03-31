@@ -606,7 +606,7 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
 
         console.log('[WhatsApp] âŒ Sem QR code ainda');
 
-        setStatus('â³ Aguardando QR code do servidor...');
+        setStatus('⏳ Aguardando QR code do servidor...');
 
       }
 
@@ -1490,7 +1490,7 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
 
                       <div className="h-3 w-3 rounded-full bg-amber-500 animate-pulse"></div>
 
-                      <h3 className="text-lg font-bold text-amber-900">â³ Aguardando Autenticação</h3>
+                      <h3 className="text-lg font-bold text-amber-900">⏳ Aguardando Autenticação</h3>
 
                     </>
 
