@@ -59,6 +59,28 @@ const SimulatorForm: React.FC<SimulatorFormProps> = ({ onSuccess }) => {
 
       const docRef = await addDoc(collection(db, 'simulations'), simulationData);
       
+      // Conversion Tracking
+      try {
+        if ((window as any).gtag) {
+          (window as any).gtag('event', 'generate_lead', {
+            'event_category': 'conversion',
+            'event_label': category,
+            'value': simulationMode === 'credito' ? creditValue : installmentValue,
+            'currency': 'BRL'
+          });
+        }
+        if ((window as any).fbq) {
+          (window as any).fbq('track', 'Lead', {
+            content_name: category,
+            content_category: 'Simulation',
+            value: 0,
+            currency: 'BRL'
+          });
+        }
+      } catch (trackError) {
+        console.error('Tracking Error:', trackError);
+      }
+
       localStorage.setItem('last_simulation_email', normalizeEmail(email));
       localStorage.setItem('last_simulation_name', name);
       

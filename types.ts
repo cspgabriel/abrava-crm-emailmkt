@@ -16,6 +16,7 @@ export interface LinkItem {
   category: LinkCategory;
   highlight?: boolean; // For primary CTAs
   subtext?: string;
+  title?: string; // For SEO and Accessibility (title tags)
 }
 
 export interface ProfileData {

@@ -52,7 +52,7 @@ export const App = () => {
         const WHATSAPP_API_URL = (
             (import.meta as any)?.env?.VITE_API_WPP?.trim?.() ||
             (import.meta as any)?.env?.VITE_WHATSAPP_API_URL?.trim?.() ||
-            'https://wpp-api.abravacom.com.br'
+            'https://wpp-api.abravacon.com.br'
         ).replace(/\/$/, '');
         const WPP_API_KEY = (
             (import.meta as any)?.env?.VITE_WPP_API_KEY?.trim?.() ||
@@ -1459,7 +1459,7 @@ export const App = () => {
                 {/* ────────────────────────────────────────────────────────────────────── */}
                 {currentPath === 'dashboard' && renderDashboard()}
                 {currentPath === 'whatsapp' && <WhatsAppSender apiBase={WHATSAPP_API_URL || ''} />}
-                {currentPath === 'email' && <EmailMarketing apiBase={((import.meta as any)?.env?.VITE_EMAIL_API_URL?.trim?.() || 'https://email-api.abravacom.com.br').replace(/\/$/, '')} apiKey={WPP_API_KEY || ''} />}
+                {currentPath === 'email' && <EmailMarketing apiBase={((import.meta as any)?.env?.VITE_EMAIL_API_URL?.trim?.() || 'https://email-api.abravacon.com.br').replace(/\/$/, '')} apiKey={WPP_API_KEY || ''} />}
                 {currentPath === 'email-pro' && <EmailMarketingWorkspace contacts={enrichedContacts} campaigns={campaigns} />}
                 {currentPath === 'companies' && (
                     <div className="space-y-4">

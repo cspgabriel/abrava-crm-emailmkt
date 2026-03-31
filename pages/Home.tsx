@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ShieldCheck, Star, Zap, DollarSign, Mail } from 'lucide-react';
@@ -343,6 +343,19 @@ const HomeWhatsappCtaSection = () => {
           href="https://chat.whatsapp.com/EQLOlDYRoiCArffDLK4lvE"
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => {
+            if ((window as any).gtag) {
+              (window as any).gtag('event', 'click_whatsapp_vip', {
+                'event_category': 'engagement',
+                'event_label': 'VIP Group Click'
+              });
+            }
+            if ((window as any).fbq) {
+              (window as any).fbq('track', 'Contact', {
+                content_name: 'WhatsApp VIP Group'
+              });
+            }
+          }}
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}

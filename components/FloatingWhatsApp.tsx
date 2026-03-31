@@ -13,6 +13,19 @@ const FloatingWhatsApp: React.FC = () => {
       href={url}
       target="_blank"
       rel="noopener noreferrer"
+      onClick={() => {
+        if ((window as any).gtag) {
+          (window as any).gtag('event', 'click_whatsapp_floating', {
+            'event_category': 'engagement',
+            'event_label': 'Floating WhatsApp Click'
+          });
+        }
+        if ((window as any).fbq) {
+          (window as any).fbq('track', 'Contact', {
+            content_name: 'Floating WhatsApp'
+          });
+        }
+      }}
       className="fixed right-6 bottom-6 z-[999] bg-emerald-600 text-white p-4 rounded-full shadow-2xl hover:scale-105 transform transition-all"
     >
       <MessageCircle size={24} />

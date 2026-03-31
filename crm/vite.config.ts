@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => {
         port: 3001,
         host: '0.0.0.0',
         // Allowlist used by tunnels and Cloudflare workers — include both domains and localhost
-        allowedHosts: ['abravacom.com.br', 'wpp-api.abravacom.com.br', 'email-api.abravacom.com.br', 'localhost', '127.0.0.1'],
+        allowedHosts: ['abravacon.com.br', 'wpp-api.abravacon.com.br', 'email-api.abravacon.com.br', 'localhost', '127.0.0.1'],
         hmr: { overlay: false },
         proxy: {
           '/api/whatsapp': {
