@@ -8,8 +8,8 @@ type BrandLogoProps = {
   compact?: boolean;
 };
 
-// Use the provided logo in public/ as favicon and brand image
-const BRAND_LOGO_URL = '/logo.png';
+// Use externally hosted logo (provided by user)
+const BRAND_LOGO_URL = 'https://gcdnb.pbrd.co/images/b2tTs3cm8rnE.png?o=1';
 
 const BrandLogo: React.FC<BrandLogoProps> = ({
   className = '',
