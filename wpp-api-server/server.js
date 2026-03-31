@@ -293,25 +293,13 @@ async function forceKillBrowser() {
 
     // ===== 2. Matar processos Chrome/Chromium via Windows =====
     try {
-      if (process.platform === 'win32') {
-        console.log('[WPP] 🔪 Matando processos Chrome/Chromium no Windows...');
-        try {
-          execSync('taskkill /F /IM chrome.exe /T 2>nul', { stdio: 'ignore' });
-        } catch (e) {}
-        try {
-          execSync('taskkill /F /IM chromium.exe /T 2>nul', { stdio: 'ignore' });
-        } catch (e) {}
-        
-        // Aguardar um pouco para garantir liberação de recursos
-        await new Promise(r => setTimeout(r, 1500));
-      } else {
-        // Linux/Mac
-        try {
-          execSync("killall -9 chrome 2>/dev/null || true", { stdio: 'ignore' });
-          execSync("killall -9 chromium 2>/dev/null || true", { stdio: 'ignore' });
-          await new Promise(r => setTimeout(r, 1500));
-        } catch (e) {}
-      }
+        // NOTE: Removing global chrome process kills. Previously the server
+        // forcibly killed all chrome/chromium processes on the machine when a
+        // session restore error occurred. That behavior can terminate unrelated
+        // browser windows. Now we only attempt to close the puppeteer browser
+        // instance (handled above). If a user still wants to kill stray
+        // processes they should run the provided maintenance script manually.
+        console.log('[WPP] ℹ️ Skipping global Chrome/Chromium kill (left to operator)');
     } catch (e) {
       console.warn('[WPP] Erro ao matar chrome process:', e?.message);
     }
