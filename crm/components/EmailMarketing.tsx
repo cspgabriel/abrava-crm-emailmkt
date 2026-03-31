@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, History, Mail, Search, Info, Copy, Trash2, Package, CheckCircle } from 'lucide-react';
-import { TemplateSelectModal } from './TemplateSelectModal';
+import { AlertTriangle, History, Mail, Search, Info, Copy, Trash2, CheckCircle } from 'lucide-react';
 
 type SendHistoryItem = {
   id: string;
@@ -99,13 +98,12 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
   // Platform selection removed — default to workspace
   const [provider] = useState<'gmail' | 'outlook' | 'workspace' | 'exchange'>('workspace');
   const [editorMode, setEditorMode] = useState<'visual' | 'code'>('visual');
-  const [previewTemplate, setPreviewTemplate] = useState<any | null>(null);
-  const [isPreviewSidebarOpen, setIsPreviewSidebarOpen] = useState(false);
+  // template selection removed
   
   // Bulk send progress tracking
   const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0, success: 0, failed: 0 });
   const [isBulkSending, setIsBulkSending] = useState(false);
-  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  // templates removed from UI
 
   const [workspaceAccount, setWorkspaceAccount] = useState<string | null>(null);
   const [isWorkspaceAuthOk, setIsWorkspaceAuthOk] = useState(false);
@@ -189,11 +187,6 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
     };
     fetchStatus();
   }, [apiBase]);
-
-  const handlePreview = (template: any | null) => {
-    setPreviewTemplate(template);
-    setIsPreviewSidebarOpen(!!template);
-  };
 
   useEffect(() => {
     if (editorMode === 'visual' && visualEditorRef.current) {
@@ -501,13 +494,7 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
 
-          <button
-            onClick={() => setIsTemplateModalOpen(true)}
-            className="w-full px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition flex items-center justify-center gap-2"
-          >
-            <Package className="h-4 w-4" />
-            🎨 Escolher Template
-          </button>
+          {/* Template selection removed as requested */}
 
           <div>
             <div className="flex items-center gap-2 mb-2">
@@ -658,39 +645,7 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
         </div>
       </div>
 
-      {/* Template Selection Modal */}
-      <TemplateSelectModal
-        isOpen={isTemplateModalOpen}
-        onClose={() => setIsTemplateModalOpen(false)}
-        onSelect={handleSelectTemplate}
-        onPreview={handlePreview}
-      />
-
-      {/* Right-side preview sidebar */}
-      {isPreviewSidebarOpen && previewTemplate && (
-        <div className="fixed right-0 top-0 h-full w-full md:w-3/4 bg-white border-l border-gray-200 shadow-lg z-50 flex flex-col">
-          <div className="p-4 border-b flex items-center justify-between">
-            <div>
-              <div className="text-sm text-slate-600">Preview</div>
-              <div className="font-semibold text-slate-900">{previewTemplate.name}</div>
-              <div className="text-xs text-slate-500">{previewTemplate.subject}</div>
-            </div>
-            <button onClick={() => handlePreview(null)} className="text-slate-500 hover:text-slate-700">Fechar</button>
-          </div>
-          <div className="flex-1 overflow-hidden flex flex-col">
-            <iframe
-              srcDoc={previewTemplate.htmlContent}
-              title="template-preview"
-              className="flex-1 w-full h-full border-0"
-              style={{ minHeight: 0 }}
-            />
-          </div>
-          <div className="p-3 border-t flex gap-2">
-            <button onClick={() => { handleSelectTemplate(previewTemplate); handlePreview(null); setIsTemplateModalOpen(false); }} className="flex-1 bg-green-600 text-white rounded-lg px-3 py-2">✅ Usar</button>
-            <button onClick={() => handlePreview(null)} className="flex-1 bg-slate-200 rounded-lg px-3 py-2">Fechar</button>
-          </div>
-        </div>
-      )}
+      {/* Templates UI removed */}
     </div>
   );
 };
