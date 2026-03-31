@@ -133,17 +133,20 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
 
   // Parse recipients
   const recipients = useMemo(() => {
-    return recipientsText
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line && line.includes('@'))
-      .map((line, idx) => {
-        const parts = line.split('|').map(p => p.trim());
-        return {
-          email: parts[0],
-          name: parts[1] || `Contato ${idx + 1}`
-        };
-      });
+    if (!recipientsText) return [];
+    // Split by newlines, commas, or semicolons
+    const rawItems = recipientsText
+      .split(/[\r\n,;]+/)
+      .map(item => item.trim())
+      .filter(item => item && item.includes('@'));
+    
+    return rawItems.map((item, idx) => {
+      const parts = item.split('|').map(p => p.trim());
+      return {
+        email: parts[0],
+        name: parts[1] || `Contato ${idx + 1}`
+      };
+    });
   }, [recipientsText]);
 
   // Fetch workspace status
@@ -208,72 +211,10 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
     }
   }, [historyItems, provider]);
 
-  // Send single email
+  // Send email (Single or Bulk)
   const handleSendEmail = async () => {
-    if (!email || !name || !subject || !message) {
-      setStatus('❌ Preencha todos os campos');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const resolvedBase = getResolvedApiBase(apiBase);
-      const resolvedApiKey = getResolvedApiKey(apiKey);
-
-      const response = await fetch(`${resolvedBase}/send`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(resolvedApiKey && { 'x-api-key': resolvedApiKey })
-        },
-        body: JSON.stringify({
-          to: email,
-          recipientName: name,
-          subject,
-          body: message,
-          provider
-        })
-      });
-
-      const data = await response.json();
-
-      if (data.ok) {
-        setStatus(`✅ Email enviado para ${email}`);
-        appendHistoryItem({
-          id: `${Date.now()}`,
-          email,
-          name,
-          subject,
-          message,
-          ok: true,
-          createdAt: new Date().toISOString(),
-          provider
-        });
-        setEmail('');
-        setName('');
-        setSubject('');
-        setMessage('');
-      } else {
-        setStatus(`❌ Erro: ${data.error || 'Falha ao enviar'}`);
-      }
-    } catch (e) {
-      setStatus(`❌ Erro: ${String(e)}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Handle template selection
-  const handleSelectTemplate = (template: any) => {
-    setSubject(template.subject);
-    setMessage(template.htmlContent);
-    setStatus(`✅ Template "${template.name}" aplicado!`);
-  };
-
-  // Bulk send
-  const handleBulkSend = async () => {
     if (recipients.length === 0) {
-      setStatus('❌ Adicione destinatários');
+      setStatus('❌ Adicione destinatários válidos');
       return;
     }
 
@@ -282,16 +223,13 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
       return;
     }
 
-    setIsBulkSending(true);
-    setBulkProgress({ current: 0, total: recipients.length, success: 0, failed: 0 });
-
     const resolvedBase = getResolvedApiBase(apiBase);
     const resolvedApiKey = getResolvedApiKey(apiKey);
 
-    for (let i = 0; i < recipients.length; i++) {
-      const recipient = recipients[i];
-      const delay = Math.random() * (bulkMaxDelaySeconds - bulkMinDelaySeconds) + bulkMinDelaySeconds;
-
+    if (recipients.length === 1) {
+      // Single send logic
+      setLoading(true);
+      const recipient = recipients[0];
       try {
         const response = await fetch(`${resolvedBase}/send`, {
           method: 'POST',
@@ -309,41 +247,91 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
         });
 
         const data = await response.json();
-        const success = data.ok;
+        if (data.ok) {
+          setStatus(`✅ Email enviado para ${recipient.email}`);
+          appendHistoryItem({
+            id: `${Date.now()}`,
+            email: recipient.email,
+            name: recipient.name,
+            subject,
+            message,
+            ok: true,
+            createdAt: new Date().toISOString(),
+            provider
+          });
+          setRecipientsText('');
+          setSubject('');
+          setMessage('');
+        } else {
+          setStatus(`❌ Erro: ${data.error || 'Falha ao enviar'}`);
+        }
+      } catch (e) {
+        setStatus(`❌ Erro: ${String(e)}`);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      // Bulk send logic
+      setIsBulkSending(true);
+      setBulkProgress({ current: 0, total: recipients.length, success: 0, failed: 0 });
 
-        appendHistoryItem({
-          id: `${Date.now()}-${i}`,
-          email: recipient.email,
-          name: recipient.name,
-          subject,
-          message,
-          ok: success,
-          createdAt: new Date().toISOString(),
-          provider
-        });
+      for (let i = 0; i < recipients.length; i++) {
+        const recipient = recipients[i];
+        const delay = Math.random() * (bulkMaxDelaySeconds - bulkMinDelaySeconds) + bulkMinDelaySeconds;
 
-        setBulkProgress(prev => ({
-          ...prev,
-          current: i + 1,
-          success: prev.success + (success ? 1 : 0),
-          failed: prev.failed + (success ? 0 : 1)
-        }));
-      } catch {
-        setBulkProgress(prev => ({
-          ...prev,
-          current: i + 1,
-          failed: prev.failed + 1
-        }));
+        try {
+          const response = await fetch(`${resolvedBase}/send`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(resolvedApiKey && { 'x-api-key': resolvedApiKey })
+            },
+            body: JSON.stringify({
+              to: recipient.email,
+              recipientName: recipient.name,
+              subject,
+              body: message,
+              provider
+            })
+          });
+
+          const data = await response.json();
+          const success = data.ok;
+
+          appendHistoryItem({
+            id: `${Date.now()}-${i}`,
+            email: recipient.email,
+            name: recipient.name,
+            subject,
+            message,
+            ok: success,
+            createdAt: new Date().toISOString(),
+            provider
+          });
+
+          setBulkProgress(prev => ({
+            ...prev,
+            current: i + 1,
+            success: prev.success + (success ? 1 : 0),
+            failed: prev.failed + (success ? 0 : 1)
+          }));
+        } catch {
+          setBulkProgress(prev => ({
+            ...prev,
+            current: i + 1,
+            failed: prev.failed + 1
+          }));
+        }
+
+        if (i < recipients.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, delay * 1000));
+        }
       }
 
-      if (i < recipients.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, delay * 1000));
-      }
+      setStatus(`✅ Enviados: ${bulkProgress.success} | ❌ Falhados: ${bulkProgress.failed}`);
+      setIsBulkSending(false);
+      setRecipientsText('');
     }
-
-    setStatus(`✅ Enviados: ${bulkProgress.success} | ❌ Falhados: ${bulkProgress.failed}`);
-    setIsBulkSending(false);
-    setRecipientsText('');
   };
 
   // Clear history
@@ -354,6 +342,13 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
     }
   };
 
+  // Handle template selection
+  const handleSelectTemplate = (template: any) => {
+    setSubject(template.subject);
+    setMessage(template.htmlContent);
+    setStatus(`✅ Template "${template.name}" aplicado!`);
+  };
+
   return (
     <div className="space-y-6 p-6 max-w-7xl mx-auto">
       {/* Header */}
@@ -362,7 +357,7 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
         <p className="text-slate-600">Envie campanhas de email em massa com controle de quotas</p>
       </div>
 
-      {/* Removed platform selection — server uses Google Workspace by default. Show auth status. */}
+      {/* Connection Info */}
       <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
         <div className="flex items-center justify-between gap-3 mb-2">
           <div className="flex items-center gap-2">
@@ -392,7 +387,7 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
               <div key={label} className={`border ${color} rounded-lg p-4`}>
                 <div className="text-sm text-slate-700">{label}</div>
                 <div className="text-2xl font-bold text-slate-900">
-                  {data.used} <span className="text-sm text-slate-600">/ {data.limit}</span>
+                   {data.used} <span className="text-sm text-slate-600">/ {data.limit}</span>
                 </div>
                 <div className="mt-2 bg-gray-200 rounded-full h-2 overflow-hidden">
                   <div
@@ -415,13 +410,17 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
         </div>
       )}
 
-      {/* Single Email Send */}
+      {/* Main Email Block */}
       <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-        <h2 className="text-xl font-bold text-slate-900 mb-4">📧 Enviar Email Único</h2>
+        <h2 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+            <Mail className="h-5 w-5" />
+            Enviar E-mail
+        </h2>
+        
         <div className="mb-4">
           {workspaceAccount ? (
             <div className="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-200">
-              📤 Enviando para sua conta Workspace: <span className="font-bold text-blue-600">{workspaceAccount}</span>
+              📤 Enviando via: <span className="font-bold text-blue-600">{workspaceAccount}</span>
             </div>
           ) : (
              <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-200">
@@ -429,146 +428,118 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
             </div>
           )}
         </div>
-        <div className="grid grid-cols-1 gap-4 mb-4">
+
+        {/* Recipients input */}
+        <div className="space-y-4 mb-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Destinatários</label>
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg mb-2 text-xs text-blue-800">
+               💡 Formatos aceitos: <b>email@exemplo.com</b> | <b>emails separados por vírgula</b> | <b>email | Nome</b> (um por linha)
+            </div>
+            <textarea
+              placeholder="Ex: joao@gmail.com, maria@outlook.com ou um por linha..."
+              value={recipientsText}
+              onChange={(e) => setRecipientsText(e.target.value)}
+              rows={4}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+            />
+            {recipients.length > 0 && (
+                <div className="mt-1 text-xs text-slate-500 font-semibold text-blue-600">
+                    📊 Destinatários identificados: {recipients.length}
+                </div>
+            )}
+          </div>
+
           <input
             type="text"
-            placeholder="Nome do destinatário"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Assunto do email"
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-        </div>
-        <input
-          type="text"
-          placeholder="Assunto do email"
-          value={subject}
-          onChange={(e) => setSubject(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
-        />
-        <button
-          onClick={() => setIsTemplateModalOpen(true)}
-          className="w-full px-4 py-2 mb-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition flex items-center justify-center gap-2"
-        >
-          <Package className="h-4 w-4" />
-          🎨 Escolher Template
-        </button>
-        <div className="mb-4">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="text-sm text-slate-700 font-medium">Corpo do email</div>
-            <div className="ml-auto flex gap-2">
-              <button onClick={() => setEditorMode('visual')} className={`px-3 py-1 rounded ${editorMode === 'visual' ? 'bg-blue-600 text-white' : 'bg-slate-100'}`}>Visual</button>
-              <button onClick={() => setEditorMode('code')} className={`px-3 py-1 rounded ${editorMode === 'code' ? 'bg-blue-600 text-white' : 'bg-slate-100'}`}>Código</button>
-            </div>
-          </div>
-          {editorMode === 'visual' ? (
-            <div className="border border-gray-300 rounded-lg mb-2">
-              <div className="p-2 flex gap-2 border-b bg-slate-50">
-                <button type="button" onClick={() => document.execCommand('bold')} className="px-2 py-1 bg-white rounded">B</button>
-                <button type="button" onClick={() => document.execCommand('italic')} className="px-2 py-1 bg-white rounded">I</button>
-                <button type="button" onClick={() => {
-                  const url = prompt('Inserir link (https://...)');
-                  if (url) document.execCommand('createLink', false, url);
-                }} className="px-2 py-1 bg-white rounded">Link</button>
-                <button type="button" onClick={() => document.execCommand('unlink')} className="px-2 py-1 bg-white rounded">Remover Link</button>
-                <button type="button" onClick={() => {
-                  setMessage('');
-                  if (visualEditorRef.current) visualEditorRef.current.innerHTML = '';
-                }} className="px-2 py-1 bg-red-50 text-red-600 rounded">Limpar</button>
+
+          <button
+            onClick={() => setIsTemplateModalOpen(true)}
+            className="w-full px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition flex items-center justify-center gap-2"
+          >
+            <Package className="h-4 w-4" />
+            🎨 Escolher Template
+          </button>
+
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="text-sm text-slate-700 font-medium">Corpo do email</div>
+              <div className="ml-auto flex gap-2">
+                <button onClick={() => setEditorMode('visual')} className={`px-3 py-1 rounded text-xs ${editorMode === 'visual' ? 'bg-blue-600 text-white' : 'bg-slate-100'}`}>Visual</button>
+                <button onClick={() => setEditorMode('code')} className={`px-3 py-1 rounded text-xs ${editorMode === 'code' ? 'bg-blue-600 text-white' : 'bg-slate-100'}`}>Código</button>
               </div>
-              <div
-                ref={visualEditorRef}
-                contentEditable
-                suppressContentEditableWarning
-                onInput={(e) => setMessage((e.target as HTMLDivElement).innerHTML)}
-                className="p-4 min-h-[240px] max-h-[60vh] overflow-auto"
-                dir="ltr"
-                spellCheck={true}
-                style={{ direction: 'ltr', unicodeBidi: 'plaintext', textAlign: 'left', whiteSpace: 'pre-wrap' }}
-              />
             </div>
-          ) : (
-            <textarea
-              placeholder="Corpo do email (HTML suportado)"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              rows={12}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm mb-4"
-            />
-          )}
-        </div>
-        <button
-          onClick={handleSendEmail}
-          disabled={loading}
-          className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition disabled:opacity-50"
-        >
-          {loading ? '⏳ Enviando...' : '📤 Enviar Email'}
-        </button>
-      </div>
-
-      {/* Bulk Send */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-        <h2 className="text-xl font-bold text-slate-900 mb-4">📨 Envio em Massa</h2>
-        
-        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-sm text-blue-800">
-            💡 Formato: um email por linha (opcional: email | Nome)
-          </p>
-          <p className="text-xs text-blue-700 mt-1">Ex: joao@example.com | João Silva</p>
-        </div>
-
-        <textarea
-          placeholder="Emails (um por linha)"
-          value={recipientsText}
-          onChange={(e) => setRecipientsText(e.target.value)}
-          rows={6}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 font-mono text-sm mb-4"
-        />
-
-        <input
-          type="text"
-          placeholder="Assunto do email"
-          value={subject}
-          onChange={(e) => setSubject(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 mb-4"
-        />
-
-        <textarea
-          placeholder="Corpo do email (HTML suportado)"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          rows={6}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 font-mono text-sm mb-4"
-        />
-
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Delay mínimo (segundos)</label>
-            <input
-              type="number"
-              value={bulkMinDelaySeconds}
-              onChange={(e) => setBulkMinDelaySeconds(parseInt(e.target.value))}
-              min="1"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Delay máximo (segundos)</label>
-            <input
-              type="number"
-              value={bulkMaxDelaySeconds}
-              onChange={(e) => setBulkMaxDelaySeconds(parseInt(e.target.value))}
-              min="1"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-            />
+            {editorMode === 'visual' ? (
+              <div className="border border-gray-300 rounded-lg mb-2">
+                <div className="p-2 flex gap-1 border-b bg-slate-50">
+                  <button type="button" onClick={() => document.execCommand('bold')} className="px-2 py-1 bg-white border border-slate-200 rounded text-xs font-bold">B</button>
+                  <button type="button" onClick={() => document.execCommand('italic')} className="px-2 py-1 bg-white border border-slate-200 rounded text-xs italic">I</button>
+                  <button type="button" onClick={() => {
+                    const url = prompt('Inserir link (https://...)');
+                    if (url) document.execCommand('createLink', false, url);
+                  }} className="px-2 py-1 bg-white border border-slate-200 rounded text-xs text-blue-600 underline">Link</button>
+                  <button type="button" onClick={() => {
+                    setMessage('');
+                    if (visualEditorRef.current) visualEditorRef.current.innerHTML = '';
+                  }} className="px-2 py-1 ml-auto bg-red-50 text-red-600 rounded text-xs">Limpar</button>
+                </div>
+                <div
+                  ref={visualEditorRef}
+                  contentEditable
+                  suppressContentEditableWarning
+                  onInput={(e) => setMessage((e.target as HTMLDivElement).innerHTML)}
+                  className="p-4 min-h-[240px] max-h-[60vh] overflow-auto prose prose-sm max-w-none"
+                  dir="ltr"
+                  style={{ textAlign: 'left' }}
+                />
+              </div>
+            ) : (
+              <textarea
+                placeholder="Corpo do email (HTML suportado)"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                rows={12}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+              />
+            )}
           </div>
         </div>
 
-        <div className="text-sm text-slate-600 mb-4">
-          📊 {recipients.length} email(s) para enviar
-          {recipients.length > RECOMMENDED_BULK_LIMIT && (
-            <span className="text-orange-600 ml-2">⚠️ Pode exceder quota!</span>
-          )}
-        </div>
+        {/* Bulk specific settings (visible only when multiple recipients) */}
+        {recipients.length > 1 && (
+            <div className="grid grid-cols-2 gap-4 mb-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                <div>
+                    <label className="block text-xs font-medium text-slate-500 mb-1">Delay mín (seg)</label>
+                    <input
+                        type="number"
+                        value={bulkMinDelaySeconds}
+                        onChange={(e) => setBulkMinDelaySeconds(parseInt(e.target.value))}
+                        min="1"
+                        className="w-full px-3 py-1 border border-gray-300 rounded"
+                    />
+                </div>
+                <div>
+                    <label className="block text-xs font-medium text-slate-500 mb-1">Delay máx (seg)</label>
+                    <input
+                        type="number"
+                        value={bulkMaxDelaySeconds}
+                        onChange={(e) => setBulkMaxDelaySeconds(parseInt(e.target.value))}
+                        min="1"
+                        className="w-full px-3 py-1 border border-gray-300 rounded"
+                    />
+                </div>
+                {recipients.length > RECOMMENDED_BULK_LIMIT && (
+                    <div className="col-span-2 text-xs text-orange-600 font-semibold">
+                         ⚠️ Lote grande detectado. Recomenda-se delay maior para evitar bloqueios.
+                    </div>
+                )}
+            </div>
+        )}
 
         {isBulkSending && (
           <div className="mb-4 space-y-2">
@@ -581,7 +552,7 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
                 style={{ width: `${(bulkProgress.current / bulkProgress.total) * 100}%` }}
               ></div>
             </div>
-            <div className="flex gap-4 text-sm">
+            <div className="flex gap-4 text-sm font-semibold">
               <span className="text-green-600">✅ Sucesso: {bulkProgress.success}</span>
               <span className="text-red-600">❌ Falha: {bulkProgress.failed}</span>
             </div>
@@ -589,11 +560,13 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
         )}
 
         <button
-          onClick={handleBulkSend}
-          disabled={isBulkSending || recipients.length === 0}
-          className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition disabled:opacity-50"
+          onClick={handleSendEmail}
+          disabled={loading || isBulkSending || recipients.length === 0}
+          className={`w-full px-6 py-3 rounded-lg font-bold text-white shadow-lg transition-all ${
+            isBulkSending ? 'bg-orange-500' : 'bg-blue-600 hover:bg-blue-700 active:scale-95'
+          } disabled:opacity-50 disabled:grayscale`}
         >
-          {isBulkSending ? `⏳ Enviando (${bulkProgress.current}/${bulkProgress.total})` : '📤 Enviar em Massa'}
+          {loading ? '⏳ Enviando...' : isBulkSending ? `⏳ Enviando Massa (${bulkProgress.current}/${bulkProgress.total})` : recipients.length > 1 ? '📤 Iniciar Envio em Massa' : '📤 Enviar E-mail'}
         </button>
       </div>
 
