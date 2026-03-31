@@ -84,9 +84,9 @@ export const App = () => {
       'updatedAt'
   ]);
   // Updated default order to prioritize Name and Company
-  const [contactColumns, setContactColumns] = useState<string[]>(['name', 'company_name', 'email', 'phone', 'total_simulations', 'mailing', 'role', 'updatedAt']);
+    const [contactColumns, setContactColumns] = useState<string[]>(['name', 'company_name', 'email', 'phone', 'total_simulations', 'role', 'updatedAt']);
   const [companyFilterColumns, setCompanyFilterColumns] = useState<string[]>([]);
-  const [contactFilterColumns, setContactFilterColumns] = useState<string[]>(['role', 'department', 'mailing', 'company_industry', 'company_location', 'company_municipio']);
+    const [contactFilterColumns, setContactFilterColumns] = useState<string[]>(['role', 'department', 'company_industry', 'company_location', 'company_municipio']);
   const [companyDetailColumns, setCompanyDetailColumns] = useState<string[]>(COMPANY_FIELDS.map(f => f.key));
   const [contactDetailColumns, setContactDetailColumns] = useState<string[]>(CONTACT_FIELDS.map(f => f.key));
   const [companyEditColumns, setCompanyEditColumns] = useState<string[]>(COMPANY_FIELDS.map(f => f.key));

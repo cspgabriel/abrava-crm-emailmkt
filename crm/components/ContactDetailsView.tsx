@@ -212,10 +212,10 @@ export const ContactDetailsView = ({ contact, onBack, onEdit, campaigns, onDelet
                                             <div className="flex items-center gap-4">
                                                 <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600"><Tag className="h-5 w-5"/></div>
                                                 <div>
-                                                    <p className="text-xs text-gray-500 uppercase font-bold">Mailings / Setores</p>
+                                                    <p className="text-xs text-gray-500 uppercase font-bold">Tags</p>
                                                     <div className="flex flex-wrap gap-1 mt-1">
-                                                        {cleanArrayValue(contact.mailing).length > 0 ? 
-                                                            cleanArrayValue(contact.mailing).map((m: string, i: number) => (
+                                                        {(Array.isArray(contact.tags) && contact.tags.length > 0) ? 
+                                                            contact.tags.map((m: string, i: number) => (
                                                                 <span key={i} className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-medium border border-purple-200">{m}</span>
                                                             )) 
                                                             : <p className="text-gray-900 font-medium">-</p>

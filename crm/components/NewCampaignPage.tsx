@@ -21,7 +21,7 @@ export const NewCampaignPage = ({ contacts = [], onBack, onSend }: any) => {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [sendMethod, setSendMethod] = useState<'email' | 'whatsapp'>('email');
 
-    const filterKeys = ['department', 'mailing', 'role'];
+    const filterKeys = ['department', 'role'];
 
     const filteredContacts = useMemo(() => {
         const searchLower = search.toLowerCase();

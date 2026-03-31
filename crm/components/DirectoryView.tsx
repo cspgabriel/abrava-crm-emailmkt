@@ -23,7 +23,7 @@ export const DirectoryView = ({ contacts, onSendCampaign, onViewContact }: any) 
     const [saveName, setSaveName] = useState('');
     const [saveDefault, setSaveDefault] = useState(false);
 
-    const filterConfig = [{ label: 'Mailings / Setores', key: 'mailing', icon: Tag }, { label: 'Status Associação', key: 'company_status', icon: Star }, { label: 'Estrelas (Hotel)', key: 'company_stars', icon: Hotel }, { label: 'Bairro', key: 'company_neighborhood', icon: MapPin }, { label: 'Zona', key: 'company_zone', icon: Map }, { label: 'Região', key: 'company_region', icon: MapIcon }, { label: 'Simulação', key: 'company_name', icon: Building2 }];
+    const filterConfig = [{ label: 'Tags', key: 'tags', icon: Tag }, { label: 'Status Associação', key: 'company_status', icon: Star }, { label: 'Estrelas (Hotel)', key: 'company_stars', icon: Hotel }, { label: 'Bairro', key: 'company_neighborhood', icon: MapPin }, { label: 'Zona', key: 'company_zone', icon: Map }, { label: 'Região', key: 'company_region', icon: MapIcon }, { label: 'Simulação', key: 'company_name', icon: Building2 }];
     const toggleFilterValue = (key: string, value: string) => { const current = activeFilters[key] || []; if (current.includes(value)) { setActiveFilters({ ...activeFilters, [key]: current.filter(v => v !== value) }); } else { setActiveFilters({ ...activeFilters, [key]: [...current, value] }); } };
     const clearFilter = (key: string) => { const { [key]: _, ...rest } = activeFilters; setActiveFilters(rest); }
     const filteredContacts = useMemo(() => {
