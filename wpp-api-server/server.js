@@ -174,7 +174,7 @@ const client = new Client({
 
 // Evento: QR Code gerado (sessão nova)
 client.on('qr', async (qr) => {
-  console.log('[WPP] � QR Code gerado - escaneie com WhatsApp');
+  console.log('[WPP] 📸 QR Code gerado - escaneie com WhatsApp');
   
   connectionState = 'waiting-qr';
   
