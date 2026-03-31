@@ -1,10 +1,12 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    
+
+    // helper functions
     function isAdmin() {
       return request.auth != null && (
-        request.auth.token.email == 'admin@finance8.com.br' || 
+        request.auth.token.email == 'admin@finance8.com.br' ||
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
       );
     }
@@ -13,7 +15,7 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // ============ USERS ============
+    // USERS
     match /users/{userId} {
       allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
       allow create: if isAuthenticated();
@@ -21,30 +23,30 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // ============ SIMULATIONS ============
+    // SIMULATIONS
     match /simulations/{simId} {
       allow create: if true;
-      allow read: if true;
-      allow update: if true;
+      allow read:   if true;
+      allow update: if request.auth != null;
       allow delete: if isAdmin();
     }
 
-    // ============ CONTACTS / LEADS ============
+    // CONTACTS / LEADS
     match /contacts/{contactId} {
       allow read: if true;
-      allow create: if isAdmin();
-      allow update: if isAdmin();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
       allow delete: if isAdmin();
     }
 
     match /leads/{leadId} {
-      allow read: if true;
-      allow create: if isAdmin();
-      allow update: if isAdmin();
+      allow create: if true;
+      allow read:   if true;
+      allow update: if request.auth != null;
       allow delete: if isAdmin();
     }
 
-    // ============ CONTEMPLATED LETTERS ============
+    // CONTEMPLATED LETTERS
     match /contemplated_letters/{letterId} {
       allow read: if true;
       allow create: if isAdmin();
@@ -52,14 +54,13 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // ============ CAMPAIGNS ============
+    // CAMPAIGNS and nested messages
     match /campaigns/{campaignId} {
       allow read: if true;
       allow create: if isAdmin();
       allow update: if isAdmin();
       allow delete: if isAdmin();
-      
-      // Campaign messages (nested collection)
+
       match /messages/{messageId} {
         allow read: if true;
         allow create: if isAdmin();
@@ -68,49 +69,29 @@ service cloud.firestore {
       }
     }
 
-          // Simulations: allow creation by anyone, public read, updates only when authenticated
-          match /simulations/{simId} {
-            allow create: if true;
-            allow read:   if true;
-            allow update: if request.auth != null;
-            allow delete: if false;
-          }
-      // Form submissions (nested collection)
-      match /submissions/{submissionId} {
-        allow read: if isAdmin();
-        allow create: if true;
-        allow update: if isAdmin();
-        allow delete: if isAdmin();
-      }
+    // FORM SUBMISSIONS (if you use /forms/{formId}/submissions)
+    match /forms/{formId}/submissions/{submissionId} {
+      allow read: if isAdmin();
+      allow create: if true;
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
     }
 
-          // Leads: common collection for contacts - allow create by clients, public read
-          match /leads/{leadId} {
-            allow create: if true;
-            allow read:   if true;
-            allow update: if request.auth != null;
-            allow delete: if false;
-          }
-    // ============ SETTINGS ============
+    // SETTINGS
     match /settings/{settingId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    // ============ ANNOTATIONS ============
+    // ANNOTATIONS
     match /annotations/{annotationId} {
       allow read: if isAuthenticated();
-          // Contemplated letters: public read, writes only authenticated
-          match /contemplated_letters/{letterId} {
-            allow read:  if true;
-            allow write: if request.auth != null;
-          }
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
       allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
       allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
-    // ============ WHATSAPP SEND HISTORY ============
+    // WHATSAPP SEND HISTORY
     match /whatsapp_send_history/{historyId} {
       allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
       allow create: if isAuthenticated();
@@ -118,20 +99,15 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // ============ WHATSAPP CAMPAIGNS ============
+    // WHATSAPP CAMPAIGNS
     match /whatsapp_campaigns/{campaignId} {
       allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-          // Campaigns: reads public, writes only authenticated
-          match /campaigns/{campaignId} {
-            allow read:  if true;
-            allow write: if request.auth != null;
-          }
-      allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow update: if isAuthenticated() && (request.resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isAuthenticated() && (request.resource.data.userId == request.auth.uid || isAdmin());
     }
 
-    // ============ ACTIVITY LOG ============
+    // ACTIVITY LOG
     match /activity_log/{logId} {
       allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
       allow create: if isAuthenticated();
@@ -139,7 +115,7 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // ============ SAVED VIEWS ============
+    // SAVED VIEWS
     match /savedViews/{viewId} {
       allow read: if true;
       allow create: if isAuthenticated();
@@ -147,7 +123,7 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && (request.auth.uid == resource.data.ownerUid || isAdmin());
     }
 
-    // ============ ELIS SOLICITACOES ============
+    // ELIS SOLICITACOES
     match /elis_solicitacoes/{solicitacaoId} {
       allow read: if true;
       allow create: if isAdmin();
@@ -155,9 +131,8 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // ============ DEVELOPMENT MODE: Catch-all permissive rules ============
-    // WARNING: This allows any authenticated user to access any other collection
-    // FOR DEVELOPMENT ONLY - Remove or restrict in production
+    // DEVELOPMENT CATCH-ALL (DEV ONLY)
+    // WARNING: for development convenience only. Remove or tighten for production.
     match /{document=**} {
       allow read, write: if isAuthenticated();
     }
