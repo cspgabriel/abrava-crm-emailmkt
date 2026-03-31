@@ -36,7 +36,7 @@ A sessão do WhatsApp **NÃO estava sendo persistida corretamente** entre reinic
    ↓
 4. ✅ Conectado!
    ↓
-5. Sessão SALVA em: .wwebjs_auth/abravacon-wpp/
+5. Sessão SALVA em: .wwebjs_auth/abravacom-wpp/
 ```
 
 ### Próximas Vezes (AUTOMÁTICO - Sem QR!)
@@ -171,7 +171,7 @@ wpp-api-server/
 ├── server.js                   # Servidor principal (corrigido)
 ├── manage-session.js           # Gerenciador de sessão (novo)
 ├── .wwebjs_auth/              # ← SESSÃO SALVA AQUI
-│   └── abravacon-wpp/
+│   └── abravacom-wpp/
 │       └── Default/
 │           └── Session Storage/  ← Cookies, dados da sessão
 ├── .wwebjs_backups/           # Backups de sessão (novo)

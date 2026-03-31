@@ -151,8 +151,8 @@ WPP_HEADLESS=false
 ## Cookies & Persistência de Sessão
 
 ### Localização dos Cookies
-- **Linux/Mac:** `~/.wwebjs_auth/abravacon-wpp/`
-- **Windows:** `C:\Users\<USER>\Downloads\abravacom-main\wpp-api-server\.wwebjs_auth\abravacon-wpp\`
+ **Linux/Mac:** `~/.wwebjs_auth/abravacom-wpp/`
+ **Windows:** `C:\Users\<USER>\Downloads\abravacom-main\wpp-api-server\.wwebjs_auth\abravacom-wpp\`
 
 ### Arquivos Importantes
 - `IndexedDB/` - Armazena estado da sessão

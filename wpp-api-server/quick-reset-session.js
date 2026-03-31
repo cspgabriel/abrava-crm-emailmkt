@@ -18,7 +18,7 @@ const { execSync } = require('child_process');
 const os = require('os');
 
 const authDir = path.join(__dirname, '.wwebjs_auth');
-const sessionPath = path.join(authDir, 'session-abravacon-wpp');
+const sessionPath = path.join(authDir, 'session-abravacom-wpp');
 const args = process.argv.slice(2);
 const isNuclear = args.includes('full');
 

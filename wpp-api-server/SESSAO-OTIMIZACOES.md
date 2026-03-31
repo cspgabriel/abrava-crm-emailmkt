@@ -5,7 +5,7 @@
 ### Problema Original
 O servidor falhava com:
 ```
-❌ The browser is already running for C:\...\session-abravacon-wpp
+❌ The browser is already running for C:\...\session-abravacom-wpp
 ```
 
 Mesmo com a sessão anterior salva, levava eternidade para reconectar (ou não conseguia).

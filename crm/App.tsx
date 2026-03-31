@@ -1469,7 +1469,7 @@ export const App = () => {
                 {/* ────────────────────────────────────────────────────────────────────── */}
                 {currentPath === 'dashboard' && renderDashboard()}
                 {currentPath === 'whatsapp' && <WhatsAppSender apiBase={WHATSAPP_API_URL || ''} />}
-                {currentPath === 'email' && <EmailMarketing apiBase={((import.meta as any)?.env?.VITE_EMAIL_API_URL?.trim?.() || 'https://email-api.abravacon.com.br').replace(/\/$/, '')} apiKey={WPP_API_KEY || ''} />}
+                {currentPath === 'email' && <EmailMarketing apiBase={((import.meta as any)?.env?.VITE_EMAIL_API_URL?.trim?.() || 'https://email-api.abravacom.com.br').replace(/\/$/, '')} apiKey={WPP_API_KEY || ''} />}
                 {currentPath === 'email-pro' && <EmailMarketingWorkspace contacts={enrichedContacts} campaigns={campaigns} />}
                 {currentPath === 'companies' && (
                     <div className="space-y-4">

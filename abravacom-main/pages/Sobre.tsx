@@ -32,15 +32,15 @@ const steps = [
 const Sobre: React.FC = () => {
   useEffect(() => {
     // SEO setup
-    document.title = "Quem Somos | Abravacon Assessoria";
+    document.title = "Quem Somos | Abravacom Assessoria";
     const metaDescription = document.querySelector('meta[name="description"]');
     if (metaDescription) {
-      metaDescription.setAttribute("content", "Conheça a Abravacon. Acesso exclusivo às melhores cartas contempladas do país e crédito com garantia de imóvel. Inteligência financeira para multiplicar seu patrimônio.");
+      metaDescription.setAttribute("content", "Conheça a Abravacom. Acesso exclusivo às melhores cartas contempladas do país e crédito com garantia de imóvel. Inteligência financeira para multiplicar seu patrimônio.");
     }
 
     const metaKeywords = document.querySelector('meta[name="keywords"]');
     if (metaKeywords) {
-        metaKeywords.setAttribute("content", "sobre nós, abravacon, cartas contempladas, home equity, empréstimo com garantia de imóvel, consórcio, inteligência financeira");
+        metaKeywords.setAttribute("content", "sobre nós, abravacom, cartas contempladas, home equity, empréstimo com garantia de imóvel, consórcio, inteligência financeira");
     }
 
     // Scroll to top
@@ -145,7 +145,7 @@ const Sobre: React.FC = () => {
           
           <div className="w-full h-[400px] md:h-[500px] rounded-[2rem] overflow-hidden shadow-2xl glass-panel border border-[#d8ad5b]/20 relative">
             <iframe 
-              src="https://maps.google.com/maps?q=Abravacon+Consorcios&t=&z=13&ie=UTF8&iwloc=&output=embed" 
+              src="https://maps.google.com/maps?q=Abravacom+Consorcios&t=&z=13&ie=UTF8&iwloc=&output=embed" 
               width="100%" 
               height="100%" 
               style={{ border: 0 }} 

@@ -13,7 +13,7 @@ const fs = require('fs');
 const path = require('path');
 
 const authDir = path.join(__dirname, '.wwebjs_auth');
-const sessionPath = path.join(authDir, 'session-abravacon-wpp'); // Match server.js SESSION_CLIENT_ID
+const sessionPath = path.join(authDir, 'session-abravacom-wpp'); // Match server.js SESSION_CLIENT_ID
 const backupDir = path.join(__dirname, '.wwebjs_backups');
 
 function ensureBackupDir() {

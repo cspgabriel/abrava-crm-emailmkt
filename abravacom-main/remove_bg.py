@@ -22,7 +22,7 @@ def main():
     output_image = remove(input_image)
     
     print("Saving transparent image...")
-    output_image.save('public/logo_abravacon_transparent.png')
+    output_image.save('public/logo_abravacom_transparent.png')
     print("Done!")
 
 if __name__ == "__main__":

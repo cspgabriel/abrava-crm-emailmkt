@@ -25,7 +25,7 @@ export default defineConfig(({ mode }) => {
         react(),
         VitePWA({
           registerType: 'autoUpdate',
-          includeAssets: ['logo_abravacon_transparent.png'],
+          includeAssets: ['logo_abravacom_transparent.png'],
           workbox: {
             maximumFileSizeToCacheInBytes: 5 * 1024 * 1024 // 5 MB to prevent Vercel failure
           },
@@ -38,12 +38,12 @@ export default defineConfig(({ mode }) => {
             display: 'standalone',
             icons: [
               {
-                src: '/logo_abravacon_transparent.png',
+                src: '/logo_abravacom_transparent.png',
                 sizes: '192x192',
                 type: 'image/png'
               },
               {
-                src: '/logo_abravacon_transparent.png',
+                src: '/logo_abravacom_transparent.png',
                 sizes: '512x512',
                 type: 'image/png'
               }

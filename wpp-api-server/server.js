@@ -125,8 +125,14 @@ app.use((req, res, next) => {
   const origin = (req.header('origin') || '').trim();
   if (!X_API_KEY) return next();
   if (key && key === X_API_KEY) return next();
-  if (origin && TRUSTED_ORIGINS.includes(origin) && (
+  const isVercel = origin.includes('vercel.app');
+  const isAbravacom = origin.includes('abravacom.com.br');
+  const isLocalhost = origin.includes('localhost');
+  const isTrusted = isVercel || isAbravacom || isLocalhost || TRUSTED_ORIGINS.includes(origin);
+
+  if (isTrusted && (
     (req.method === 'POST' && req.path === '/send') ||
+    (req.method === 'POST' && req.path === '/logout') ||
     (req.method === 'POST' && req.path === '/schedule') ||
     (req.method === 'GET' && req.path === '/schedules') ||
     (req.method === 'POST' && req.path.startsWith('/schedules'))

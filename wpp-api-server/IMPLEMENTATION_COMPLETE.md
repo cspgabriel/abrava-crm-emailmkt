@@ -122,7 +122,7 @@ wpp-api-server/
 ├── ✅ .env.example              (atualizado - documentação)
 ├── ✅ SESSION_PERSISTENCE.md    (novo - guia completo)
 └── .wwebjs_auth/
-    └── session-abravacon-wpp/   (✅ PRESERVADA!)
+   └── session-abravacom-wpp/   (✅ PRESERVADA!)
 ```
 
 ---

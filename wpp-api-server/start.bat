@@ -52,7 +52,7 @@ if exist ".wwebjs_cache" (
 
 REM Check session
 echo [6/7] Verificando sessão WhatsApp...
-if exist ".wwebjs_auth\session-abravacon-wpp" (
+if exist ".wwebjs_auth\session-abravacom-wpp" (
     echo       ✓ Sessão encontrada - será restaurada ao iniciar
 ) else (
     echo       ⚠️  Nenhuma sessão - QR code será necessário

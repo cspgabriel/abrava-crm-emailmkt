@@ -41,7 +41,7 @@ const testimonials = [
   {
     name: 'Mariana Costa',
     role: 'Médica',
-    text: 'Estava pagando juros absurdos. Com a carta da Abravacon economizei mais de 40% e ganhei segurança.',
+    text: 'Estava pagando juros absurdos. Com a carta da Abravacom economizei mais de 40% e ganhei segurança.',
     rating: 5,
     date: 'Há 1 semana',
   },
