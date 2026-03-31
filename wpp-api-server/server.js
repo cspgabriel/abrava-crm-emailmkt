@@ -116,6 +116,27 @@ console.log('[WPP] 📂 LocalAuth directory:', authDir);
 console.log('[WPP] 📂 Session path:', sessionPath);
 console.log('[WPP] 📋 Previous session found:', doesSessionExist);
 
+// Path to persist the last QR temporarily so frontend can retrieve it
+const lastQrFile = path.join(authDir, 'last_qr.json');
+// On startup, if there's a saved QR and no session, restore it (if recent)
+try {
+  if (!doesSessionExist && fs.existsSync(lastQrFile)) {
+    const raw = fs.readFileSync(lastQrFile, 'utf8');
+    const obj = JSON.parse(raw);
+    // Only restore if QR is recent (<= 10 minutes)
+    if (obj && obj.qr && obj.ts && (Date.now() - obj.ts) < 10 * 60 * 1000) {
+      lastQr = obj.qr;
+      console.log('[WPP] ✅ Restored recent QR from disk for frontend retrieval');
+      connectionState = 'waiting-qr';
+    } else {
+      // stale file - remove
+      try { fs.unlinkSync(lastQrFile); } catch (e) {}
+    }
+  }
+} catch (e) {
+  // ignore parse/read errors
+}
+
 // ====================  AUTH MIDDLEWARE  ====================
 app.use((req, res, next) => {
   if (req.method === 'GET' && ['/', '/healthz', '/status', '/qr', '/session-check'].includes(req.path)) {
@@ -181,6 +202,12 @@ client.on('qr', async (qr) => {
   try {
     const dataUrl = await qrcodeImg.toDataURL(qr);
     lastQr = dataUrl;
+      // Persist latest QR to disk so frontend can retrieve it after restarts
+      try {
+        fs.writeFileSync(lastQrFile, JSON.stringify({ qr: dataUrl, ts: Date.now() }), 'utf8');
+      } catch (e) {
+        console.warn('[WPP] ⚠️  Não foi possível salvar lastQr:', e?.message || e);
+      }
     console.log('[WPP] ✅ QR pronto no endpoint /qr');
   } catch (e) {
     console.error('[WPP] ❌ Erro ao gerar QR:', e.message);
@@ -195,6 +222,8 @@ client.on('qr', async (qr) => {
 client.on('authenticated', () => {
   console.log('[WPP] 🔐 Autenticado! Aguarde conexão total...');
   lastQr = null;
+  // remove persisted QR once authenticated
+  try { if (fs.existsSync(lastQrFile)) fs.unlinkSync(lastQrFile); } catch (e) {}
   connectionState = 'ready';
 });
 
