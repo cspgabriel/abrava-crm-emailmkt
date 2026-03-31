@@ -381,7 +381,12 @@ export const EmailMarketing: React.FC<{ apiBase?: string; apiKey?: string }> = (
           {workspaceAccount && (
             <div className="px-3 py-1 bg-green-50 text-green-700 border border-green-200 rounded-full text-xs font-semibold flex items-center gap-1">
               <CheckCircle className="h-3 w-3" />
-              Conta CLI: {workspaceAccount}
+              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-gradient-to-r from-green-400 to-green-600 text-white shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 15c2.761 0 5.29.846 7.379 2.276M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span>Conta CLI: {workspaceAccount}</span>
+              </span>
             </div>
           )}
         </div>
