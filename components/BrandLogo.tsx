@@ -8,8 +8,8 @@ type BrandLogoProps = {
   compact?: boolean;
 };
 
-// PNG locally generated with transparent background
-const BRAND_LOGO_URL = '/logo_abravacon_transparent.png';
+// Use the provided logo in public/ as favicon and brand image
+const BRAND_LOGO_URL = '/logo.png';
 
 const BrandLogo: React.FC<BrandLogoProps> = ({
   className = '',
