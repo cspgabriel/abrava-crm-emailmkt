@@ -11,6 +11,25 @@ type BrandLogoProps = {
 // Use externally hosted logo (provided by user)
 const BRAND_LOGO_URL = 'https://gcdnb.pbrd.co/images/b2tTs3cm8rnE.png?o=1';
 
+export default function BrandLogo({ className = '' }: { className?: string }) {
+  return (
+    <div className={`flex items-center justify-center ${className}`}>
+      <img
+        src={BRAND_LOGO_URL}
+        alt="Abravacom"
+        style={{
+          maxHeight: '72px',
+          width: 'auto',
+          objectFit: 'contain',
+        }}
+        onError={(e) => {
+          (e.target as HTMLImageElement).src = '/logo.png';
+        }}
+      />
+    </div>
+  );
+}
+
 const BrandLogo: React.FC<BrandLogoProps> = ({
   className = '',
   iconClassName = '',
