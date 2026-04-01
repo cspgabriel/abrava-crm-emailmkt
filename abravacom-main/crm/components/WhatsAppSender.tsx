@@ -243,28 +243,25 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
           setStatus(`✓ WhatsApp conectado: ${statusData.phone || ''} ${statusData.accountName ? '| ' + statusData.accountName : ''}`);
         }
 
-        // If not ready, try to fetch QR only if backend indicates it has one
+        // If not ready, always try to fetch fresh QR snapshot from backend.
         if (!isNowReady) {
-          if (statusData.hasQR) {
-            try {
-              const qrUrl = `${resolvedBase}/qr`;
-              console.log('[WhatsApp] 📡 Fetching QR from:', qrUrl);
-              const qrResp = await fetchWithAuth(qrUrl, resolvedApiKey, { method: 'GET' });
-              if (qrResp.ok) {
-                const qrData = await qrResp.json();
-                if (qrData?.ok && qrData.qr) {
-                  setQrCode(qrData.qr);
-                } else {
-                  setQrCode(null);
-                }
+          try {
+            const qrUrl = `${resolvedBase}/qr`;
+            console.log('[WhatsApp] 📡 Fetching QR from:', qrUrl);
+            const qrResp = await fetchWithAuth(qrUrl, resolvedApiKey, { method: 'GET' });
+            if (qrResp.ok) {
+              const qrData = await qrResp.json();
+              if (qrData?.ok && qrData.qr) {
+                setQrCode(qrData.qr);
+                setStatus('📸 Escaneie o QR code com seu WhatsApp');
               } else {
                 setQrCode(null);
               }
-            } catch (e) {
-              console.warn('[WhatsApp] Erro ao buscar QR:', e);
+            } else {
               setQrCode(null);
             }
-          } else {
+          } catch (e) {
+            console.warn('[WhatsApp] Erro ao buscar QR:', e);
             setQrCode(null);
           }
         } else {
@@ -404,10 +401,12 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
     } catch (e: any) {
       setStatus('⚠️ Atualizando sessão no frontend...');
     } finally {
-      void fetchWhatsappStatus();
-      setTimeout(() => {
-        void fetchWhatsappStatus();
-      }, 1200);
+      const retryDelaysMs = [250, 900, 1800, 3000, 4500, 6500, 9000];
+      retryDelaysMs.forEach((delay) => {
+        setTimeout(() => {
+          void fetchWhatsappStatus();
+        }, delay);
+      });
       setIsDisconnecting(false);
     }
   };

@@ -433,6 +433,29 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
 
   };
 
+  // Force QR snapshot fetch from backend endpoint (same QR shown in terminal).
+  const fetchLatestQrSnapshot = async () => {
+    try {
+      const resolvedBase = getResolvedApiBase(apiBase);
+      const resolvedKey = getResolvedApiKey(apiKey);
+      const qrUrl = `${resolvedBase}/qr`;
+      const qrResp = await fetchWithAuth(qrUrl, resolvedKey, { method: 'GET' });
+
+      if (!qrResp.ok) return false;
+
+      const qrData = await qrResp.json();
+      if (qrData?.ok && qrData.qr) {
+        setQrCode(qrData.qr);
+        setConnectionState('waiting-qr');
+        setStatus('📸 Escaneie o QR code com seu WhatsApp');
+        return true;
+      }
+      return false;
+    } catch (_err) {
+      return false;
+    }
+  };
+
 
 
   // ====================  STATUS POLLING VIA HTTP (SEM WEBSOCKET)  ====================
@@ -475,7 +498,7 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
 
         if (data.ok || data.ready !== undefined) {
 
-          handleStatusUpdate(data);
+          await handleStatusUpdate(data);
 
         } else {
 
@@ -535,7 +558,7 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
 
   
 
-  const handleStatusUpdate = (data: any) => {
+  const handleStatusUpdate = async (data: any) => {
 
     console.log('[WhatsApp] 🔍 handleStatusUpdate chamado com:', { 
 
@@ -609,7 +632,17 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
 
         setStatus('⏳ Aguardando QR code do servidor...');
 
+        // Fallback: fetch QR directly from /qr to mirror terminal QR as soon as it exists.
+        await fetchLatestQrSnapshot();
+
       }
+
+    } else if (!ready && data.qr) {
+
+      // Some backends can report a transient state while already carrying a fresh QR.
+      setConnectionState('waiting-qr');
+      setQrCode(data.qr);
+      setStatus('📸 Escaneie o QR code com seu WhatsApp');
 
     } else if (state === 'error') {
 
@@ -822,11 +855,13 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
 
     } finally {
 
-      void pollWhatsAppStatus();
-
-      setTimeout(() => {
-        void pollWhatsAppStatus();
-      }, 1200);
+      const retryDelaysMs = [250, 900, 1800, 3000, 4500, 6500, 9000];
+      retryDelaysMs.forEach((delay) => {
+        setTimeout(() => {
+          void pollWhatsAppStatus();
+          void fetchLatestQrSnapshot();
+        }, delay);
+      });
 
       setIsDisconnecting(false);
 
