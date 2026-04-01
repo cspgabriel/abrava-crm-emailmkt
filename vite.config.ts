@@ -83,6 +83,8 @@ export default defineConfig(({ mode }) => {
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
+          // Explicit alias to framer-motion CJS entry to avoid Rollup resolution issues
+          'framer-motion': 'framer-motion/dist/cjs/index.js',
         }
       }
     };

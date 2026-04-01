@@ -69,7 +69,7 @@ const Navbar: React.FC = () => {
   return (
     <>
       <nav className="fixed inset-x-0 top-0 z-[150]">
-        <div className="flex w-full items-center justify-between border-b border-[rgba(217,173,87,0.06)] bg-[#081728] px-4 py-4 shadow-[0_6px_20px_rgba(3,10,20,0.25)]">
+        <div className="flex w-full items-center justify-between border-b border-[rgba(217,173,87,0.06)] bg-[#0A1938] px-4 py-4 shadow-[0_6px_20px_rgba(4,9,20,0.35)]">
           <Link to="/" className="shrink-0">
             <BrandLogo />
           </Link>
