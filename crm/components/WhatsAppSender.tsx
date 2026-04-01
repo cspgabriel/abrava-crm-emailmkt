@@ -1556,6 +1556,7 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
                       Desconectar / Mudar Conta
 
                     </button>
+                  </div>
                   <div className="mt-3">
 
                     <p className="text-sm text-blue-700">Sua sessão anterior foi encontrada. Restaurando acesso em alguns segundos...</p>
