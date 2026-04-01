@@ -1,7 +1,7 @@
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
-import { VitePWA } from 'vite-plugin-pwa';
+// import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
@@ -23,33 +23,8 @@ export default defineConfig(({ mode }) => {
       },
       plugins: [
         react(),
-        VitePWA({
-          registerType: 'autoUpdate',
-          includeAssets: ['logo_abravacom_transparent.png'],
-          workbox: {
-            maximumFileSizeToCacheInBytes: 5 * 1024 * 1024 // 5 MB to prevent Vercel failure
-          },
-          manifest: {
-            name: 'CRM ABRACON',
-            short_name: 'CRM ABRACON',
-            description: 'Gestão de Relacionamento e Simulações ABRACON.',
-            theme_color: '#071226',
-            background_color: '#f8f9fa',
-            display: 'standalone',
-            icons: [
-              {
-                src: '/logo_abravacom_transparent.png',
-                sizes: '192x192',
-                type: 'image/png'
-              },
-              {
-                src: '/logo_abravacom_transparent.png',
-                sizes: '512x512',
-                type: 'image/png'
-              }
-            ]
-          }
-        })
+        // PWA desativado temporariamente para evitar cache de bundles antigos
+        // durante estabilização de deploy (tela branca por assets desatualizados).
       ],
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
@@ -58,7 +33,16 @@ export default defineConfig(({ mode }) => {
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
+          // Prefer stable bundled entry to avoid missing ESM entry issues in some installs.
+          'framer-motion': path.resolve(__dirname, 'node_modules/framer-motion/dist/framer-motion.js'),
+          'framer-motion/dist/cjs/index.js': path.resolve(__dirname, 'node_modules/framer-motion/dist/cjs/index.js'),
         }
+      },
+      optimizeDeps: {
+        include: ['framer-motion']
+      },
+      ssr: {
+        noExternal: ['framer-motion']
       }
     };
 });
