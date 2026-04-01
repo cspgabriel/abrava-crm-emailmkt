@@ -84,6 +84,7 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
   const [lastStatusUpdate, setLastStatusUpdate] = useState(0);
   const [sessionPersisted, setSessionPersisted] = useState<boolean | null>(null);
   const [checkingConnection, setCheckingConnection] = useState(false);
+  const [isDisconnecting, setIsDisconnecting] = useState(false);
 
   // Bulk send progress tracking
   const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0, success: 0, failed: 0 });
@@ -363,26 +364,51 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
 
   // Disconnect WhatsApp account
   const handleDisconnect = async () => {
+    if (isDisconnecting) return;
     if (!confirm('Tem certeza que deseja desconectar a conta WhatsApp?')) return;
+
+    // Optimistic update: frontend reacts immediately while backend finalizes logout.
+    setIsDisconnecting(true);
+    setWhatsappReady(false);
+    setConnectedPhone(null);
+    setConnectedName(null);
+    setQrCode(null);
+    setSessionPersisted(false);
+    setStatus('⏳ Desconectando conta... preparando novo QR code.');
+
     try {
       const resolvedBase = getResolvedApiBase(apiBase);
       const resolvedApiKey = getResolvedApiKey(apiKey);
-      const logoutUrl = `${resolvedBase}/logout${resolvedApiKey ? `?api_key=${encodeURIComponent(resolvedApiKey)}` : ''}`;
+      const logoutUrl = `${resolvedBase}/logout`;
+
+      const abortController = new AbortController();
+      const timeoutId = setTimeout(() => abortController.abort(), 8000);
+      const resp = await fetchWithAuth(logoutUrl, resolvedApiKey, {
+        method: 'POST',
+        signal: abortController.signal,
+      });
+      clearTimeout(timeoutId);
+
+      let data: any = null;
+      try {
+        data = await resp.json();
+      } catch (_jsonError) {
+        data = null;
+      }
       
-      const resp = await fetch(logoutUrl, { method: 'POST' });
-      const data = await resp.json();
-      
-      if (data?.ok) {
-        setStatus('✓ Conta desconectada com sucesso. QR code será exibido em breve...');
-        setConnectedPhone(null);
-        setConnectedName(null);
-        setWhatsappReady(false);
-        setTimeout(() => fetchWhatsappStatus(), 1000);
+      if (resp.ok && data?.ok) {
+        setStatus('✅ Conta desconectada com sucesso. Atualizando QR code...');
       } else {
-        setStatus('✗ Erro ao desconectar: ' + (data?.error || 'Desconhecido'));
+        setStatus('⚠️ Solicitação enviada. Atualizando status da conexão...');
       }
     } catch (e: any) {
-      setStatus('✗ Erro na desconexão: ' + (e?.message || String(e)));
+      setStatus('⚠️ Atualizando sessão no frontend...');
+    } finally {
+      void fetchWhatsappStatus();
+      setTimeout(() => {
+        void fetchWhatsappStatus();
+      }, 1200);
+      setIsDisconnecting(false);
     }
   };
 
@@ -706,9 +732,10 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
                 {connectedName && <p className="text-sm text-green-800"><strong>👤 Conta:</strong> {connectedName}</p>}
                 <button
                   onClick={handleDisconnect}
-                  className="mt-2 px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-medium transition"
+                  disabled={isDisconnecting}
+                  className={`mt-2 px-3 py-1 rounded text-xs font-medium transition text-white ${isDisconnecting ? 'bg-red-400 cursor-not-allowed opacity-70' : 'bg-red-500 hover:bg-red-600'}`}
                 >
-                  Desconectar / Mudar Conta
+                  {isDisconnecting ? 'Desconectando...' : 'Desconectar / Mudar Conta'}
                 </button>
               </div>
             ) : checkingConnection ? (
