@@ -91,16 +91,9 @@
         background: #475569;
       }
     </style>
-<script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@^19.2.4",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
-    "react/": "https://esm.sh/react@^19.2.4/",
-    "lucide-react": "https://esm.sh/lucide-react@^0.563.0"
-  }
-}
-</script>
+<!-- Removed importmap that loaded React and lucide-react from esm.sh CDN.
+     Bundling these dependencies locally avoids runtime blocking by ad-blockers
+     and ensures React is available when the app script runs. -->
     <link rel="stylesheet" href="/index.css">
     <link rel="icon" href="https://gcdnb.pbrd.co/images/b2tTs3cm8rnE.png?o=1" type="image/png">
   </head>
