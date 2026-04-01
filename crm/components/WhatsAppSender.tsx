@@ -632,8 +632,10 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
 
         setStatus('⏳ Aguardando QR code do servidor...');
 
-        // Fallback: fetch QR directly from /qr to mirror terminal QR as soon as it exists.
-        await fetchLatestQrSnapshot();
+        // Fetch /qr only when backend says QR is already available to avoid repeated 404 noise.
+        if (data.hasQR) {
+          await fetchLatestQrSnapshot();
+        }
 
       }
 
@@ -859,7 +861,6 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
       retryDelaysMs.forEach((delay) => {
         setTimeout(() => {
           void pollWhatsAppStatus();
-          void fetchLatestQrSnapshot();
         }, delay);
       });
 

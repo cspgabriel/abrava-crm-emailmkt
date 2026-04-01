@@ -243,25 +243,29 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
           setStatus(`✓ WhatsApp conectado: ${statusData.phone || ''} ${statusData.accountName ? '| ' + statusData.accountName : ''}`);
         }
 
-        // If not ready, always try to fetch fresh QR snapshot from backend.
+        // If not ready, fetch /qr only when backend signals QR availability.
         if (!isNowReady) {
-          try {
-            const qrUrl = `${resolvedBase}/qr`;
-            console.log('[WhatsApp] 📡 Fetching QR from:', qrUrl);
-            const qrResp = await fetchWithAuth(qrUrl, resolvedApiKey, { method: 'GET' });
-            if (qrResp.ok) {
-              const qrData = await qrResp.json();
-              if (qrData?.ok && qrData.qr) {
-                setQrCode(qrData.qr);
-                setStatus('📸 Escaneie o QR code com seu WhatsApp');
+          if (statusData.hasQR || statusData.qr) {
+            try {
+              const qrUrl = `${resolvedBase}/qr`;
+              console.log('[WhatsApp] 📡 Fetching QR from:', qrUrl);
+              const qrResp = await fetchWithAuth(qrUrl, resolvedApiKey, { method: 'GET' });
+              if (qrResp.ok) {
+                const qrData = await qrResp.json();
+                if (qrData?.ok && qrData.qr) {
+                  setQrCode(qrData.qr);
+                  setStatus('📸 Escaneie o QR code com seu WhatsApp');
+                } else {
+                  setQrCode(null);
+                }
               } else {
                 setQrCode(null);
               }
-            } else {
+            } catch (e) {
+              console.warn('[WhatsApp] Erro ao buscar QR:', e);
               setQrCode(null);
             }
-          } catch (e) {
-            console.warn('[WhatsApp] Erro ao buscar QR:', e);
+          } else {
             setQrCode(null);
           }
         } else {
