@@ -58,9 +58,9 @@ export default defineConfig(({ mode }) => {
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
-          // Prefer a stable bundle entry for framer-motion to avoid package "exports"/missing ESM files
-          'framer-motion': path.resolve(__dirname, 'node_modules/framer-motion/dist/framer-motion.js'),
-          // Map legacy subpath imports (some deps import the internal CJS file directly)
+          // Use CJS entry (UMD bundle expects global React and causes runtime crash in production).
+          'framer-motion': path.resolve(__dirname, 'node_modules/framer-motion/dist/cjs/index.js'),
+          // Map legacy subpath imports (some deps import the internal CJS file directly).
           'framer-motion/dist/cjs/index.js': path.resolve(__dirname, 'node_modules/framer-motion/dist/cjs/index.js'),
         }
       },

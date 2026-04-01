@@ -33,8 +33,8 @@ export default defineConfig(({ mode }) => {
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
-          // Prefer stable bundled entry to avoid missing ESM entry issues in some installs.
-          'framer-motion': path.resolve(__dirname, 'node_modules/framer-motion/dist/framer-motion.js'),
+          // Use CJS entry (UMD bundle expects global React and causes runtime crash in production).
+          'framer-motion': path.resolve(__dirname, 'node_modules/framer-motion/dist/cjs/index.js'),
           'framer-motion/dist/cjs/index.js': path.resolve(__dirname, 'node_modules/framer-motion/dist/cjs/index.js'),
         }
       },
