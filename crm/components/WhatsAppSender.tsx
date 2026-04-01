@@ -1556,11 +1556,6 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
                       Desconectar / Mudar Conta
 
                     </button>
-
-                  </div>
-
-                ) : connectionState === 'restoring' ? (
-
                   <div className="mt-3">
 
                     <p className="text-sm text-blue-700">Sua sessão anterior foi encontrada. Restaurando acesso em alguns segundos...</p>
@@ -1621,7 +1616,7 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
 
                   <button
 
-                    onClick={() => window.location.reload()}
+                    onClick={async () => { setStatus('⏳ Atualizando status...'); await pollWhatsAppStatus(); }}
 
                     className="w-full px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded text-sm font-medium transition"
 
