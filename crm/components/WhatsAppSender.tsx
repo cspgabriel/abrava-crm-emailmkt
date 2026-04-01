@@ -1532,6 +1532,8 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
 
                 {whatsappReady && connectedPhone ? (
 
+                  <>
+
                   <div className="mt-3 space-y-1">
 
                     <p className="text-sm text-green-800"><strong>📱 Número:</strong> {connectedPhone}</p>
@@ -1562,6 +1564,7 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
                     <p className="text-sm text-blue-700">Sua sessão anterior foi encontrada. Restaurando acesso em alguns segundos...</p>
 
                   </div>
+                  </>
 
                 ) : connectionState === 'waiting-qr' && qrCode ? (
 

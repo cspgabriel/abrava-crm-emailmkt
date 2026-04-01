@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   addDoc,
+  arrayUnion,
   collection,
   deleteDoc,
   doc,
@@ -73,8 +74,8 @@ const emptyTemplate = {
   subject: '',
   previewText: '',
   html: `<div style="font-family:Arial,sans-serif;color:#0f172a;">
-  <h1 style="margin:0 0 16px;">Olá, {{name}}!</h1>
-  <p style="margin:0 0 12px;">Escreva aqui o conteúdo principal da sua campanha.</p>
+  <h1 style="margin:0 0 16px;">Olï¿½, {{name}}!</h1>
+  <p style="margin:0 0 12px;">Escreva aqui o conteï¿½do principal da sua campanha.</p>
   <p style="margin:0;">Inclua ofertas, novidades ou convites de forma clara e objetiva.</p>
 </div>`
 };
@@ -315,7 +316,7 @@ export const EmailMarketingWorkspace: React.FC<{ contacts?: any[]; campaigns?: a
     const relatedList = lists.find(item => item.id === campaignListId);
     const recipients = relatedList?.contactIds?.length || relatedList?.emails?.length || 0;
 
-    await addDoc(collection(db, HISTORY_COLLECTION), {
+    const historyRef = await addDoc(collection(db, HISTORY_COLLECTION), {
       name: campaignName.trim(),
       subject: campaignSubject.trim(),
       listName: relatedList?.name || 'Sem lista vinculada',
@@ -328,11 +329,33 @@ export const EmailMarketingWorkspace: React.FC<{ contacts?: any[]; campaigns?: a
       owner: 'Equipe CRM'
     });
 
+    // Record campaign reference on each contact in the list (so contact history includes this campaign)
+    try {
+      const campaignRecord = {
+        id: historyRef.id,
+        name: campaignName.trim(),
+        subject: campaignSubject.trim(),
+        sentAt: serverTimestamp(),
+        channel: 'Email'
+      };
+
+      const targetContactIds = relatedList?.contactIds || selectedContacts.map((c: any) => c.id);
+      if (Array.isArray(targetContactIds) && targetContactIds.length > 0) {
+        await Promise.all(targetContactIds.map((contactId: string) =>
+          updateDoc(doc(db, 'contacts', contactId), {
+            campaigns: arrayUnion(campaignRecord)
+          }).catch(() => {})
+        ));
+      }
+    } catch (err) {
+      console.warn('Could not attach campaign record to contacts:', err);
+    }
+
     setCampaignName('');
     setCampaignSubject('');
     setCampaignListId('');
     setCampaignStatus('Rascunho');
-    showFeedback('Campanha registrada no histórico.');
+    showFeedback('Campanha registrada no histï¿½rico.');
   };
 
   const summaryCards = [
@@ -349,12 +372,12 @@ export const EmailMarketingWorkspace: React.FC<{ contacts?: any[]; campaigns?: a
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
               <Sparkles className="h-3.5 w-3.5" />
-              Novo módulo isolado do CRM atual
+              Novo mï¿½dulo isolado do CRM atual
             </div>
             <h1 className="text-3xl font-bold text-slate-900">E-mail Marketing Pro</h1>
             <p className="max-w-3xl text-sm text-slate-600">
-              Expansão segura com páginas novas para listas, designer de email e histórico de campanhas,
-              sem alterar a tela atual de envio que já está funcionando.
+              Expansï¿½o segura com pï¿½ginas novas para listas, designer de email e histï¿½rico de campanhas,
+              sem alterar a tela atual de envio que jï¿½ estï¿½ funcionando.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -373,7 +396,7 @@ export const EmailMarketingWorkspace: React.FC<{ contacts?: any[]; campaigns?: a
           {[
             { key: 'lists', label: 'Listas', icon: ListChecks },
             { key: 'designer', label: 'Design de Email', icon: PencilLine },
-            { key: 'history', label: 'Histórico', icon: BarChart3 }
+            { key: 'history', label: 'Histï¿½rico', icon: BarChart3 }
           ].map(item => (
             <button
               key={item.key}
@@ -402,7 +425,7 @@ export const EmailMarketingWorkspace: React.FC<{ contacts?: any[]; campaigns?: a
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-xl font-bold text-slate-900">Listas de distribuição</h2>
+                <h2 className="text-xl font-bold text-slate-900">Listas de distribuiï¿½ï¿½o</h2>
                 <p className="text-sm text-slate-500">Monte segmentos sem encostar na base atual de campanhas.</p>
               </div>
               <button onClick={resetListForm} className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white">
@@ -412,9 +435,9 @@ export const EmailMarketingWorkspace: React.FC<{ contacts?: any[]; campaigns?: a
 
             <div className="grid gap-4 md:grid-cols-2">
               <input value={listName} onChange={(e) => setListName(e.target.value)} placeholder="Nome da lista" className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-400" />
-              <input value={listTags} onChange={(e) => setListTags(e.target.value)} placeholder="Tags (VIP, Hotéis, Eventos)" className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-400" />
+              <input value={listTags} onChange={(e) => setListTags(e.target.value)} placeholder="Tags (VIP, Hotï¿½is, Eventos)" className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-400" />
             </div>
-            <textarea value={listDescription} onChange={(e) => setListDescription(e.target.value)} placeholder="Descrição da estratégia ou critério da lista" rows={3} className="mt-4 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-400" />
+            <textarea value={listDescription} onChange={(e) => setListDescription(e.target.value)} placeholder="Descriï¿½ï¿½o da estratï¿½gia ou critï¿½rio da lista" rows={3} className="mt-4 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-400" />
 
             <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <div className="relative">
@@ -489,7 +512,7 @@ export const EmailMarketingWorkspace: React.FC<{ contacts?: any[]; campaigns?: a
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <div className="font-semibold text-slate-900">{item.name}</div>
-                        <div className="mt-1 text-xs text-slate-500">{item.description || 'Sem descrição'}</div>
+                        <div className="mt-1 text-xs text-slate-500">{item.description || 'Sem descriï¿½ï¿½o'}</div>
                       </div>
                       <div className="flex gap-2">
                         <button onClick={() => handleSelectList(item)} className="rounded-xl bg-slate-100 p-2 text-slate-600 hover:bg-slate-200">
@@ -525,9 +548,9 @@ export const EmailMarketingWorkspace: React.FC<{ contacts?: any[]; campaigns?: a
             <div className="rounded-3xl border border-slate-200 bg-slate-900 p-6 text-white shadow-sm">
               <h3 className="text-lg font-bold">Como isso encaixa no CRM atual</h3>
               <ul className="mt-4 space-y-2 text-sm text-slate-200">
-                <li>- Usa coleções novas do Firestore, sem sobrescrever campanhas existentes.</li>
-                <li>- Permite preparar segmentações antes de ligar o envio real.</li>
-                <li>- Reaproveita sua base de contatos já cadastrada no CRM.</li>
+                <li>- Usa coleï¿½ï¿½es novas do Firestore, sem sobrescrever campanhas existentes.</li>
+                <li>- Permite preparar segmentaï¿½ï¿½es antes de ligar o envio real.</li>
+                <li>- Reaproveita sua base de contatos jï¿½ cadastrada no CRM.</li>
               </ul>
             </div>
           </div>
@@ -615,7 +638,7 @@ export const EmailMarketingWorkspace: React.FC<{ contacts?: any[]; campaigns?: a
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="mb-4 flex items-center gap-2">
               <Mail className="h-5 w-5 text-slate-700" />
-              <h3 className="text-lg font-bold text-slate-900">Pré-visualização</h3>
+              <h3 className="text-lg font-bold text-slate-900">Prï¿½-visualizaï¿½ï¿½o</h3>
             </div>
             <div className="rounded-[28px] border border-slate-200 bg-slate-100 p-4">
               <div className="mx-auto max-w-3xl rounded-[28px] border border-slate-200 bg-white shadow-sm">
@@ -651,7 +674,7 @@ export const EmailMarketingWorkspace: React.FC<{ contacts?: any[]; campaigns?: a
                 <h2 className="text-xl font-bold text-slate-900">Registrar campanha</h2>
               </div>
               <p className="mt-2 text-sm text-slate-500">
-                Esta tela já pode organizar o histórico, mesmo antes de conectar o disparo automático.
+                Esta tela jï¿½ pode organizar o histï¿½rico, mesmo antes de conectar o disparo automï¿½tico.
               </p>
               <div className="mt-4 space-y-4">
                 <input value={campaignName} onChange={(e) => setCampaignName(e.target.value)} placeholder="Nome interno da campanha" className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-400" />
@@ -669,7 +692,7 @@ export const EmailMarketingWorkspace: React.FC<{ contacts?: any[]; campaigns?: a
                 </select>
                 <button onClick={handleCreateHistory} className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800">
                   <Plus className="h-4 w-4" />
-                  Adicionar ao histórico
+                  Adicionar ao histï¿½rico
                 </button>
               </div>
             </div>
@@ -677,8 +700,8 @@ export const EmailMarketingWorkspace: React.FC<{ contacts?: any[]; campaigns?: a
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <h2 className="text-xl font-bold text-slate-900">Histórico de campanhas</h2>
-                  <p className="text-sm text-slate-500">Unifica o histórico novo com as campanhas que já existiam no CRM.</p>
+                  <h2 className="text-xl font-bold text-slate-900">Histï¿½rico de campanhas</h2>
+                  <p className="text-sm text-slate-500">Unifica o histï¿½rico novo com as campanhas que jï¿½ existiam no CRM.</p>
                 </div>
                 <div className="relative w-full md:w-80">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -693,7 +716,7 @@ export const EmailMarketingWorkspace: React.FC<{ contacts?: any[]; campaigns?: a
                       <th className="px-4 py-3 font-semibold text-slate-600">Campanha</th>
                       <th className="px-4 py-3 font-semibold text-slate-600">Lista</th>
                       <th className="px-4 py-3 font-semibold text-slate-600">Status</th>
-                      <th className="px-4 py-3 font-semibold text-slate-600">Destinatários</th>
+                      <th className="px-4 py-3 font-semibold text-slate-600">Destinatï¿½rios</th>
                       <th className="px-4 py-3 font-semibold text-slate-600">Abertura</th>
                       <th className="px-4 py-3 font-semibold text-slate-600">Cliques</th>
                       <th className="px-4 py-3 font-semibold text-slate-600">Data</th>

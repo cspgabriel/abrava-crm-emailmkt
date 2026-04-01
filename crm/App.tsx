@@ -446,12 +446,26 @@ export const App = () => {
       
       const campaignData = { subject, responsible, recipientCount: emails.length, date: serverTimestamp(), status: 'Enviado', recipientEmails: emails, recipientsSample: emails.slice(0, 5) }; 
       
-      try {
-          // Attempt to save to history, but don't let rules block the actual send action
-          await addDoc(collection(db, "campaigns"), campaignData);
-      } catch (err) {
-          console.warn("Could not save to campaigns history (Firebase Rules may be blocking or missing permissions):", err);
-      }
+            try {
+                    // Attempt to save to history, but don't let rules block the actual send action
+                    const ref = await addDoc(collection(db, "campaigns"), campaignData);
+                    // Attach campaign record to each contact for per-contact history
+                    try {
+                        const campaignRecord = {
+                            id: ref.id,
+                            name: subject,
+                            subject,
+                            sentAt: serverTimestamp(),
+                            channel: method
+                        };
+                        const targetIds = targets.map(t => t.id).filter(Boolean);
+                        await Promise.all(targetIds.map(id => updateDoc(doc(db, 'contacts', id), { campaigns: arrayUnion(campaignRecord) }).catch(() => {})));
+                    } catch (err2) {
+                        console.warn('Could not attach campaign record to contacts:', err2);
+                    }
+            } catch (err) {
+                    console.warn("Could not save to campaigns history (Firebase Rules may be blocking or missing permissions):", err);
+            }
 
       try {
           if (emails.length > 500) {

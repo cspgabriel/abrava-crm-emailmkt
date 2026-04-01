@@ -48,33 +48,8 @@ export default defineConfig(({ mode }) => {
       },
       plugins: [
         react(),
-        VitePWA({
-          registerType: 'autoUpdate',
-          includeAssets: ['logo_abravacon_transparent.png'],
-          workbox: {
-            maximumFileSizeToCacheInBytes: 5 * 1024 * 1024 // 5 MB to prevent Vercel failure
-          },
-          manifest: {
-            name: 'CRM ABRACON',
-            short_name: 'CRM ABRACON',
-            description: 'Gestão de Relacionamento e Simulações ABRACON.',
-            theme_color: '#071226',
-            background_color: '#f8f9fa',
-            display: 'standalone',
-            icons: [
-              {
-                src: '/logo_abravacon_transparent.png',
-                sizes: '192x192',
-                type: 'image/png'
-              },
-              {
-                src: '/logo_abravacon_transparent.png',
-                sizes: '512x512',
-                type: 'image/png'
-              }
-            ]
-          }
-        })
+        // VitePWA plugin disabled temporarily to avoid dependency resolution errors during build
+        // VitePWA({ ... })
       ],
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
@@ -83,9 +58,18 @@ export default defineConfig(({ mode }) => {
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
-          // Explicit alias to framer-motion CJS entry to avoid Rollup resolution issues
-          'framer-motion': 'framer-motion/dist/cjs/index.js',
+          // Prefer a stable bundle entry for framer-motion to avoid package "exports"/missing ESM files
+          'framer-motion': path.resolve(__dirname, 'node_modules/framer-motion/dist/framer-motion.js'),
+          // Map legacy subpath imports (some deps import the internal CJS file directly)
+          'framer-motion/dist/cjs/index.js': path.resolve(__dirname, 'node_modules/framer-motion/dist/cjs/index.js'),
         }
+      },
+      // Ensure Vite pre-bundles and SSR treat framer-motion as expected
+      optimizeDeps: {
+        include: ['framer-motion']
+      },
+      ssr: {
+        noExternal: ['framer-motion']
       }
     };
 });
