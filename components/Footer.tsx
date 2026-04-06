@@ -9,7 +9,7 @@ const Footer: React.FC = () => {
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(217,173,87,0.5),transparent)]" />
       <div className="mx-auto max-w-6xl px-6">
         <div className="mb-20 grid grid-cols-1 gap-16 md:grid-cols-4">
-          <div className="col-span-1 space-y-8 md:col-span-2">
+          <div className="col-span-1 space-y-5 md:col-span-2">
             <BrandLogo />
             <p className="max-w-sm text-sm font-medium leading-relaxed text-[rgba(244,236,223,0.7)]">
               Consultoria financeira com posicionamento premium, foco em consorcios,

@@ -127,7 +127,7 @@ const Home: React.FC = () => {
               variants={{ hidden: { opacity: 0, y: 15 }, visible: { opacity: 1, y: 0 } }}
               className="max-w-2xl text-lg font-medium leading-relaxed text-[rgba(244,236,223,0.88)] sm:text-xl"
             >
-              Cartas contempladas, consorcios e simulacoes com uma comunicacao mais clara, direta e orientada a conversao. Veja as oportunidades, entenda o potencial e avance no momento certo.
+              Acesso exclusivo às melhores condições de cartas contempladas do país. sem juros, transações com agilidade e 100% seguras. Consulte as condições e já comece a negociar agora mesmo com um dos nossos consultores.
             </motion.p>
 
             <motion.div
