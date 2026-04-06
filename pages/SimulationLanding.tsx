@@ -109,8 +109,8 @@ const SimulationLanding: React.FC = () => {
       <section className="w-full brand-shell py-16 px-4 text-center shadow-sm relative z-10">
         <div className="max-w-7xl mx-auto space-y-16">
           <div className="text-left md:text-center space-y-4 max-w-3xl mx-auto">
-            <h2 className="text-3xl font-bold tracking-tight text-white">O que é Crédito Inteligente?</h2>
-              O Crédito no modelo de consórcio ou garantia é uma modalidade em que você utiliza o potencial de bens ou planejamento para obter recursos financeiros. As instituições financeiras oferecem taxas de juros significativamente mais baixas e prazos de pagamento mais longos – o que proporciona condições mais vantajosas para quem busca crédito com planejamento e segurança.
+            <h2 className="text-3xl font-bold tracking-tight text-white">O que é Empréstimo com Garantia de Imóvel?</h2>
+              O Empréstimo com Garantia de Imóvel, também conhecido como Home Equity, é uma modalidade de crédito em que o proprietário utiliza um imóvel como garantia para obter recursos financeiros. Por contar com essa garantia real, as instituições financeiras oferecem taxas de juros significativamente mais baixas e prazos de pagamento mais longos em comparação a outras modalidades de crédito – o que proporciona condições mais vantajosas para quem busca crédito com planejamento e segurança.
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-left mt-8">
