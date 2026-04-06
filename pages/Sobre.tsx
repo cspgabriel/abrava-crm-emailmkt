@@ -112,9 +112,9 @@ const Sobre: React.FC = () => {
       <section className="w-full brand-shell py-16 px-4 text-center shadow-sm relative z-10">
         <div className="max-w-7xl mx-auto space-y-16">
           <div className="text-left md:text-center space-y-4 max-w-3xl mx-auto">
-            <h2 className="text-3xl font-bold tracking-tight text-white">Como Funciona o Crédito com Garantia?</h2>
+            <h2 className="text-3xl font-bold tracking-tight text-white">O que é Empréstimo com Garantia de Imóvel?</h2>
             <p className="text-[rgba(244,236,223,0.85)] text-[1.05rem] leading-relaxed">
-              Também conhecido como Home Equity, é uma modalidade onde o proprietário utiliza o imóvel quitado como garantia. Isso proporciona acesso a taxas significativamente mais baixas e prazos de pagamento estendidos, ideal para quem busca realizar grandes projetos ou reestruturar finanças com segurança e planejamento sólido. Trabalhamos com consórcios para oferecer a aquisição inteligente de imóveis e automotores.
+              O Empréstimo com Garantia de Imóvel, também conhecido como Home Equity, é uma modalidade de crédito em que o proprietário utiliza um imóvel como garantia para obter recursos financeiros. Por contar com essa garantia real, as instituições financeiras oferecem taxas de juros significativamente mais baixas e prazos de pagamento mais longos em comparação a outras modalidades de crédito – o que proporciona condições mais vantajosas para quem busca crédito com planejamento e segurança.
             </p>
           </div>
 
