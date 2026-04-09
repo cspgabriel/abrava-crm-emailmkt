@@ -102,8 +102,8 @@ const ReserveForm: React.FC<ReserveFormProps> = ({ letters, onSuccess }) => {
 
   const buildWhatsAppMsg = () => {
     const lines = letters.map(
-      (l) =>
-        `• ${l.code ? l.code + ' - ' : ''}${l.administrator || l.group} — ${l.category} — ${formatCurrency(l.credit)}`
+      (letter) =>
+        `• ${letter.code ? letter.code + ' - ' : ''}${letter.administrator || letter.group} — ${letter.category} — ${formatCurrency(letter.credit)}`
     );
     const text = `Olá! Tenho interesse em reservar ${letters.length === 1 ? 'a seguinte carta contemplada' : 'as seguintes cartas contempladas'}:\n\n${lines.join('\n')}\n\nMeu nome: ${name}`;
     const phone = (PROFILE?.whatsapp || '').replace(/\D/g, '');

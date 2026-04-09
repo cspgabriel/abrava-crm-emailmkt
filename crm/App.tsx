@@ -43,7 +43,7 @@ import { CompanyDetailsView } from './components/CompanyDetailsView';
 import { ContactDetailsView } from './components/ContactDetailsView';
 import { CampaignDetailsView } from './components/CampaignDetailsView';
 import { NewCampaignPage } from './components/NewCampaignPage';
-import { DirectoryView } from './components/DirectoryView';
+import { ReserveIntent, ReserveIntentLetter } from '../types';
 import { WhatsAppSender } from './components/WhatsAppSender';
 import { EmailMarketing } from './components/EmailMarketing';
 import { EmailMarketingWorkspace } from './components/EmailMarketingWorkspace';
@@ -56,7 +56,7 @@ const statusColors: Record<string, string> = {
 };
 
 const ReservasView: React.FC = () => {
-  const [reservas, setReservas] = React.useState<any[]>([]);
+  const [reservas, setReservas] = React.useState<(ReserveIntent & { id: string })[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [statusFilter, setStatusFilter] = React.useState<string>('todos');
 
@@ -121,7 +121,7 @@ const ReservasView: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {filtered.map((r: any) => (
+                {filtered.map((r) => (
                   <tr key={r.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-5 py-4">
                       <div className="font-semibold text-gray-900 text-sm">{r.userName || '—'}</div>
@@ -132,12 +132,12 @@ const ReservasView: React.FC = () => {
                     <td className="px-5 py-4">
                       {Array.isArray(r.letters) && r.letters.length > 0 ? (
                         <div className="flex flex-col gap-1">
-                          {r.letters.map((l: any, i: number) => (
+                          {r.letters.map((letter: ReserveIntentLetter, i: number) => (
                             <span key={i} className="inline-flex items-center gap-1 text-xs text-gray-700 bg-gray-100 rounded-full px-2.5 py-0.5 font-medium">
-                              <span className="font-black text-amber-700">{l.letterCategory}</span>
-                              {l.letterCode ? ` · ${l.letterCode}` : ''} · {l.letterAdministrator}
+                              <span className="font-black text-amber-700">{letter.letterCategory}</span>
+                              {letter.letterCode ? ` · ${letter.letterCode}` : ''} · {letter.letterAdministrator}
                               <span className="ml-1 text-gray-500">
-                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(l.letterCredit)}
+                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(letter.letterCredit)}
                               </span>
                             </span>
                           ))}

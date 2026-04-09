@@ -4,7 +4,7 @@ import { db } from '../firebase';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 
 interface EmailCaptureProps {
-  onSuccess?: (leadId?: string) => void;
+  onSuccess?: (leadId: string) => void;
   title?: string;
   description?: string;
   source?: string;
