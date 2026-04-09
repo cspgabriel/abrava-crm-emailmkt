@@ -6,6 +6,7 @@ import { db, auth } from '../firebase';
 import { PROFILE } from '../constants';
 import { collection, getDocs, doc, runTransaction } from 'firebase/firestore';
 import EmailCapture from './EmailCapture';
+import ReserveForm from './ReserveForm';
 import CartaFicha from './CartaFicha';
 import defaultLettersData from '../data/defaultLetters.json';
 import WhatsappVipModal from './WhatsappVipModal';
@@ -21,6 +22,8 @@ const ContemplatedLetters: React.FC = () => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showEmailCapture, setShowEmailCapture] = useState(false);
   const [pendingReserveId, setPendingReserveId] = useState<string | null>(null);
+  const [showReserveForm, setShowReserveForm] = useState(false);
+  const [reserveFormLetters, setReserveFormLetters] = useState<ContemplatedLetter[]>([]);
   const [adminSearch, setAdminSearch] = useState('');
   const [situationFilter, setSituationFilter] = useState<'all' | 'available' | 'reserved' | 'sold'>('all');
   const [minCredit, setMinCredit] = useState<string>('');
@@ -130,53 +133,59 @@ const ContemplatedLetters: React.FC = () => {
     const letter = letters.find(l => l.id === letterId);
     if (!letter) return;
 
-    if (!isLogged) {
-      setPendingReserveId(letterId);
-      setShowEmailCapture(true);
+    // Admin (Firebase auth) users → direct Firestore reservation
+    if (isLogged) {
+      try {
+        const letterRef = doc(db, 'contemplated_letters', letterId);
+        await runTransaction(db, async (transaction) => {
+          const snap = await transaction.get(letterRef as any);
+          if (!snap.exists()) throw new Error('Carta não encontrada');
+          const data: any = snap.data();
+          if (data.status !== 'available') throw new Error('Carta já reservada');
+          transaction.update(letterRef, { status: 'reserved', userId: auth.currentUser?.uid || null });
+        });
+        setLetters(prev => prev.map(l => l.id === letterId ? { ...l, status: 'reserved', userId: auth.currentUser?.uid } : l));
+      } catch (e) {
+        console.error('Error reserving letter:', e);
+        alert('Não foi possível reservar esta carta. Talvez já tenha sido reservada.');
+      }
       return;
     }
 
-    try {
-      const letterRef = doc(db, 'contemplated_letters', letterId);
-      await runTransaction(db, async (transaction) => {
-        const snap = await transaction.get(letterRef as any);
-        if (!snap.exists()) throw new Error('Carta não encontrada');
-        const data: any = snap.data();
-        if (data.status !== 'available') throw new Error('Carta já reservada');
-        transaction.update(letterRef, { status: 'reserved', userId: auth.currentUser?.uid || null });
-      });
-      setLetters(prev => prev.map(l => l.id === letterId ? { ...l, status: 'reserved', userId: auth.currentUser?.uid } : l));
-    } catch (e) {
-      console.error('Error reserving letter:', e);
-      alert('Não foi possível reservar esta carta. Talvez já tenha sido reservada.');
-    }
+    // Public users → open ReserveForm with selected letter
+    setReserveFormLetters([letter]);
+    setShowReserveForm(true);
   };
 
   const reserveSelection = async () => {
     if (selectedIds.length === 0) return;
-    if (!isLogged) {
-      setShowEmailCapture(true);
+
+    // Admin (Firebase auth) users → direct batch Firestore reservation
+    if (isLogged) {
+      try {
+        await runTransaction(db, async (transaction) => {
+          for (const id of selectedIds) {
+            const ref = doc(db, 'contemplated_letters', id);
+            const snap = await transaction.get(ref as any);
+            if (!snap.exists()) continue;
+            const data: any = snap.data();
+            if (data.status === 'available') {
+              transaction.update(ref, { status: 'reserved', userId: auth.currentUser?.uid || null });
+            }
+          }
+        });
+        setLetters(prev => prev.map(l => selectedIds.includes(l.id) ? { ...l, status: 'reserved', userId: auth.currentUser?.uid } : l));
+        setSelectedIds([]);
+      } catch (e) {
+        console.error('Error reserving selection:', e);
+        alert('Erro ao reservar seleção. Tente novamente.');
+      }
       return;
     }
 
-    try {
-      await runTransaction(db, async (transaction) => {
-        for (const id of selectedIds) {
-          const ref = doc(db, 'contemplated_letters', id);
-          const snap = await transaction.get(ref as any);
-          if (!snap.exists()) continue;
-          const data: any = snap.data();
-          if (data.status === 'available') {
-            transaction.update(ref, { status: 'reserved', userId: auth.currentUser?.uid || null });
-          }
-        }
-      });
-      setLetters(prev => prev.map(l => selectedIds.includes(l.id) ? { ...l, status: 'reserved', userId: auth.currentUser?.uid } : l));
-      setSelectedIds([]);
-    } catch (e) {
-      console.error('Error reserving selection:', e);
-      alert('Erro ao reservar seleção. Tente novamente.');
-    }
+    // Public users → open ReserveForm with all selected letters
+    setReserveFormLetters(selectedLetters);
+    setShowReserveForm(true);
   };
 
   const handleOpenFicha = (letter: ContemplatedLetter) => {
@@ -370,27 +379,6 @@ const ContemplatedLetters: React.FC = () => {
         ) : null}
       </AnimatePresence>
 
-      {/* Email capture modal for non-logged users */}
-      <AnimatePresence>
-        {showEmailCapture ? (
-          <div className="fixed inset-0 z-[250] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => { setShowEmailCapture(false); setPendingReserveId(null); }} className="absolute inset-0 bg-slate-900/60" />
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="relative w-full max-w-2xl p-8">
-              <div className="bg-white rounded-[2rem] p-8 shadow-2xl border border-slate-100">
-                <div className="flex justify-end">
-                  <button onClick={() => { setShowEmailCapture(false); setPendingReserveId(null); }} className="text-slate-400">Fechar</button>
-                </div>
-                <EmailCapture title="CADASTRE-SE PARA TER O ACESSO COMPLETO" description="Informe nome, email e celular para liberar a entrada e os detalhes completos da carta contemplada." source="Lead - Cartas Contempladas" onSuccess={() => {
-                  localStorage.setItem('letters_unlocked', 'true');
-                  setIsUnlocked(true);
-                  setShowEmailCapture(false);
-                }} />
-              </div>
-            </motion.div>
-          </div>
-        ) : null}
-      </AnimatePresence>
-
       {/* Desktop table - Glassmorphism Premium Edition */}
       <div className="hidden md:block overflow-hidden rounded-[2rem] border border-[#1b3152] bg-[rgba(13,34,56,0.65)] backdrop-blur-2xl shadow-[0_25px_80px_rgba(2,6,12,0.4)] relative mt-4">
         <div className="absolute inset-0 bg-gradient-to-b from-white/[0.03] to-transparent pointer-events-none" />
@@ -563,15 +551,38 @@ const ContemplatedLetters: React.FC = () => {
                 <div className="flex justify-end mb-1 sm:mb-2">
                   <button onClick={() => { setShowEmailCapture(false); setPendingReserveId(null); if (!isUnlocked) setFichaLetter(null); }} className="text-slate-400 hover:text-slate-900"><X size={20} /></button>
                 </div>
-                <EmailCapture title="CADASTRE-SE PARA TER O ACESSO COMPLETO" description="Informe nome, email e celular para liberar a entrada e os detalhes completos da carta contemplada." source="Lead - Cartas Contempladas" onSuccess={() => {
+                <EmailCapture title="CADASTRE-SE PARA TER O ACESSO COMPLETO" description="Informe nome, email e celular para liberar a entrada e os detalhes completos da carta contemplada." source="Lead - Cartas Contempladas" onSuccess={(leadId) => {
                   localStorage.setItem('letters_unlocked', 'true');
                   setIsUnlocked(true);
                   setShowEmailCapture(false);
-                  if (pendingReserveId) {
-                    reserveLetter(pendingReserveId);
-                    setPendingReserveId(null);
-                  }
+                  setPendingReserveId(null);
                 }} />
+              </div>
+            </motion.div>
+          </div>
+        ) : null}
+      </AnimatePresence>
+
+      {/* Reserve Form modal */}
+      <AnimatePresence>
+        {showReserveForm && reserveFormLetters.length > 0 ? (
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => { setShowReserveForm(false); setReserveFormLetters([]); }} className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="relative w-full max-w-md p-3 sm:p-4 max-h-screen overflow-y-auto">
+              <div className="bg-white rounded-[1.5rem] p-3 sm:p-6 shadow-2xl border border-slate-100">
+                <div className="flex justify-end mb-1 sm:mb-2">
+                  <button onClick={() => { setShowReserveForm(false); setReserveFormLetters([]); }} className="text-slate-400 hover:text-slate-900"><X size={20} /></button>
+                </div>
+                <ReserveForm
+                  letters={reserveFormLetters}
+                  onSuccess={() => {
+                    localStorage.setItem('letters_unlocked', 'true');
+                    setIsUnlocked(true);
+                    setShowReserveForm(false);
+                    setReserveFormLetters([]);
+                    setSelectedIds([]);
+                  }}
+                />
               </div>
             </motion.div>
           </div>

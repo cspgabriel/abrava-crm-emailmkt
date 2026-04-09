@@ -4,11 +4,19 @@ import { db } from '../firebase';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 
 interface EmailCaptureProps {
-  onSuccess?: () => void;
+  onSuccess?: (leadId: string) => void;
   title?: string;
   description?: string;
   source?: string;
 }
+
+const formatCpf = (val: string) => {
+  const digits = val.replace(/\D/g, '').slice(0, 11);
+  return digits
+    .replace(/^(\d{3})(\d)/, '$1.$2')
+    .replace(/^(\d{3}\.\d{3})(\d)/, '$1.$2')
+    .replace(/^(\d{3}\.\d{3}\.\d{3})(\d)/, '$1-$2');
+};
 
 const EmailCapture: React.FC<EmailCaptureProps> = ({
   onSuccess,
@@ -19,6 +27,7 @@ const EmailCapture: React.FC<EmailCaptureProps> = ({
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [cpf, setCpf] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,29 +36,41 @@ const EmailCapture: React.FC<EmailCaptureProps> = ({
 
     setStatus('loading');
     try {
-      await addDoc(collection(db, 'simulations'), {
+      const docRef = await addDoc(collection(db, 'simulations'), {
         userName: name,
         userEmail: email,
         userPhone: phone,
+        userCpf: cpf,
         source,
         type: 'Lead Cartas Contempladas',
         status: 'pending',
         createdAt: serverTimestamp(),
       });
 
+      // Persist lead data locally for ReserveForm pre-fill
+      localStorage.setItem('letters_lead_id', docRef.id);
+      localStorage.setItem('letters_lead_name', name);
+      localStorage.setItem('letters_lead_email', email);
+      localStorage.setItem('letters_lead_phone', phone);
+      localStorage.setItem('letters_lead_cpf', cpf);
+
       setStatus('success');
       if (onSuccess) {
-        setTimeout(onSuccess, 500);
+        setTimeout(() => onSuccess(docRef.id), 500);
       } else {
         setName('');
         setEmail('');
         setPhone('');
+        setCpf('');
       }
     } catch (e) {
       console.error('Error saving lead: ', e);
       setStatus('error');
     }
   };
+
+  const inputClass =
+    'w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:ring-2 focus:ring-[#d8ad5b] disabled:opacity-50 sm:rounded-2xl sm:px-5 sm:py-4 sm:text-sm';
 
   return (
     <div className="w-full rounded-2xl border border-slate-200 bg-white p-4 pb-6 shadow-2xl transition-all duration-500 sm:p-6">
@@ -92,7 +113,7 @@ const EmailCapture: React.FC<EmailCaptureProps> = ({
             placeholder="Seu nome completo"
             required
             disabled={status === 'loading'}
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:ring-2 focus:ring-[#d8ad5b] disabled:opacity-50 sm:rounded-2xl sm:px-5 sm:py-4 sm:text-sm"
+            className={inputClass}
           />
           <input
             type="email"
@@ -101,7 +122,7 @@ const EmailCapture: React.FC<EmailCaptureProps> = ({
             placeholder="Seu melhor e-mail"
             required
             disabled={status === 'loading'}
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:ring-2 focus:ring-[#d8ad5b] disabled:opacity-50 sm:rounded-2xl sm:px-5 sm:py-4 sm:text-sm"
+            className={inputClass}
           />
           <input
             type="tel"
@@ -118,7 +139,18 @@ const EmailCapture: React.FC<EmailCaptureProps> = ({
             placeholder="Seu celular"
             required
             disabled={status === 'loading'}
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:ring-2 focus:ring-[#d8ad5b] disabled:opacity-50 sm:rounded-2xl sm:px-5 sm:py-4 sm:text-sm"
+            className={inputClass}
+          />
+          <input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9.\-]*"
+            value={cpf}
+            onChange={(e) => setCpf(formatCpf(e.target.value))}
+            maxLength={14}
+            placeholder="CPF (opcional)"
+            disabled={status === 'loading'}
+            className={inputClass}
           />
 
           {status === 'error' ? (
