@@ -1,4 +1,3 @@
-require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -7,9 +6,15 @@ const qrcodeImg = require('qrcode');
 const http = require('http');
 const path = require('path');
 const fs = require('fs');
-const { exec, execSync } = require('child_process');
 
-const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
+// Carrega variáveis de ambiente - Ajustado para PKG
+const dotEnvPath = process.pkg 
+    ? path.join(path.dirname(process.execPath), '.env') 
+    : path.join(__dirname, '.env');
+require('dotenv').config({ path: dotEnvPath });
+
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
+const P = require('pino');
 
 // ====================  SETUP  ====================
 const app = express();
@@ -96,12 +101,13 @@ app.use((req, res, next) => {
 });
 
 // ====================  STATE  ====================
-const authDir = path.join(__dirname, '.wwebjs_auth');
+const authDir = process.pkg 
+  ? path.join(path.dirname(process.execPath), 'baileys_auth') 
+  : path.join(__dirname, 'baileys_auth');
+
 if (!fs.existsSync(authDir)) fs.mkdirSync(authDir, { recursive: true });
 
-const SESSION_CLIENT_ID = 'session-abravacom-wpp';
-const sessionPath = path.join(authDir, SESSION_CLIENT_ID);
-const doesSessionExist = fs.existsSync(sessionPath) && fs.readdirSync(sessionPath).length > 0;
+const doesSessionExist = fs.existsSync(authDir) && fs.readdirSync(authDir).length > 0;
 
 let lastQr = null;
 let isStartingClient = false;
@@ -116,30 +122,13 @@ let previousSessionAttempted = false;
 let previousSessionFailed = false;
 let previousSessionErrorStack = null;
 
-console.log('[WPP] 📂 LocalAuth directory:', authDir);
-console.log('[WPP] 📂 Session path:', sessionPath);
-console.log('[WPP] 📋 Previous session found:', doesSessionExist);
+// Baileys socket instance
+let sock = null;
+let retryCount = 0;
+const MAX_RETRIES = 8;
 
-// Path to persist the last QR temporarily so frontend can retrieve it
-const lastQrFile = path.join(authDir, 'last_qr.json');
-// On startup, if there's a saved QR and no session, restore it (if recent)
-try {
-  if (!doesSessionExist && fs.existsSync(lastQrFile)) {
-    const raw = fs.readFileSync(lastQrFile, 'utf8');
-    const obj = JSON.parse(raw);
-    // Only restore if QR is recent (<= 10 minutes)
-    if (obj && obj.qr && obj.ts && (Date.now() - obj.ts) < 10 * 60 * 1000) {
-      lastQr = obj.qr;
-      console.log('[WPP] ✅ Restored recent QR from disk for frontend retrieval');
-      connectionState = 'waiting-qr';
-    } else {
-      // stale file - remove
-      try { fs.unlinkSync(lastQrFile); } catch (e) {}
-    }
-  }
-} catch (e) {
-  // ignore parse/read errors
-}
+console.log('[WPP] 📂 Baileys Auth directory:', authDir);
+console.log('[WPP] 📋 Previous session found:', doesSessionExist);
 
 // ====================  AUTH MIDDLEWARE  ====================
 app.use((req, res, next) => {
@@ -167,108 +156,218 @@ app.use((req, res, next) => {
   res.status(401).json({ error: 'Unauthorized', detail: 'Invalid or missing API key' });
 });
 
-// ====================  WHATSAPP CLIENT  ====================
-const WPP_HEADLESS = (process.env.WPP_HEADLESS || 'true') === 'true';
-const client = new Client({
-  authStrategy: new LocalAuth({ dataPath: authDir, clientId: SESSION_CLIENT_ID }),
-  puppeteer: {
-    headless: WPP_HEADLESS,
-    timeout: 60000,
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-gpu',
-      '--disable-web-security',
-      '--disable-features=IsolateOrigins,site-per-process',
-      '--disable-blink-features=AutomationControlled',
-      '--no-first-run',
-      '--no-zygote',
-      '--disable-extensions',
-      '--disable-sync',
-      '--mute-audio',
-      '--enable-automation'
-    ],
-  },
-  restartOnAuthFail: true,
-  qrMaxRetries: 5,
-  takeoverOnConflict: true
-});
+// ====================  BAILEYS CLIENT  ====================
 
-// ====================  CLIENT EVENTS  ====================
-
-// Evento: QR Code gerado (sessão nova)
-client.on('qr', async (qr) => {
-  console.log('[WPP] 📸 QR Code gerado - escaneie com WhatsApp');
-  
-  connectionState = 'waiting-qr';
-  
-  try {
-    const dataUrl = await qrcodeImg.toDataURL(qr);
-    lastQr = dataUrl;
-      // Persist latest QR to disk so frontend can retrieve it after restarts
-      try {
-        fs.writeFileSync(lastQrFile, JSON.stringify({ qr: dataUrl, ts: Date.now() }), 'utf8');
-      } catch (e) {
-        console.warn('[WPP] ⚠️  Não foi possível salvar lastQr:', e?.message || e);
-      }
-    console.log('[WPP] ✅ QR pronto no endpoint /qr');
-  } catch (e) {
-    console.error('[WPP] ❌ Erro ao gerar QR:', e.message);
-    lastQr = null;
+async function startClient() {
+  if (isStartingClient) {
+    console.log('[WPP] ⏳ Inicialização em andamento...');
+    return;
   }
-  
-  // Mostrar QR no terminal também
-  qrcode.generate(qr, { small: true });
-});
-
-// Evento: Sessão autenticada
-client.on('authenticated', () => {
-  console.log('[WPP] 🔐 Autenticado! Aguarde conexão total...');
-  lastQr = null;
-  // remove persisted QR once authenticated
-  try { if (fs.existsSync(lastQrFile)) fs.unlinkSync(lastQrFile); } catch (e) {}
-  connectionState = 'ready';
-});
-
-// Evento: Cliente pronto (conectado)
-client.on('ready', () => {
-  const phone = client.info?.wid?.user || 'desconhecido';
-  const pushname = client.info?.pushname || 'sem-nome';
-  console.log('\n' + '═'.repeat(70));
-  console.log('🎉 ✅ WHATSAPP CONECTADO COM SUCESSO!');
-  console.log('═'.repeat(70));
-  console.log(`📱 NÚMERO: ${phone}`);
-  console.log(`👤 NOME:   ${pushname}`);
-  console.log(`🔄 SESSÃO: ${previousSessionFound && !previousSessionFailed ? '✅ RESTAURADA' : '⚠️  NOVA'}`);
-  console.log('═'.repeat(70) + '\n');
-  
+  isStartingClient = true;
   lastInitError = null;
-  lastQr = null;
-});
+  
+  console.log('[WPP] 🚀 Iniciando motor Baileys (WebSocket puro — sem navegador)...');
+  connectionState = doesSessionExist && !previousSessionAttempted ? 'restoring' : 'waiting-qr';
+  previousSessionAttempted = true;
 
-// Evento: Falha de autenticação
-client.on('auth_failure', (msg) => {
-  console.error('[WPP] ❌ Falha na autenticação:', msg);
-  connectionState = 'error';
-  lastInitError = msg;
-  scheduleReconnect('auth_failure');
-});
+  try {
+    const { state, saveCreds } = await useMultiFileAuthState(authDir);
+    // Buscar versão mais recente do WhatsApp Web
+    let version;
+    try {
+      const { version: latestVersion, isLatest } = await fetchLatestBaileysVersion();
+      version = latestVersion;
+      console.log(`[WPP] 📦 WA Web version: ${version.join('.')} (latest: ${isLatest})`);
+    } catch (e) {
+      // Fallback para versão conhecida estável
+      version = [2, 3000, 1023141209];
+      console.log(`[WPP] 📦 WA Web version (fallback): ${version.join('.')}`);
+    }
 
-// Evento: Desconectado
-client.on('disconnected', (reason) => {
-  console.warn('[WPP] 🔌 Desconectado:', reason);
-  connectionState = 'error';
-  lastInitError = String(reason || 'disconnected');
-  scheduleReconnect('disconnected');
-});
+    // Encerrar socket anterior se existir
+    if (sock) {
+      try { sock.end(); } catch (e) {}
+      sock = null;
+      // Cooldown para o WhatsApp liberar a conexão anterior
+      console.log('[WPP] ⏳ Aguardando liberação da conexão anterior (3s)...');
+      await new Promise(resolve => setTimeout(resolve, 3000));
+    }
 
-// Erro não tratado
-process.on('unhandledRejection', (reason) => {
-  console.error('[WPP] UnhandledRejection:', reason?.message || reason);
-});
+    sock = makeWASocket({
+      version,
+      auth: state,
+      printQRInTerminal: false,
+      logger: P({ level: 'error' }),
+      browser: ['Ubuntu', 'Chrome', '20.0.04'],
+      syncFullHistory: false,
+      shouldSyncHistoryMessage: () => false, // Evita bad-request em contas com muito histórico
+      markOnlineOnConnect: true,
+      defaultQueryTimeoutMs: undefined,
+      connectTimeoutMs: 60000,
+      generateHighQualityLinkPreview: false,
+      patchMessageBeforeSending: (message) => {
+        const requiresPatch = !!(
+          message.buttonsMessage 
+          || message.templateMessage
+          || message.listMessage
+        );
+        if (requiresPatch) {
+          message = {
+            viewOnceMessage: {
+              message: {
+                messageContextInfo: {
+                  deviceListMetadata: {},
+                  deviceListMetadataVersion: 2
+                },
+                ...message
+              }
+            }
+          };
+        }
+        return message;
+      }
+    });
 
-// ====================  CLIENT INITIALIZATION  ====================
+    // Salvar credenciais quando atualizadas
+    sock.ev.on('creds.update', saveCreds);
+
+    // ====================  CONNECTION EVENTS  ====================
+    sock.ev.on('connection.update', async (update) => {
+      const { connection, lastDisconnect, qr } = update;
+
+      // QR Code gerado
+      if (qr) {
+        console.log('[WPP] 📸 QR Code gerado - escaneie com WhatsApp');
+        connectionState = 'waiting-qr';
+        
+        try {
+          const dataUrl = await qrcodeImg.toDataURL(qr);
+          lastQr = dataUrl;
+          console.log('[WPP] ✅ QR pronto no endpoint /qr');
+        } catch (e) {
+          console.error('[WPP] ❌ Erro ao gerar QR:', e.message);
+          lastQr = null;
+        }
+        
+        // Mostrar QR no terminal também
+        qrcode.generate(qr, { small: true });
+      }
+
+      // Conexão aberta (equivale ao 'ready' do whatsapp-web.js)
+      if (connection === 'open') {
+        retryCount = 0;
+        lastInitError = null;
+        lastQr = null;
+        connectionState = 'ready';
+        previousSessionFailed = false;
+        isStartingClient = false;
+
+        const phone = sock.user?.id?.split(':')[0] || sock.user?.id?.split('@')[0] || 'desconhecido';
+        const pushname = sock.user?.name || 'sem-nome';
+        
+        console.log('\n' + '═'.repeat(70));
+        console.log('🎉 ✅ WHATSAPP CONECTADO COM SUCESSO! (Motor: Baileys)');
+        console.log('═'.repeat(70));
+        console.log(`📱 NÚMERO: ${phone}`);
+        console.log(`👤 NOME:   ${pushname}`);
+        console.log(`🔄 SESSÃO: ${previousSessionFound && !previousSessionFailed ? '✅ RESTAURADA' : '⚠️  NOVA'}`);
+        console.log('═'.repeat(70) + '\n');
+      }
+
+      // Conexão fechada
+      if (connection === 'close') {
+        lastQr = null;
+        const statusCode = lastDisconnect?.error?.output?.statusCode 
+          || lastDisconnect?.error?.code 
+          || 'unknown';
+        const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+        
+        console.log(`[WPP] 🔌 Desconectado. Código: ${statusCode}`);
+        
+        if (statusCode === DisconnectReason.loggedOut) {
+          // Logout intencional — limpar sessão
+          connectionState = 'waiting-qr';
+          lastInitError = 'Logged out';
+          console.log('[WPP] 🚪 Logout detectado. Limpando sessão...');
+          try {
+            fs.rmSync(authDir, { recursive: true, force: true });
+            fs.mkdirSync(authDir, { recursive: true });
+          } catch (e) {}
+          previousSessionFound = false;
+          previousSessionFailed = false;
+          previousSessionErrorStack = null;
+          isStartingClient = false;
+          // Reconectar para gerar novo QR
+          scheduleReconnect('loggedOut');
+        } else if (statusCode === 405) {
+          // 405 = connectionReplaced — outra instância Baileys está ativa
+          // Pode ser test-baileys.js, outra aba, ou reconexão rápida demais
+          connectionState = 'error';
+          lastInitError = 'Conflito: outra sessão WebSocket ativa (405). Feche test-baileys.js se estiver rodando.';
+          isStartingClient = false;
+          
+          // Limpar sessão corrompida se não tinha sessão antes
+          if (!previousSessionFound) {
+            console.log('[WPP] ⚠️ 405 sem sessão prévia — limpando pasta auth...');
+            try {
+              fs.rmSync(authDir, { recursive: true, force: true });
+              fs.mkdirSync(authDir, { recursive: true });
+            } catch (e) {}
+          }
+          
+          if (retryCount < MAX_RETRIES) {
+            retryCount++;
+            // Esperar mais tempo no 405 — dar tempo para a outra instância liberar
+            const delay = Math.min(retryCount * 5 + 5, 30);
+            console.log(`[WPP] ⚠️ 405 (conflito). Outra instância pode estar ativa.`);
+            console.log(`[WPP] 💡 Dica: feche test-baileys.js (porta 8989) se estiver rodando.`);
+            console.log(`[WPP] 🔄 Tentando novamente em ${delay}s... (${retryCount}/${MAX_RETRIES})`);
+            setTimeout(() => startClient(), delay * 1000);
+          } else {
+            console.error('[WPP] ❌ Máximo de tentativas com 405. Verifique se há outra instância rodando.');
+          }
+        } else if (shouldReconnect && retryCount < MAX_RETRIES) {
+          connectionState = 'error';
+          lastInitError = `Disconnected (code: ${statusCode})`;
+          isStartingClient = false;
+          retryCount++;
+          const delay = Math.min(retryCount * 3, 15);
+          console.log(`[WPP] 🔄 Reconectando em ${delay}s... (tentativa ${retryCount}/${MAX_RETRIES})`);
+          setTimeout(() => startClient(), delay * 1000);
+        } else {
+          connectionState = 'error';
+          lastInitError = `Disconnected (code: ${statusCode}). Max retries reached.`;
+          isStartingClient = false;
+          console.error('[WPP] ❌ Máximo de tentativas atingido.');
+        }
+      }
+    });
+
+    // Evento de mensagens recebidas (log para debug)
+    sock.ev.on('messages.upsert', async (m) => {
+      if (m.type === 'notify') {
+        for (const msg of m.messages) {
+          if (!msg.key.fromMe && msg.message) {
+            const jid = msg.key.remoteJid;
+            const text = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
+            if (text) {
+              console.log(`[WPP] 📩 Mensagem de ${jid}: ${text.substring(0, 80)}${text.length > 80 ? '...' : ''}`);
+            }
+          }
+        }
+      }
+    });
+
+  } catch (err) {
+    const errMsg = err?.message || String(err);
+    console.error('[WPP] ❌ Erro ao iniciar Baileys:', errMsg);
+    lastInitError = errMsg;
+    connectionState = 'error';
+    previousSessionFailed = true;
+    previousSessionErrorStack = err?.stack || errMsg;
+    isStartingClient = false;
+  }
+}
 
 function scheduleReconnect(reason) {
   if (reconnectTimer) return;
@@ -279,136 +378,12 @@ function scheduleReconnect(reason) {
   }, 5000);
 }
 
-async function forceKillBrowser() {
-  try {
-    // ===== 1. Fechar conexão Puppeteer =====
-    if (client.pupBrowser) {
-      try {
-        await Promise.race([
-          client.pupBrowser.close(),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000))
-        ]).catch(() => {});
-      } catch (e) {
-        console.warn('[WPP] Erro ao fechar puppeteer:', e?.message);
-      }
-      client.pupBrowser = null;
-    }
-    if (client.pupPage) client.pupPage = null;
+// Erro não tratado
+process.on('unhandledRejection', (reason) => {
+  console.error('[WPP] UnhandledRejection:', reason?.message || reason);
+});
 
-    // ===== 2. Matar processos Chrome/Chromium via Windows =====
-    try {
-        // NOTE: Removing global chrome process kills. Previously the server
-        // forcibly killed all chrome/chromium processes on the machine when a
-        // session restore error occurred. That behavior can terminate unrelated
-        // browser windows. Now we only attempt to close the puppeteer browser
-        // instance (handled above). If a user still wants to kill stray
-        // processes they should run the provided maintenance script manually.
-        console.log('[WPP] ℹ️ Skipping global Chrome/Chromium kill (left to operator)');
-    } catch (e) {
-      console.warn('[WPP] Erro ao matar chrome process:', e?.message);
-    }
-
-    // ===== 3. Limpar lock files do Chromium =====
-    try {
-      const sessionPath = path.join(__dirname, '.wwebjs_auth', 'session-abravacom-wpp');
-      if (fs.existsSync(sessionPath)) {
-        // Lock files comum: LevelDB writing lock
-        const lockFiles = [
-          path.join(sessionPath, 'LOCK'),
-          path.join(sessionPath, 'DEFAULT', 'LOCK'),
-          path.join(sessionPath, 'Default', 'Cache', 'LOCK'),
-          path.join(sessionPath, 'SingletonLock'),
-        ];
-
-        for (const lockFile of lockFiles) {
-          if (fs.existsSync(lockFile)) {
-            try {
-              fs.unlinkSync(lockFile);
-              console.log('[WPP] 🗑️  Removido lock file:', path.basename(lockFile));
-            } catch (e) {
-              // Pode estar em uso, é OK
-            }
-          }
-        }
-      }
-    } catch (e) {
-      // Silenciar erros de limpeza de lock files
-    }
-
-  } catch (e) {
-    console.warn('[WPP] ⚠️  Erro ao forceKillBrowser:', e?.message);
-  }
-}
-
-async function startClient() {
-  if (isStartingClient) {
-    console.log('[WPP] ⏳ Inicialização em andamento...');
-    return;
-  }
-  isStartingClient = true;
-  lastInitError = null;
-  
-  // If there's an existing session, try restoring it only ONCE. If it fails,
-  // capture the full error stack, invalidate the old session and proceed to
-  // start a fresh login (QR) flow. This avoids repeated noisy restore loops
-  // and makes it explicit to the frontend that the previous session failed.
-  if (doesSessionExist && !previousSessionAttempted) {
-    previousSessionAttempted = true;
-    console.log('[WPP] 🔄 Restaurando sessão anterior (1 tentativa)...');
-    connectionState = 'restoring';
-    try {
-      await client.initialize();
-      console.log('[WPP] ✅ Sessão restaurada!');
-      lastInitError = null;
-      previousSessionFailed = false;
-      isStartingClient = false;
-      return;
-    } catch (err) {
-      const errStack = err?.stack || err?.message || String(err);
-      console.error('[WPP] ❌ Falha ao restaurar sessão anterior (não será tentado novamente):', errStack);
-      lastInitError = errStack;
-      previousSessionFailed = true;
-      previousSessionErrorStack = errStack;
-      connectionState = 'waiting-qr';
-
-      try {
-        if (errStack.includes('already running')) {
-          console.log('[WPP] 🔪 Limpando browser...');
-          await forceKillBrowser();
-          await new Promise(r => setTimeout(r, 2000));
-        } else {
-          await forceKillBrowser();
-          await new Promise(r => setTimeout(r, 1000));
-        }
-      } catch (e) {}
-
-      try {
-        fs.rmSync(sessionPath, { recursive: true, force: true });
-        console.log('[WPP] 🗑️  Sessão antiga removida (invalidada para novo login)');
-      } catch (e) {}
-
-      // fallthrough to start fresh QR below
-    }
-  }
-  
-  console.log('[WPP] 📱 Iniciando com novo QR...');
-  connectionState = 'waiting-qr';
-  
-  try {
-    await client.initialize();
-    console.log('[WPP] ✅ Pronto para receber QR!');
-    lastInitError = null;
-  } catch (err) {
-    const errMsg = err?.message || String(err);
-    console.error('[WPP] ❌ Erro ao iniciar:', errMsg);
-    lastInitError = errMsg;
-    connectionState = 'error';
-    await forceKillBrowser();
-  }
-  
-  isStartingClient = false;
-}
-
+// Iniciar o client
 startClient().catch(e => console.error('[WPP] Fatal error:', e));
 
 
@@ -416,19 +391,19 @@ startClient().catch(e => console.error('[WPP] Fatal error:', e));
 // ====================  REST ENDPOINTS  ====================
 
 function buildStatusMessage() {
-  const ready = !!(client && client.info && client.info.wid);
-  const info = client?.info ? {
-    phone: client.info.wid?.user || null,
-    accountName: client.info.pushname || null
-  } : null;
-  const sessionDirExists = fs.existsSync(sessionPath);
-  const sessionFilesExist = sessionDirExists && fs.readdirSync(sessionPath).length > 0;
+  // Only consider ready if connectionState is actually 'ready'
+  const isActuallyReady = connectionState === 'ready' && !!sock?.user;
+  
+  const phone = isActuallyReady ? (sock.user?.id?.split(':')[0] || sock.user?.id?.split('@')[0] || null) : null;
+  const accountName = isActuallyReady ? (sock.user?.name || null) : null;
+  const sessionDirExists = fs.existsSync(authDir);
+  const sessionFilesExist = sessionDirExists && fs.readdirSync(authDir).length > 0;
   
   return {
     ok: true,
-    ready,
-    phone: info?.phone || null,
-    accountName: info?.accountName || null,
+    ready: isActuallyReady,
+    phone: phone,
+    accountName: accountName,
     connectionState,
     sessionPersisted: sessionFilesExist,
     previousSessionFound,
@@ -438,16 +413,18 @@ function buildStatusMessage() {
     qr: lastQr,
     initializing: isStartingClient,
     lastError: lastInitError,
+    retryCount,
+    maxRetries: MAX_RETRIES,
     timestamp: new Date().toISOString()
   };
 }
 
 app.get('/', (req, res) => 
-  res.json({ ok: true, message: 'WPP API Server' })
+  res.json({ ok: true, message: 'WPP API Server (Baileys Engine)' })
 );
 
 app.get('/healthz', (req, res) => 
-  res.json({ ok: true, service: 'wpp-api-server' })
+  res.json({ ok: true, service: 'wpp-api-server', engine: 'baileys' })
 );
 
 // Status endpoint - reflects real connection state
@@ -475,6 +452,7 @@ app.get('/qr', (req, res) => {
 app.get('/debug', (req, res) => {
   res.json({
     ok: true,
+    engine: 'baileys',
     status: buildStatusMessage()
   });
 });
@@ -482,7 +460,7 @@ app.get('/debug', (req, res) => {
 // Session check endpoint
 app.get('/session-check', (req, res) => {
   try {
-    const sessionExists = fs.existsSync(sessionPath) && fs.readdirSync(sessionPath).length > 0;
+    const sessionExists = fs.existsSync(authDir) && fs.readdirSync(authDir).length > 0;
     res.json({ 
       ok: true, 
       sessionExists,
@@ -493,36 +471,25 @@ app.get('/session-check', (req, res) => {
   }
 });
 
-// Emergency cleanup endpoint - kills Chrome locks but preserves session
+// Emergency cleanup endpoint
 app.post('/cleanup', async (req, res) => {
   try {
     console.log('[WPP] 🔧 Cleanup requested via HTTP');
     
-    const locksBefore = (() => {
-      let count = 0;
-      const walk = (dir) => {
-        try {
-          fs.readdirSync(dir).forEach(f => {
-            if (['LOCK', 'SingletonLock', '.lockfile'].some(p => f.includes(p))) count++;
-            const stat = fs.statSync(path.join(dir, f));
-            if (stat.isDirectory()) walk(path.join(dir, f));
-          });
-        } catch (e) {}
-      };
-      if (fs.existsSync(sessionPath)) walk(sessionPath);
-      return count;
-    })();
-    
-    await forceKillBrowser();
+    // Encerrar socket
+    if (sock) {
+      try { sock.end(); } catch (e) {}
+      sock = null;
+    }
     
     res.json({ 
       ok: true, 
       message: 'Cleanup complete',
-      locksFound: locksBefore,
-      sessionPreserved: fs.existsSync(sessionPath) && fs.readdirSync(sessionPath).length > 0
+      sessionPreserved: fs.existsSync(authDir) && fs.readdirSync(authDir).length > 0
     });
     
     // Auto-reconnect after short delay
+    isStartingClient = false;
     setTimeout(() => startClient(), 1500);
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
@@ -537,25 +504,99 @@ app.post('/send', async (req, res) => {
       return res.status(400).json({ error: 'phone and message required' });
     }
     
-    if (!client?.info?.wid) {
+    if (!sock || connectionState !== 'ready') {
       return res.status(503).json({ 
         error: 'whatsapp_not_ready', 
         detail: 'WhatsApp session not initialized'
       });
     }
     
-    const chatId = phone.includes('@c.us') ? phone : `${phone}@c.us`;
+    // Robust chatId resolution
+    let chatId = phone;
+
+    // Check if it's already a JID
+    if (!chatId.includes('@')) {
+      // Basic formatting: remove non-digits
+      let cleanPhone = phone.replace(/\D/g, '');
+      
+      // Auto-prepend 55 for Brazilian numbers (10 or 11 digits without country code)
+      if (cleanPhone.length >= 10 && cleanPhone.length <= 11 && !cleanPhone.startsWith('55')) {
+          console.log(`[WPP] 🇧🇷 Prepending 55 to Brazilian number: ${cleanPhone}`);
+          cleanPhone = `55${cleanPhone}`;
+      }
+      
+      try {
+          // Use onWhatsApp to verify the number exists (equivalent to getNumberId)
+          const [result] = await sock.onWhatsApp(cleanPhone);
+          if (result && result.exists) {
+              chatId = result.jid;
+              console.log(`[WPP] ✅ Resolved ${phone} -> ${chatId}`);
+          } else {
+              // Number not found on WhatsApp
+              console.warn(`[WPP] ⚠️ Number ${cleanPhone} is not registered on WhatsApp.`);
+              return res.status(404).json({ 
+                  error: 'number_not_found', 
+                  detail: `The number ${phone} is not registered on WhatsApp.` 
+              });
+          }
+      } catch (e) {
+          console.warn(`[WPP] ❌ Error in onWhatsApp for ${cleanPhone}:`, e.message);
+          // Fallback to manual JID if onWhatsApp errors but we want to try anyway
+          chatId = `${cleanPhone}@s.whatsapp.net`;
+      }
+    }
     
     if (mediaBase64) {
-      const media = MessageMedia.fromDataURL(mediaBase64);
-      await client.sendMessage(chatId, media, { caption: message });
+      // Baileys media send: extract mime type and buffer from data URL
+      try {
+        const matches = mediaBase64.match(/^data:([^;]+);base64,(.+)$/);
+        if (matches) {
+          const mimetype = matches[1];
+          const buffer = Buffer.from(matches[2], 'base64');
+          
+          // Determine media type based on mimetype
+          if (mimetype.startsWith('image/')) {
+            await sock.sendMessage(chatId, { image: buffer, caption: message, mimetype });
+          } else if (mimetype.startsWith('video/')) {
+            await sock.sendMessage(chatId, { video: buffer, caption: message, mimetype });
+          } else if (mimetype.startsWith('audio/')) {
+            await sock.sendMessage(chatId, { audio: buffer, mimetype, ptt: false });
+            // Send text separately since audio doesn't support caption
+            if (message) await sock.sendMessage(chatId, { text: message });
+          } else {
+            // Document/file
+            await sock.sendMessage(chatId, { 
+              document: buffer, 
+              mimetype, 
+              fileName: filename || 'file',
+              caption: message 
+            });
+          }
+        } else {
+          // Fallback: send as text if base64 parsing fails
+          await sock.sendMessage(chatId, { text: message });
+        }
+      } catch (mediaErr) {
+        console.error('[WPP] ❌ Erro ao enviar mídia:', mediaErr.message);
+        // Fallback: try sending just the text
+        await sock.sendMessage(chatId, { text: message });
+      }
     } else {
-      await client.sendMessage(chatId, message);
+      await sock.sendMessage(chatId, { text: message });
     }
     
     res.json({ ok: true, chatId });
   } catch (err) {
     console.error('[WPP] Send error:', err.message);
+    
+    // Categorize error
+    if (err.message.includes('not a valid JID') || err.message.includes('invalid')) {
+        return res.status(400).json({ 
+            error: 'invalid_recipient', 
+            detail: 'O número informado parece inválido ou não existe no WhatsApp.'
+        });
+    }
+    
     res.status(500).json({ error: 'send_failed', detail: err.message });
   }
 });
@@ -563,22 +604,49 @@ app.post('/send', async (req, res) => {
 // Logout endpoint
 app.post('/logout', async (req, res) => {
   try {
+    console.log('[WPP] 🚪 Solicitando logout oficial...');
     connectionState = 'waiting-qr';
     lastQr = null;
     lastInitError = null;
-    await client.destroy().catch(() => {});
+    
+    // Tenta logout oficial
+    if (sock) {
+      try {
+        await sock.logout();
+        console.log('[WPP] ✅ Logout oficial concluído.');
+      } catch (e) {
+        console.warn('[WPP] ⚠️ Erro no logout oficial:', e.message);
+      }
+      try { sock.end(); } catch (e) {}
+      sock = null;
+    }
+    
+    // Limpar sessão
     try { 
-      fs.rmSync(authDir, { recursive: true, force: true }); 
-    } catch (e) {}
-    // Reset previous-session tracking after an explicit logout
+      if (fs.existsSync(authDir)) {
+        fs.rmSync(authDir, { recursive: true, force: true });
+        fs.mkdirSync(authDir, { recursive: true });
+        console.log('[WPP] 🗑️ Sessão local apagada.');
+      }
+    } catch (e) {
+      console.warn('[WPP] Erro ao remover pasta de sessão:', e.message);
+    }
+    
+    // Reset global state
     previousSessionFound = false;
     previousSessionAttempted = false;
     previousSessionFailed = false;
     previousSessionErrorStack = null;
+    retryCount = 0;
+    isStartingClient = false;
     
-    res.json({ ok: true, message: 'Logged out' });
-    setTimeout(() => startClient(), 1000);
+    res.json({ ok: true, message: 'Logged out successfully' });
+    
+    // Reinicia cliente em nova instância limpa após um curto delay
+    console.log('[WPP] 🔄 Reiniciando motor para nova conta...');
+    setTimeout(() => startClient(), 2000);
   } catch (e) {
+    console.error('[WPP] Erro fatal no logout:', e.message);
     res.status(500).json({ ok: false, error: e.message });
   }
 });
@@ -587,9 +655,12 @@ app.post('/logout', async (req, res) => {
 app.post('/reconnect', async (req, res) => {
   try {
     console.log('[WPP] Reconexão manual solicitada...');
-    if (client?.pupBrowser) {
-      await client.destroy().catch(() => {});
+    if (sock) {
+      try { sock.end(); } catch (e) {}
+      sock = null;
     }
+    retryCount = 0;
+    isStartingClient = false;
     res.json({ ok: true, message: 'Reiniciando' });
     setTimeout(() => startClient(), 1000);
   } catch (e) {
@@ -649,7 +720,7 @@ app.get('/schedules', (req, res) => {
 // Background worker to process scheduled messages
 setInterval(async () => {
   try {
-    if (!client?.info?.wid) return;
+    if (!sock || connectionState !== 'ready') return;
     
     let schedules = readSchedules();
     let changed = false;
@@ -667,10 +738,11 @@ setInterval(async () => {
       
       if (when <= now) {
         try {
-          const chatId = schedules[i].phone.includes('@c.us') 
-            ? schedules[i].phone 
-            : `${schedules[i].phone}@c.us`;
-          await client.sendMessage(chatId, schedules[i].message);
+          let chatId = schedules[i].phone;
+          if (!chatId.includes('@')) {
+            chatId = `${chatId.replace(/\D/g, '')}@s.whatsapp.net`;
+          }
+          await sock.sendMessage(chatId, { text: schedules[i].message });
           schedules[i].status = 'sent';
           changed = true;
         } catch (e) {
@@ -695,8 +767,9 @@ async function shutdown(signal) {
       clearTimeout(reconnectTimer);
       reconnectTimer = null;
     }
-    await forceKillBrowser();
-    await client.destroy().catch(() => {});
+    if (sock) {
+      try { sock.end(); } catch (e) {}
+    }
   } catch (e) {
     console.warn('[WPP] Erro durante shutdown:', e?.message);
   } finally {
@@ -710,7 +783,7 @@ process.on('SIGTERM', () => shutdown('SIGTERM'));
 // ====================  START SERVER  ====================
 
 server.listen(PORT, () => {
-  console.log(`\n[WPP] ✓ WPP API Server listening on port ${PORT}`);
+  console.log(`\n[WPP] ✓ WPP API Server listening on port ${PORT} (Engine: Baileys — Browserless)`);
   console.log('[WPP] 📍 Endpoints:');
   console.log('  GET  /status         → Connection status');
   console.log('  POST /send           → Send message');

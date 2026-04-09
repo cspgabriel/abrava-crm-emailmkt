@@ -183,7 +183,10 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
   const [qrCode, setQrCode] = useState<string | null>(null);
 
   const [lastError, setLastError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const [maxRetries, setMaxRetries] = useState(8);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const [isReconnecting, setIsReconnecting] = useState(false);
 
   const wsRef = React.useRef<WebSocket | null>(null);
 
@@ -581,12 +584,11 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
     
 
     setWhatsappReady(ready);
-
     setConnectedPhone(data.phone);
-
     setConnectedName(data.accountName);
-
     setLastError(data.lastError);
+    setRetryCount(data.retryCount || 0);
+    setMaxRetries(data.maxRetries || 8);
 
     
 
@@ -868,6 +870,35 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
 
     }
 
+  };
+
+  const handleManualReconnect = async () => {
+    if (isReconnecting) return;
+    setIsReconnecting(true);
+    try {
+      const resolvedBase = getResolvedApiBase(apiBase);
+      const resolvedKey = getResolvedApiKey(apiKey);
+      const reconnectUrl = `${resolvedBase}/reconnect`;
+      
+      const response = await fetchWithAuth(reconnectUrl, resolvedKey, {
+        method: 'POST'
+      });
+      
+      if (response.ok) {
+        setStatus('🔄 Reiniciando motor WhatsApp...');
+        setRetryCount(0);
+        setLastError(null);
+        setQrCode(null);
+        setConnectionState('waiting-qr');
+      } else {
+        alert('Falha ao solicitar reconexão. Verifique se o servidor está rodando.');
+      }
+    } catch (e) {
+      console.error('Erro ao reconectar:', e);
+      alert('Erro de conexão com o servidor.');
+    } finally {
+      setIsReconnecting(false);
+    }
   };
 
 
@@ -1643,19 +1674,70 @@ export const WhatsAppSender: React.FC<{ apiBase?: string; apiKey?: string; campa
                   </div>
 
                 ) : connectionState === 'waiting-qr' ? (
-
-                  <div className="mt-3 space-y-2">
-
-                    <p className="text-sm text-amber-700">Gerando código QR...</p>
-
-                    <div className="inline-flex items-center gap-2">
-
-                      <div className="h-4 w-4 bg-amber-500 rounded-full animate-pulse"></div>
-
-                      <p className="text-xs text-amber-600">Obtendo QR via WebSocket...</p>
-
+                  <div className="mt-4 space-y-4 max-w-md">
+                    <div className="space-y-2">
+                       <p className="text-sm font-semibold text-amber-800">🔒 Preparando Ambiente Seguro</p>
+                       <p className="text-xs text-amber-700 leading-relaxed">
+                        Estamos reiniciando os módulos de autenticação e limpando rastros da sessão anterior para garantir que sua nova conexão seja 100% estável e protegida.
+                       </p>
+                    </div>
+                    
+                    {/* Barra de progresso animada */}
+                    <div className="space-y-1">
+                      <div className="w-full h-2.5 bg-amber-200 rounded-full overflow-hidden shadow-inner">
+                        <div className="h-full bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 rounded-full" style={{
+                          width: '100%',
+                          animation: 'pulse-progress 3s ease-in-out infinite'
+                        }}></div>
+                      </div>
+                      <div className="flex justify-between text-[10px] text-amber-600 font-medium">
+                        <span>REINICIANDO SERVIÇOS</span>
+                        <span>AGUARDE...</span>
+                      </div>
                     </div>
 
+                    <style>{`
+                      @keyframes pulse-progress {
+                        0% { transform: translateX(-100%); }
+                        50% { transform: translateX(0%); }
+                        100% { transform: translateX(100%); }
+                      }
+                    `}</style>
+
+                    <div className="flex items-center gap-2 px-3 py-2 bg-amber-100/50 rounded-lg border border-amber-200">
+                      <div className="h-2 w-2 bg-amber-500 rounded-full animate-ping"></div>
+                      <p className="text-[11px] text-amber-700 italic">Obtendo nova chave de acesso via WebSocket seguro...</p>
+                    </div>
+
+                    {retryCount > 0 && (
+                      <div className="mt-2 flex flex-col gap-2">
+                        <div className="flex items-center justify-between text-[11px] text-amber-800 font-bold px-1">
+                          <span>🔄 Tentativa de reconexão automática:</span>
+                          <span className={`${retryCount >= maxRetries ? 'text-red-600' : 'text-amber-700'}`}>{retryCount}/{maxRetries}</span>
+                        </div>
+                        {retryCount >= maxRetries && (
+                          <div className="p-3 bg-red-50 border border-red-200 rounded-xl space-y-2">
+                            <p className="text-xs text-red-700 font-semibold leading-relaxed">
+                              ⚠️ O limite de tentativas automáticas foi atingido. Isso geralmente acontece se o celular estiver offline ou se houver um conflito de sessão.
+                            </p>
+                            <button
+                              onClick={handleManualReconnect}
+                              disabled={isReconnecting}
+                              className="w-full py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2"
+                            >
+                              {isReconnecting ? (
+                                <>
+                                  <div className="h-3 w-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                  Reiniciando...
+                                </>
+                              ) : (
+                                <>🔄 Conectar nova conta / Gerar Novo QR</>
+                              )}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                 ) : connectionState === 'error' ? (
