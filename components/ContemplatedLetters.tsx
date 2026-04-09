@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, MessageCircle, Mail, Info, CheckCircle2, X, FileText, Filter, SlidersHorizontal } from 'lucide-react';
+import { Search, MessageCircle, Mail, Info, CheckCircle2, X, FileText, Filter, SlidersHorizontal, Loader2 } from 'lucide-react';
 import { ContemplatedLetter } from '../types';
 import { db, auth } from '../firebase';
 import { PROFILE } from '../constants';
-import { collection, getDocs, doc, runTransaction } from 'firebase/firestore';
+import { collection, getDocs, doc, runTransaction, addDoc, serverTimestamp } from 'firebase/firestore';
 import EmailCapture from './EmailCapture';
 import CartaFicha from './CartaFicha';
 import defaultLettersData from '../data/defaultLetters.json';
@@ -30,6 +30,11 @@ const ContemplatedLetters: React.FC = () => {
   const [fundoRange, setFundoRange] = useState<string>('all');
   const [refRange, setRefRange] = useState<string>('all');
   const [showFilters, setShowFilters] = useState(false);
+  const [showIntentModal, setShowIntentModal] = useState(false);
+  const [intentName, setIntentName] = useState('');
+  const [intentEmail, setIntentEmail] = useState('');
+  const [intentPhone, setIntentPhone] = useState('');
+  const [intentStatus, setIntentStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [fichaLetter, setFichaLetter] = useState<ContemplatedLetter | null>(null);
   
   // Pagination states
@@ -113,9 +118,53 @@ const ContemplatedLetters: React.FC = () => {
   const paginatedLetters = filteredLetters.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const toggleSelection = (id: string) => {
-    setSelectedIds(prev => 
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-    );
+    setSelectedIds(prev => {
+      if (prev.includes(id)) return prev.filter(i => i !== id);
+      if (prev.length >= 5) return prev; // max 5 cartas
+      return [...prev, id];
+    });
+  };
+
+  const openIntentWithLetter = (letterId: string) => {
+    setSelectedIds(prev => {
+      if (prev.includes(letterId)) return prev;
+      if (prev.length >= 5) return prev;
+      return [...prev, letterId];
+    });
+    setIntentStatus('idle');
+    setIntentName('');
+    setIntentEmail('');
+    setIntentPhone('');
+    setShowIntentModal(true);
+  };
+
+  const handleIntentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!intentName || !intentEmail || !intentEmail.includes('@') || !intentPhone) return;
+    setIntentStatus('loading');
+    try {
+      await addDoc(collection(db, 'simulations'), {
+        userName: intentName,
+        userEmail: intentEmail,
+        userPhone: intentPhone,
+        source: 'Intenção de Reserva - Cartas Contempladas',
+        type: 'Lead Cartas Contempladas',
+        status: 'pending',
+        letterIds: selectedIds,
+        totalCredit,
+        totalInstallment,
+        createdAt: serverTimestamp(),
+      });
+      setIntentStatus('success');
+      setTimeout(() => {
+        setShowIntentModal(false);
+        setSelectedIds([]);
+        setIntentStatus('idle');
+      }, 2500);
+    } catch (err) {
+      console.error('Error saving intent:', err);
+      setIntentStatus('error');
+    }
   };
 
   const selectedLetters = letters.filter(l => selectedIds.includes(l.id));
@@ -356,8 +405,8 @@ const ContemplatedLetters: React.FC = () => {
               >
                 <X size={20} />
               </button>
-              <button onClick={reserveSelection} className="bg-white text-emerald-600 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-50 transition-all shadow-lg">
-                Reservar Seleção
+              <button onClick={() => { setIntentStatus('idle'); setIntentName(''); setIntentEmail(''); setIntentPhone(''); setShowIntentModal(true); }} className="bg-white text-emerald-600 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-50 transition-all shadow-lg">
+                Confirmar Intenção
               </button>
               <button onClick={() => alert('Soma: ' + formatCurrency(totalCredit))} className="bg-white text-slate-700 px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm">
                 Somar
@@ -418,8 +467,8 @@ const ContemplatedLetters: React.FC = () => {
                   onClick={() => handleOpenFicha(letter)}
                   className={`cursor-pointer transition-all duration-300 group ${selectedIds.includes(letter.id) ? 'bg-[rgba(217,173,87,0.1)] hover:bg-[rgba(217,173,87,0.15)]' : 'hover:bg-white/[0.04]'}`}
                 >
-                  <td className="px-5 py-2.5">
-                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${selectedIds.includes(letter.id) ? 'bg-[var(--brand-gold)] border-[var(--brand-gold)]' : 'border-white/20 group-hover:border-[var(--brand-gold-soft)]'}`}>
+                  <td className="px-5 py-2.5" onClick={(e) => { e.stopPropagation(); toggleSelection(letter.id); }}>
+                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all cursor-pointer ${selectedIds.includes(letter.id) ? 'bg-[var(--brand-gold)] border-[var(--brand-gold)]' : 'border-white/20 group-hover:border-[var(--brand-gold-soft)]'}`}>
                       {selectedIds.includes(letter.id) ? <CheckCircle2 size={14} className="text-[#081728]" /> : null}
                     </div>
                   </td>
@@ -441,7 +490,7 @@ const ContemplatedLetters: React.FC = () => {
                   </td>
                   <td className="px-5 py-2.5 text-right">
                     <div className="flex items-center justify-end gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
-                      <button onClick={(e) => { e.stopPropagation(); reserveLetter(letter.id); }} aria-label={letter.status === 'available' ? 'Reservar carta' : 'Carta reservada'} className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg min-w-[90px] ${letter.status === 'available' ? 'bg-[linear-gradient(135deg,#d8ad5b_0%,#b98532_100%)] text-[#081728] border-none hover:scale-105' : 'bg-white/5 text-white/40 border border-white/10'}`}>
+                      <button onClick={(e) => { e.stopPropagation(); openIntentWithLetter(letter.id); }} aria-label={letter.status === 'available' ? 'Reservar carta' : 'Carta reservada'} className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg min-w-[90px] ${letter.status === 'available' ? 'bg-[linear-gradient(135deg,#d8ad5b_0%,#b98532_100%)] text-[#081728] border-none hover:scale-105' : 'bg-white/5 text-white/40 border border-white/10'}`}>
                         {letter.status === 'available' ? 'Reservar' : 'Indisponível'}
                       </button>
                     </div>
@@ -504,7 +553,7 @@ const ContemplatedLetters: React.FC = () => {
 
               <div className="flex gap-2">
                 <button
-                  onClick={(e) => { e.stopPropagation(); reserveLetter(letter.id); }}
+                  onClick={(e) => { e.stopPropagation(); openIntentWithLetter(letter.id); }}
                   className={`flex-1 py-2.5 rounded-xl text-[10px] font-black tracking-widest uppercase transition-all shadow-lg ${letter.status === 'available' ? 'bg-[linear-gradient(135deg,#d8ad5b_0%,#b98532_100%)] text-[#081728] border border-[#d8ad5b]/20 hover:scale-[1.02]' : 'bg-white/5 text-white/30 border border-white/10'}`}
                 >
                   {letter.status === 'available' ? 'Reservar Oferta' : 'Indisponível'}
@@ -576,6 +625,115 @@ const ContemplatedLetters: React.FC = () => {
             </motion.div>
           </div>
         ) : null}
+      </AnimatePresence>
+
+      {/* Intent / Reservation Modal */}
+      <AnimatePresence>
+        {showIntentModal && (
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => { if (intentStatus !== 'loading') { setShowIntentModal(false); setIntentStatus('idle'); } }}
+              className="absolute inset-0 bg-slate-900/70 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
+              className="relative w-full max-w-md bg-white rounded-[1.5rem] shadow-2xl overflow-hidden"
+            >
+              <div className="p-6">
+                {intentStatus === 'success' ? (
+                  <div className="text-center py-8">
+                    <CheckCircle2 size={48} className="text-emerald-600 mx-auto mb-4" />
+                    <h3 className="text-xl font-black text-slate-900 mb-2">Intenção Registrada!</h3>
+                    <p className="text-sm text-slate-500">Em breve nossa equipe entrará em contato.</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-base font-black text-slate-900 uppercase tracking-tight">
+                        Confirmar Intenção de Reserva
+                      </h3>
+                      <button onClick={() => { setShowIntentModal(false); setIntentStatus('idle'); }} className="text-slate-400 hover:text-slate-900">
+                        <X size={20} />
+                      </button>
+                    </div>
+
+                    {/* Selected letters summary */}
+                    <div className="bg-slate-50 rounded-xl p-3 mb-4 space-y-2 max-h-44 overflow-y-auto border border-slate-100">
+                      {selectedLetters.map(l => (
+                        <div key={l.id} className="flex justify-between items-center text-sm">
+                          <div className="min-w-0 pr-2">
+                            <span className="font-black text-slate-900 block truncate">{l.administrator || l.group}</span>
+                            <span className="text-slate-400 text-xs">{l.category} · {l.installmentsCount}x {formatCurrency(l.installmentValue)}</span>
+                          </div>
+                          <span className="font-black text-emerald-600 flex-shrink-0">{formatCurrency(l.credit)}</span>
+                        </div>
+                      ))}
+                      <div className="border-t border-slate-200 pt-2 flex justify-between items-center">
+                        <span className="text-xs font-black text-slate-500">Total — {selectedIds.length} carta{selectedIds.length > 1 ? 's' : ''}</span>
+                        <span className="font-black text-emerald-700">{formatCurrency(totalCredit)}</span>
+                      </div>
+                    </div>
+
+                    <form onSubmit={handleIntentSubmit} className="space-y-3">
+                      <input
+                        type="text"
+                        value={intentName}
+                        onChange={e => setIntentName(e.target.value)}
+                        placeholder="Seu nome completo"
+                        required
+                        disabled={intentStatus === 'loading'}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:ring-2 focus:ring-[#d8ad5b] disabled:opacity-50"
+                      />
+                      <input
+                        type="email"
+                        value={intentEmail}
+                        onChange={e => setIntentEmail(e.target.value)}
+                        placeholder="Seu melhor e-mail"
+                        required
+                        disabled={intentStatus === 'loading'}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:ring-2 focus:ring-[#d8ad5b] disabled:opacity-50"
+                      />
+                      <input
+                        type="tel"
+                        value={intentPhone}
+                        onChange={e => {
+                          const val = e.target.value.replace(/\D/g, '');
+                          let formatted = val;
+                          if (val.length <= 11) {
+                            formatted = val.replace(/^(\d{2})(\d)/g, '($1) $2').replace(/(\d)(\d{4})$/, '$1-$2');
+                          }
+                          setIntentPhone(formatted);
+                        }}
+                        maxLength={15}
+                        placeholder="Seu celular (WhatsApp)"
+                        required
+                        disabled={intentStatus === 'loading'}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:ring-2 focus:ring-[#d8ad5b] disabled:opacity-50"
+                      />
+
+                      {intentStatus === 'error' && (
+                        <p className="text-center text-xs font-bold text-red-500">Erro ao salvar. Verifique sua conexão e tente novamente.</p>
+                      )}
+
+                      <button
+                        type="submit"
+                        disabled={intentStatus === 'loading'}
+                        className="w-full flex items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-[#d8ad5b] to-[#b98532] px-6 py-4 text-sm font-black uppercase tracking-widest text-[#081728] shadow-lg transition-all duration-300 active:scale-[0.98] disabled:opacity-70 hover:brightness-110"
+                      >
+                        {intentStatus === 'loading' ? (
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                        ) : (
+                          'Confirmar Intenção de Reserva'
+                        )}
+                      </button>
+                    </form>
+                  </>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
       </AnimatePresence>
 
       {/* Carta Ficha modal */}

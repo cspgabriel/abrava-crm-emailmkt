@@ -51,6 +51,9 @@ export interface Simulation {
   sentBy?: 'whatsapp' | 'email';    // Channel used to send
   nextContactAt?: Timestamp | null; // sentAt + 15 days — auto-calculated
   lastActivity?: string;            // Human-readable description of last action
+  // Contemplated letters linked to this simulation/lead
+  letterIds?: string[];             // IDs of contemplated letters selected by the user
+  source?: string;                  // Origin of the lead
 }
 
 export interface ContemplatedLetter {
