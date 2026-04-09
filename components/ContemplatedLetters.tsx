@@ -116,9 +116,11 @@ const ContemplatedLetters: React.FC = () => {
   const paginatedLetters = filteredLetters.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const toggleSelection = (id: string) => {
-    setSelectedIds(prev => 
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-    );
+    setSelectedIds(prev => {
+      if (prev.includes(id)) return prev.filter(i => i !== id);
+      if (prev.length >= 5) return prev; // max 5 cartas
+      return [...prev, id];
+    });
   };
 
   const selectedLetters = letters.filter(l => selectedIds.includes(l.id));
@@ -406,8 +408,8 @@ const ContemplatedLetters: React.FC = () => {
                   onClick={() => handleOpenFicha(letter)}
                   className={`cursor-pointer transition-all duration-300 group ${selectedIds.includes(letter.id) ? 'bg-[rgba(217,173,87,0.1)] hover:bg-[rgba(217,173,87,0.15)]' : 'hover:bg-white/[0.04]'}`}
                 >
-                  <td className="px-5 py-2.5">
-                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${selectedIds.includes(letter.id) ? 'bg-[var(--brand-gold)] border-[var(--brand-gold)]' : 'border-white/20 group-hover:border-[var(--brand-gold-soft)]'}`}>
+                  <td className="px-5 py-2.5" onClick={(e) => { e.stopPropagation(); toggleSelection(letter.id); }}>
+                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all cursor-pointer ${selectedIds.includes(letter.id) ? 'bg-[var(--brand-gold)] border-[var(--brand-gold)]' : 'border-white/20 group-hover:border-[var(--brand-gold-soft)]'}`}>
                       {selectedIds.includes(letter.id) ? <CheckCircle2 size={14} className="text-[#081728]" /> : null}
                     </div>
                   </td>

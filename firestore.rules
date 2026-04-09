@@ -132,6 +132,14 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // RESERVATION INTENTIONS (public leads expressing interest in a letter)
+    match /reserva_intencoes/{intencaoId} {
+      allow create: if true;
+      allow read:   if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
     // NOTE: removed development catch-all to enforce explicit rules in production.
   }
 }
