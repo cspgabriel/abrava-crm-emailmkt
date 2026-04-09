@@ -99,3 +99,25 @@ export interface AdminNote {
   status: 'open' | 'done';
   createdAt?: Timestamp | null;
 }
+
+export interface ReserveIntentLetter {
+  letterId: string;
+  letterCode?: string;
+  letterCategory: string;
+  letterAdministrator: string;
+  letterCredit: number;
+  letterInstallmentValue?: number;
+  letterInstallmentsCount?: number;
+}
+
+export interface ReserveIntent {
+  id?: string;
+  leadId?: string; // Reference to simulations doc from step 1
+  userName: string;
+  userEmail: string;
+  userPhone: string;
+  userCpf: string;
+  letters: ReserveIntentLetter[];
+  createdAt: Timestamp | null;
+  status: 'interesse' | 'confirmado' | 'cancelado';
+}

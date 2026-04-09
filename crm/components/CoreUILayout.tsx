@@ -92,6 +92,9 @@ export const CoreUILayout: React.FC<CoreUILayoutProps> = ({ children, currentPat
             <CNavItem href="#" active={currentPath === 'settings'} onClick={(e: any) => { e.preventDefault(); onNavigate('settings'); }}>
               Configurações
             </CNavItem>
+            <CNavItem href="#" active={currentPath === 'reservas'} onClick={(e: any) => { e.preventDefault(); onNavigate('reservas'); }}>
+              Intenções de Reserva
+            </CNavItem>
             {/* New menu items */}
             <hr className="border-white/10 my-2" />
             <CNavItem href="#" onClick={(e: any) => { e.preventDefault(); onNavigate('new-company'); }} className="text-[#d8ad5b] font-bold">

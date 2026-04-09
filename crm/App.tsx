@@ -48,6 +48,130 @@ import { WhatsAppSender } from './components/WhatsAppSender';
 import { EmailMarketing } from './components/EmailMarketing';
 import { EmailMarketingWorkspace } from './components/EmailMarketingWorkspace';
 
+// ─── Intenções de Reserva ────────────────────────────────────────────────────
+const statusColors: Record<string, string> = {
+  interesse: 'bg-amber-100 text-amber-800',
+  confirmado: 'bg-emerald-100 text-emerald-800',
+  cancelado: 'bg-red-100 text-red-700',
+};
+
+const ReservasView: React.FC = () => {
+  const [reservas, setReservas] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [statusFilter, setStatusFilter] = React.useState<string>('todos');
+
+  React.useEffect(() => {
+    const q = query(collection(db, 'reserva_intencoes'), orderBy('createdAt', 'desc'), limit(200));
+    const unsub = onSnapshot(q, (snap) => {
+      setReservas(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setLoading(false);
+    });
+    return () => unsub();
+  }, []);
+
+  const filtered = statusFilter === 'todos' ? reservas : reservas.filter(r => r.status === statusFilter);
+
+  const updateStatus = async (id: string, newStatus: string) => {
+    try {
+      await updateDoc(doc(db, 'reserva_intencoes', id), { status: newStatus });
+    } catch (e) {
+      console.error('Erro ao atualizar status:', e);
+    }
+  };
+
+  return (
+    <div className="space-y-6 animate-in fade-in zoom-in-95 duration-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-bold text-gray-900">Intenções de Reserva</h2>
+          <p className="text-sm text-gray-500 mt-1">Leads que manifestaram interesse em reservar cartas contempladas.</p>
+        </div>
+        <select
+          value={statusFilter}
+          onChange={e => setStatusFilter(e.target.value)}
+          className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="todos">Todos os status</option>
+          <option value="interesse">Interesse</option>
+          <option value="confirmado">Confirmado</option>
+          <option value="cancelado">Cancelado</option>
+        </select>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-20 text-gray-400">
+          <Loader2 className="h-6 w-6 animate-spin mr-2" /> Carregando...
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="bg-white rounded-xl border border-gray-200 p-12 text-center text-gray-400">
+          Nenhuma intenção de reserva encontrada.
+        </div>
+      ) : (
+        <div className="bg-white shadow-sm border border-gray-200 rounded-xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left min-w-[900px]">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Lead</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase">CPF</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Telefone</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Cartas</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Data</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {filtered.map((r: any) => (
+                  <tr key={r.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-5 py-4">
+                      <div className="font-semibold text-gray-900 text-sm">{r.userName || '—'}</div>
+                      <div className="text-xs text-gray-400">{r.userEmail || '—'}</div>
+                    </td>
+                    <td className="px-5 py-4 text-sm text-gray-700">{r.userCpf || '—'}</td>
+                    <td className="px-5 py-4 text-sm text-gray-700">{r.userPhone || '—'}</td>
+                    <td className="px-5 py-4">
+                      {Array.isArray(r.letters) && r.letters.length > 0 ? (
+                        <div className="flex flex-col gap-1">
+                          {r.letters.map((l: any, i: number) => (
+                            <span key={i} className="inline-flex items-center gap-1 text-xs text-gray-700 bg-gray-100 rounded-full px-2.5 py-0.5 font-medium">
+                              <span className="font-black text-amber-700">{l.letterCategory}</span>
+                              {l.letterCode ? ` · ${l.letterCode}` : ''} · {l.letterAdministrator}
+                              <span className="ml-1 text-gray-500">
+                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(l.letterCredit)}
+                              </span>
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-gray-400 text-xs">—</span>
+                      )}
+                    </td>
+                    <td className="px-5 py-4 text-sm text-gray-500 whitespace-nowrap">
+                      {r.createdAt?.seconds ? new Date(r.createdAt.seconds * 1000).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
+                    </td>
+                    <td className="px-5 py-4">
+                      <select
+                        value={r.status || 'interesse'}
+                        onChange={e => updateStatus(r.id, e.target.value)}
+                        className={`text-xs font-bold px-2.5 py-1 rounded-full border-0 outline-none cursor-pointer ${statusColors[r.status] || 'bg-gray-100 text-gray-700'}`}
+                      >
+                        <option value="interesse">Interesse</option>
+                        <option value="confirmado">Confirmado</option>
+                        <option value="cancelado">Cancelado</option>
+                      </select>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
 export const App = () => {
         const WHATSAPP_API_URL = (
             (import.meta as any)?.env?.VITE_API_WPP?.trim?.() ||
@@ -1779,6 +1903,7 @@ export const App = () => {
                 {currentPath === 'forms' && renderFormsList()}
                 
                 {currentPath === 'settings' && <SettingsView companies={companies} contacts={contacts} savedViews={savedViews} onDeleteView={handleDeleteSavedView} onSetDefaultView={handleSetDefaultView} onRenameView={handleRenameView} />}
+                {currentPath === 'reservas' && <ReservasView />}
             </div>
         </div>
     </CoreUILayout>
